@@ -101,12 +101,22 @@ struct happy_eyeballs_ctx {
 	const char *error_message;
 
 	/**
-	 * Set along with bind_addr to hint which interface to use.
+	 * Set along with bind_iface to hint which interface to use.
+	 */
+	int bind_iface_len;
+
+	/**
+	 * Set along with bind_iface_len to hint which interface to use.
+	 */
+	char *bind_iface;
+
+	/**
+	 * Set along with bind_addr to hint which address to use.
 	 */
 	socklen_t bind_addr_len;
 
 	/**
-	 * Set along with bind_addr_len to hint which interface to use.
+	 * Set along with bind_addr_len to hint which address to use.
 	 */
 	struct sockaddr_storage bind_addr;
 
@@ -349,6 +359,14 @@ static void *happy_connect_worker(void *arg)
 	setsockopt(args->sockfd, SOL_SOCKET, SO_NOSIGPIPE, &(int){1},
 		   sizeof(int));
 #endif
+
+#ifdef __linux__
+	if (setsockopt(args->sockfd, SOL_SOCKET, SO_BINDTODEVICE,
+		       context->bind_iface, context->bind_iface_len) < 0) {
+		goto failure;
+	}
+#endif
+
 	if (context->bind_addr.ss_family != 0 &&
 	    bind(args->sockfd, (const struct sockaddr *)&context->bind_addr,
 		 context->bind_addr_len) < 0) {
@@ -696,12 +714,29 @@ int happy_eyeballs_destroy(struct happy_eyeballs_ctx *context)
 		freeaddrinfo(context->addresses);
 
 	da_free(context->candidates);
+	bfree(context->bind_iface);
 	free(context);
 	return STATUS_SUCCESS;
 }
 
 /* ------------------------------------------------------------------------- */
 /* Setters & Getters                                                         */
+
+int happy_eyeballs_set_bind_iface(struct happy_eyeballs_ctx *context,
+				  int iface_len, const char *iface)
+{
+	if (!context)
+		return STATUS_INVALID_ARGUMENT;
+
+	if (iface && iface_len > 0) {
+		context->bind_iface = bstrdup(iface);
+		context->bind_iface_len = iface_len;
+	} else {
+		context->bind_iface_len = 0;
+		context->bind_iface = NULL;
+	}
+	return STATUS_SUCCESS;
+}
 
 int happy_eyeballs_set_bind_addr(struct happy_eyeballs_ctx *context,
 				 socklen_t addr_len,

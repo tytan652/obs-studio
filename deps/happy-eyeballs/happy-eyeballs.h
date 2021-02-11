@@ -83,6 +83,16 @@ int happy_eyeballs_connect(struct happy_eyeballs_ctx *context,
 			   const char *hostname, int port);
 
 /**
+ * Optionally set the interface. You may pass 0 and NULL for these
+ * parameters, respectively, to clear this setting. This must be called before
+ * happy_eyeballs_connect.
+ *
+ * Returns 0 on success or -EINVAL if context is not set.
+ */
+int happy_eyeballs_set_bind_iface(struct happy_eyeballs_ctx *context,
+				  int iface_len, const char *iface);
+
+/**
  * Optionally set the interface address. You may pass 0 and NULL for these
  * parameters, respectively, to clear this setting. This must be called before
  * happy_eyeballs_connect.
