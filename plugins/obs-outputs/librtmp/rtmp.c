@@ -1063,6 +1063,9 @@ RTMP_Connect(RTMP *r, RTMPPacket *cp)
         port = r->Link.port;
     }
 
+    /* Set local bind interface (if present) */
+    happy_eyeballs_set_bind_iface(happy_ctx, r->m_bindInterface.av_len, r->m_bindInterface.av_val);
+
     /* Set local bind address (if present) */
     happy_eyeballs_set_bind_addr(happy_ctx, r->m_bindIP.addrLen, &r->m_bindIP.addr);
 
