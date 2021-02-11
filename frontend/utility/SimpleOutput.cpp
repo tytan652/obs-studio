@@ -673,6 +673,7 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	bool useDelay = config_get_bool(main->Config(), "Output", "DelayEnable");
 	int delaySec = config_get_int(main->Config(), "Output", "DelaySec");
 	bool preserveDelay = config_get_bool(main->Config(), "Output", "DelayPreserve");
+	const char *bindInterface = config_get_string(main->Config(), "Output", "BindInterface");
 	const char *bindIP = config_get_string(main->Config(), "Output", "BindIP");
 #ifdef _WIN32
 	bool enableNewSocketLoop = config_get_bool(main->Config(), "Output", "NewSocketLoopEnable");
@@ -687,6 +688,7 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	}
 
 	OBSDataAutoRelease settings = obs_data_create();
+	obs_data_set_string(settings, "bind_interface", bindInterface);
 	obs_data_set_string(settings, "bind_ip", bindIP);
 #ifdef _WIN32
 	obs_data_set_bool(settings, "new_socket_loop_enabled", enableNewSocketLoop);

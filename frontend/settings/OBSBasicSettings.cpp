@@ -545,6 +545,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->reconnectMaxRetries,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->processPriority,      COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->confirmOnExit,        CHECK_CHANGED,  ADV_CHANGED);
+#ifdef __linux__
+	HookWidget(ui->bindToInterface,      COMBO_CHANGED,  ADV_CHANGED);
+#endif
 	HookWidget(ui->bindToIP,             COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
@@ -653,6 +656,13 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->resetOSXVSync;
 	ui->disableOSXVSync = nullptr;
 	ui->resetOSXVSync = nullptr;
+#endif
+
+#ifndef __linux__
+	delete ui->bindToIfaceLabel;
+	delete ui->bindToInterface;
+	ui->bindToIfaceLabel = nullptr;
+	ui->bindToInterface = nullptr;
 #endif
 
 	connect(ui->streamDelaySec, &QSpinBox::valueChanged, this, &OBSBasicSettings::UpdateStreamDelayEstimate);
@@ -795,8 +805,35 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	connectScaleFilter(ui->advOutRescaleFilter, ui->advOutRescale);
 	connectScaleFilter(ui->advOutRecRescaleFilter, ui->advOutRecRescale);
 
-	// Get Bind to IP Addresses
+#ifdef __linux__
+	connect(ui->bindToInterface, &QComboBox::currentIndexChanged, this, &OBSBasicSettings::UpdateAddrList);
+	ui->bindToIP->setEnabled(false);
+#endif
+
+	// Get Bind to interfaces Interfaces (Linux only)
+	// Get Bind to IP Addresses (Others)
 	obs_properties_t *ppts = obs_get_output_properties("rtmp_output");
+#ifdef __linux__
+	obs_property_t *p_iface = obs_properties_get(ppts, "bind_interface");
+	QStringList dedup_iface = {};
+
+	ui->bindToInterface->blockSignals(true);
+
+	size_t count_iface = obs_property_list_item_count(p_iface);
+	for (size_t i = 0; i < count_iface; i++) {
+		const char *name = obs_property_list_item_name(p_iface, i);
+		const char *val = obs_property_list_item_string(p_iface, i);
+
+		// Add interfaces without duplicates
+		if (!dedup_iface.contains(QT_UTF8(name))) {
+			dedup_iface.append(QT_UTF8(name));
+			ui->bindToInterface->addItem(QT_UTF8(name), val);
+		}
+	}
+
+	UpdateAddrList();
+	ui->bindToInterface->blockSignals(false);
+#else
 	obs_property_t *p = obs_properties_get(ppts, "bind_ip");
 
 	size_t count = obs_property_list_item_count(p);
@@ -806,7 +843,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 		ui->bindToIP->addItem(QT_UTF8(name), val);
 	}
-
+#endif
 	obs_properties_destroy(ppts);
 
 	ui->multitrackVideoNoticeBox->setVisible(false);
@@ -2520,6 +2557,9 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	int maxRetries = config_get_int(main->Config(), "Output", "MaxRetries");
 	const char *filename = config_get_string(main->Config(), "Output", "FilenameFormatting");
 	bool overwriteIfExists = config_get_bool(main->Config(), "Output", "OverwriteIfExists");
+#ifdef __linux__
+	const char *bindInterface = config_get_string(main->Config(), "Output", "BindInterface");
+#endif
 	const char *bindIP = config_get_string(main->Config(), "Output", "BindIP");
 	const char *rbPrefix = config_get_string(main->Config(), "SimpleOutput", "RecRBPrefix");
 	const char *rbSuffix = config_get_string(main->Config(), "SimpleOutput", "RecRBSuffix");
@@ -2564,6 +2604,11 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	SetComboByValue(ui->colorRange, videoColorRange);
 	ui->sdrWhiteLevel->setValue(sdrWhiteLevel);
 	ui->hdrNominalPeakLevel->setValue(hdrNominalPeakLevel);
+
+#ifdef __linux__
+	if (!SetComboByValue(ui->bindToInterface, bindInterface))
+		SetInvalidValue(ui->bindToInterface, bindInterface, bindInterface);
+#endif
 
 	if (!SetComboByValue(ui->bindToIP, bindIP))
 		SetInvalidValue(ui->bindToIP, bindIP, bindIP);
@@ -3197,6 +3242,9 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCheckBox(ui->reconnectEnable, "Output", "Reconnect");
 	SaveSpinBox(ui->reconnectRetryDelay, "Output", "RetryDelay");
 	SaveSpinBox(ui->reconnectMaxRetries, "Output", "MaxRetries");
+#ifdef __linux__
+	SaveComboData(ui->bindToInterface, "Output", "BindInterface");
+#endif
 	SaveComboData(ui->bindToIP, "Output", "BindIP");
 	SaveCheckBox(ui->autoRemux, "Video", "AutoRemux");
 	SaveCheckBox(ui->dynBitrate, "Output", "DynamicBitrate");
@@ -5571,6 +5619,9 @@ void OBSBasicSettings::UpdateAdvNetworkGroup()
 #ifdef _WIN32
 	ui->enableNewSocketLoop->setVisible(enabled);
 	ui->enableLowLatencyMode->setVisible(enabled);
+#elif defined(__linux__)
+	ui->bindToIfaceLabel->setVisible(enabled);
+	ui->bindToInterface->setVisible(enabled);
 #endif
 }
 
@@ -5808,3 +5859,34 @@ void OBSBasicSettings::AdvAudioEncodersChanged()
 			       ui->advOutTrack4Bitrate, ui->advOutTrack5Bitrate, ui->advOutTrack6Bitrate},
 			      320);
 }
+
+#ifdef __linux__
+void OBSBasicSettings::UpdateAddrList()
+{
+	ui->bindToIP->clear();
+
+	// Get Bind to IP Addresses (Linux only)
+	obs_properties_t *ppts = obs_get_output_properties("rtmp_output");
+	obs_property_t *p = obs_properties_get(ppts, "bind_ip");
+
+	size_t count_addr = obs_property_list_item_count(p);
+	for (size_t i = 0; i < count_addr; i++) {
+		const char *name = obs_property_list_item_name(p, i);
+		const char *val = obs_property_list_item_string(p, i);
+
+		//Put only the addresses from the selected interface
+		if (QT_UTF8(name).contains(ui->bindToInterface->currentText()) || QT_UTF8(val).contains("default"))
+			ui->bindToIP->addItem(QT_UTF8(name), val);
+	}
+
+	obs_properties_destroy(ppts);
+
+	if (ui->bindToInterface->currentIndex() > 0) {
+		ui->bindToIP->setEnabled(true);
+	} else {
+		ui->bindToIP->setEnabled(false);
+		if (!SetComboByValue(ui->bindToIP, "default"))
+			SetInvalidValue(ui->bindToIP, "default", "default");
+	}
+}
+#endif

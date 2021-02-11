@@ -793,6 +793,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint(activeConfiguration, "Output", "RetryDelay", 2);
 	config_set_default_uint(activeConfiguration, "Output", "MaxRetries", 25);
 
+	config_set_default_string(activeConfiguration, "Output", "BindInterface", "default");
 	config_set_default_string(activeConfiguration, "Output", "BindIP", "default");
 	config_set_default_bool(activeConfiguration, "Output", "NewSocketLoopEnable", false);
 	config_set_default_bool(activeConfiguration, "Output", "LowLatencyEnable", false);
