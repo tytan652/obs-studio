@@ -390,7 +390,6 @@ size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst,
 size_t os_wcs_to_mbs(const wchar_t *str, size_t len, char *dst, size_t dst_size)
 {
 	UNUSED_PARAMETER(len);
-
 	size_t out_len;
 
 	if (!str)
