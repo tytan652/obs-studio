@@ -1,0 +1,27 @@
+name: CMake Format Check
+
+on:
+  push:
+    paths-ignore: ['**.md']
+    branches-ignore: [master]
+  pull_request:
+    paths-ignore: ['**.md']
+    branches-ignore: [master]
+
+jobs:
+  ubuntu64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+
+      - name: Install cmake format
+        run: |
+          sudo pip install cmake-format
+
+      - name: Check the Formatting
+        run: |
+          ./formatcmake.sh
+          ./CI/check-format.sh
