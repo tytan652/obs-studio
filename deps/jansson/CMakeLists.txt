@@ -44,8 +44,7 @@ option(USE_WINDOWS_CRYPTOAPI "Use CryptGenRandom to seed the hash function." ON)
 
 if(MSVC)
   # This option must match the settings used in your program, in particular if
-  # you
-  # are linking statically
+  # you are linking statically
   option(JANSSON_STATIC_CRT "Link the static CRT libraries" ON)
 endif()
 
