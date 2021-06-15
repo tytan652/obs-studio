@@ -11,13 +11,20 @@ on:
 
 env:
   CEF_BUILD_VERSION_MAC: '4638'
+  CEF_HASH_MAC_X86_64: '309a58607f9f910a54f3e2e38beb255abb67823b47e4224895c35812ed0e8f77'
+  CEF_HASH_MAC_ARM64: '510687954ece8f109116f1ac8c915d4114c9632193b288bc7db7380b70887ab8'
   CEF_BUILD_VERSION_LINUX: '4638'
   CEF_BUILD_VERSION_WIN: '4638'
   QT_VERSION_MAC: '5.15.2'
+  QT_HASH_MAC_X86_64: 'c928199f3c3787a42cd50a34fe4fa484bf6f1c6ada14edb3bf6134d3b5fd45aa'
+  QT_HASH_MAC_ARM64: '6fe5bef60cee6cd51f91663dfc63b99093fca688b379230d7db5e096c61fb38f'
   QT_VERSION_WIN: '5.15.2'
   DEPS_VERSION_MAC: '2021-12-05'
+  DEPS_HASH_MAC_X86_64: 'bfc45a1c335990f33a88c266acdcdd829532cab5837ad4189ac3f8aa07f3ff54'
+  DEPS_HASH_MAC_ARM64: '77e398a9affa66aa5c9c8909fde2c663e69ea1cb597c9cca2615a02f16a6a20a'
   DEPS_VERSION_WIN: '2019'
   VLC_VERSION_MAC: '3.0.8'
+  VLC_HASH_MAC: 'e0149ef4a20a19b9ecd87309c2d27787ee3f47dfd47c6639644bc1f6fd95bdf6'
   VLC_VERSION_WIN: '3.0.0-git'
   TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
   TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
@@ -58,11 +65,12 @@ jobs:
     runs-on: [macos-11]
     strategy:
       matrix:
-        arch: ['x86_64']
+        arch: ['x86_64', 'arm64']
     if: always()
     needs: [clang_check]
     env:
-      MACOSX_DEPLOYMENT_TARGET: '10.13'
+      MACOSX_DEPLOYMENT_TARGET_X86_64: '10.13'
+      MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
       SPARKLE_VERSION: '1.26.0'
       SPARKLE_HASH: '8312cbf7528297a49f1b97692c33cb8d33254c396dc51be394e9484e4b6833a0'
       BLOCKED_FORMULAS: 'speexdsp curl php composer'
@@ -164,13 +172,13 @@ jobs:
         run: CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
 
       - name: 'Run tests'
-        if: success()
+        if: ${{ success() && matrix.arch == 'x86_64' }}
         run: cmake --build build -t test
 
       - name: 'Create build artifact'
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         run: |
-          CI/macos/03_package_obs.sh --codesign
+          CI/macos/03_package_obs.sh --codesign --architecture "${{ matrix.arch }}"
           ARTIFACT_NAME=$(basename $(/usr/bin/find build -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
           echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
 
@@ -430,7 +438,7 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
     strategy:
       matrix:
-        arch: ['x86_64']
+        arch: ['x86_64', 'arm64']
     defaults:
       run:
         shell: bash
