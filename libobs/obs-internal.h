@@ -140,6 +140,8 @@ struct obs_hotkey {
 	char *description;
 
 	obs_hotkey_func func;
+	obs_hotkey_func2 func2;
+
 	void *data;
 	int pressed;
 
@@ -147,6 +149,7 @@ struct obs_hotkey {
 	void *registerer;
 
 	obs_hotkey_id pair_partner_id;
+	uint32_t version;
 };
 
 struct obs_hotkey_pair {
