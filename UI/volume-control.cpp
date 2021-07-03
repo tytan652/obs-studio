@@ -323,6 +323,20 @@ void VolControl::EnableSlider(bool enable)
 	slider->setEnabled(enable);
 }
 
+void VolControl::refreshColors()
+{
+	volMeter->setBackgroundNominalColor(
+		volMeter->getBackgroundNominalColor());
+	volMeter->setBackgroundWarningColor(
+		volMeter->getBackgroundWarningColor());
+	volMeter->setBackgroundErrorColor(volMeter->getBackgroundErrorColor());
+	volMeter->setForegroundNominalColor(
+		volMeter->getForegroundNominalColor());
+	volMeter->setForegroundWarningColor(
+		volMeter->getForegroundWarningColor());
+	volMeter->setForegroundErrorColor(volMeter->getForegroundErrorColor());
+}
+
 VolControl::~VolControl()
 {
 	obs_fader_remove_callback(obs_fader, OBSVolumeChanged, this);
@@ -337,9 +351,18 @@ VolControl::~VolControl()
 		contextMenu->close();
 }
 
+static inline QColor color_from_int(long long val)
+{
+	QColor color(val & 0xff, (val >> 8) & 0xff, (val >> 16) & 0xff,
+		     (val >> 24) & 0xff);
+	color.setAlpha(255);
+
+	return color;
+}
+
 QColor VolumeMeter::getBackgroundNominalColor() const
 {
-	return backgroundNominalColor;
+	return p_backgroundNominalColor;
 }
 
 QColor VolumeMeter::getBackgroundNominalColorDisabled() const
@@ -349,7 +372,15 @@ QColor VolumeMeter::getBackgroundNominalColorDisabled() const
 
 void VolumeMeter::setBackgroundNominalColor(QColor c)
 {
-	backgroundNominalColor = std::move(c);
+	p_backgroundNominalColor = std::move(c);
+
+	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+			    "OverrideColors")) {
+		backgroundNominalColor = color_from_int(config_get_int(
+			GetGlobalConfig(), "Accessibility", "MixerGreen"));
+	} else {
+		backgroundNominalColor = p_backgroundNominalColor;
+	}
 }
 
 void VolumeMeter::setBackgroundNominalColorDisabled(QColor c)
@@ -359,7 +390,7 @@ void VolumeMeter::setBackgroundNominalColorDisabled(QColor c)
 
 QColor VolumeMeter::getBackgroundWarningColor() const
 {
-	return backgroundWarningColor;
+	return p_backgroundWarningColor;
 }
 
 QColor VolumeMeter::getBackgroundWarningColorDisabled() const
@@ -369,7 +400,15 @@ QColor VolumeMeter::getBackgroundWarningColorDisabled() const
 
 void VolumeMeter::setBackgroundWarningColor(QColor c)
 {
-	backgroundWarningColor = std::move(c);
+	p_backgroundWarningColor = std::move(c);
+
+	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+			    "OverrideColors")) {
+		backgroundWarningColor = color_from_int(config_get_int(
+			GetGlobalConfig(), "Accessibility", "MixerYellow"));
+	} else {
+		backgroundWarningColor = p_backgroundWarningColor;
+	}
 }
 
 void VolumeMeter::setBackgroundWarningColorDisabled(QColor c)
@@ -379,7 +418,7 @@ void VolumeMeter::setBackgroundWarningColorDisabled(QColor c)
 
 QColor VolumeMeter::getBackgroundErrorColor() const
 {
-	return backgroundErrorColor;
+	return p_backgroundErrorColor;
 }
 
 QColor VolumeMeter::getBackgroundErrorColorDisabled() const
@@ -389,7 +428,15 @@ QColor VolumeMeter::getBackgroundErrorColorDisabled() const
 
 void VolumeMeter::setBackgroundErrorColor(QColor c)
 {
-	backgroundErrorColor = std::move(c);
+	p_backgroundErrorColor = std::move(c);
+
+	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+			    "OverrideColors")) {
+		backgroundErrorColor = color_from_int(config_get_int(
+			GetGlobalConfig(), "Accessibility", "MixerRed"));
+	} else {
+		backgroundErrorColor = p_backgroundErrorColor;
+	}
 }
 
 void VolumeMeter::setBackgroundErrorColorDisabled(QColor c)
@@ -399,7 +446,7 @@ void VolumeMeter::setBackgroundErrorColorDisabled(QColor c)
 
 QColor VolumeMeter::getForegroundNominalColor() const
 {
-	return foregroundNominalColor;
+	return p_foregroundNominalColor;
 }
 
 QColor VolumeMeter::getForegroundNominalColorDisabled() const
@@ -409,7 +456,16 @@ QColor VolumeMeter::getForegroundNominalColorDisabled() const
 
 void VolumeMeter::setForegroundNominalColor(QColor c)
 {
-	foregroundNominalColor = std::move(c);
+	p_foregroundNominalColor = std::move(c);
+
+	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+			    "OverrideColors")) {
+		foregroundNominalColor = color_from_int(
+			config_get_int(GetGlobalConfig(), "Accessibility",
+				       "MixerGreenActive"));
+	} else {
+		foregroundNominalColor = p_foregroundNominalColor;
+	}
 }
 
 void VolumeMeter::setForegroundNominalColorDisabled(QColor c)
@@ -419,7 +475,7 @@ void VolumeMeter::setForegroundNominalColorDisabled(QColor c)
 
 QColor VolumeMeter::getForegroundWarningColor() const
 {
-	return foregroundWarningColor;
+	return p_foregroundWarningColor;
 }
 
 QColor VolumeMeter::getForegroundWarningColorDisabled() const
@@ -429,7 +485,16 @@ QColor VolumeMeter::getForegroundWarningColorDisabled() const
 
 void VolumeMeter::setForegroundWarningColor(QColor c)
 {
-	foregroundWarningColor = std::move(c);
+	p_foregroundWarningColor = std::move(c);
+
+	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+			    "OverrideColors")) {
+		foregroundWarningColor = color_from_int(
+			config_get_int(GetGlobalConfig(), "Accessibility",
+				       "MixerYellowActive"));
+	} else {
+		foregroundWarningColor = p_foregroundWarningColor;
+	}
 }
 
 void VolumeMeter::setForegroundWarningColorDisabled(QColor c)
@@ -439,7 +504,7 @@ void VolumeMeter::setForegroundWarningColorDisabled(QColor c)
 
 QColor VolumeMeter::getForegroundErrorColor() const
 {
-	return foregroundErrorColor;
+	return p_foregroundErrorColor;
 }
 
 QColor VolumeMeter::getForegroundErrorColorDisabled() const
@@ -449,7 +514,15 @@ QColor VolumeMeter::getForegroundErrorColorDisabled() const
 
 void VolumeMeter::setForegroundErrorColor(QColor c)
 {
-	foregroundErrorColor = std::move(c);
+	p_foregroundErrorColor = std::move(c);
+
+	if (config_get_bool(GetGlobalConfig(), "Accessibility",
+			    "OverrideColors")) {
+		foregroundErrorColor = color_from_int(config_get_int(
+			GetGlobalConfig(), "Accessibility", "MixerRedActive"));
+	} else {
+		foregroundErrorColor = p_foregroundErrorColor;
+	}
 }
 
 void VolumeMeter::setForegroundErrorColorDisabled(QColor c)

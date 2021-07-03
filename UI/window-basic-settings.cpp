@@ -353,6 +353,7 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define VIDEO_RESTART   SLOT(VideoChangedRestart())
 #define VIDEO_RES       SLOT(VideoChangedResolution())
 #define VIDEO_CHANGED   SLOT(VideoChanged())
+#define A11Y_CHANGED    SLOT(A11yChanged())
 #define ADV_CHANGED     SLOT(AdvancedChanged())
 #define ADV_RESTART     SLOT(AdvancedChangedRestart())
 /* clang-format on */
@@ -531,6 +532,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsNumerator,         SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsDenominator,       SCROLL_CHANGED, VIDEO_CHANGED);
+	HookWidget(ui->colorsGroupBox,       CHECK_CHANGED,  A11Y_CHANGED);
+	HookWidget(ui->colorPreset,          COMBO_CHANGED,  A11Y_CHANGED);
 	HookWidget(ui->renderer,             COMBO_CHANGED,  ADV_RESTART);
 	HookWidget(ui->adapter,              COMBO_CHANGED,  ADV_RESTART);
 	HookWidget(ui->colorFormat,          COMBO_CHANGED,  ADV_CHANGED);
@@ -3068,6 +3071,8 @@ void OBSBasicSettings::LoadSettings(bool changedOnly)
 		LoadVideoSettings();
 	if (!changedOnly || hotkeysChanged)
 		LoadHotkeySettings();
+	if (!changedOnly || a11yChanged)
+		LoadA11ySettings();
 	if (!changedOnly || advancedChanged)
 		LoadAdvancedSettings();
 }
@@ -3839,6 +3844,8 @@ void OBSBasicSettings::SaveSettings()
 		SaveVideoSettings();
 	if (hotkeysChanged)
 		SaveHotkeySettings();
+	if (a11yChanged)
+		SaveA11ySettings();
 	if (advancedChanged)
 		SaveAdvancedSettings();
 
@@ -3863,6 +3870,8 @@ void OBSBasicSettings::SaveSettings()
 			AddChangedVal(changed, "video");
 		if (hotkeysChanged)
 			AddChangedVal(changed, "hotkeys");
+		if (a11yChanged)
+			AddChangedVal(changed, "a11y");
 		if (advancedChanged)
 			AddChangedVal(changed, "advanced");
 
@@ -4585,6 +4594,15 @@ void OBSBasicSettings::ReloadHotkeys(obs_hotkey_id ignoreKey)
 	LoadHotkeySettings(ignoreKey);
 }
 
+void OBSBasicSettings::A11yChanged()
+{
+	if (!loading) {
+		a11yChanged = true;
+		sender()->setProperty("changed", QVariant(true));
+		EnableApplyButton(true);
+	}
+}
+
 void OBSBasicSettings::AdvancedChanged()
 {
 	if (!loading) {
@@ -5238,6 +5256,11 @@ QIcon OBSBasicSettings::GetHotkeysIcon() const
 	return hotkeysIcon;
 }
 
+QIcon OBSBasicSettings::GetAccessibilityIcon() const
+{
+	return accessibilityIcon;
+}
+
 QIcon OBSBasicSettings::GetAdvancedIcon() const
 {
 	return advancedIcon;
@@ -5273,9 +5296,14 @@ void OBSBasicSettings::SetHotkeysIcon(const QIcon &icon)
 	ui->listWidget->item(5)->setIcon(icon);
 }
 
-void OBSBasicSettings::SetAdvancedIcon(const QIcon &icon)
+void OBSBasicSettings::SetAccessibilityIcon(const QIcon &icon)
 {
 	ui->listWidget->item(6)->setIcon(icon);
+}
+
+void OBSBasicSettings::SetAdvancedIcon(const QIcon &icon)
+{
+	ui->listWidget->item(7)->setIcon(icon);
 }
 
 int OBSBasicSettings::CurrentFLVTrack()
