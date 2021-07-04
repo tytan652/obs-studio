@@ -203,6 +203,43 @@ static inline bool get_bool_val(json_t *service, const char *key)
 	return json_is_true(bool_val);
 }
 
+static inline bool is_protocol_available(json_t *service)
+{
+	json_t *recommended;
+	const char *name;
+	const char *output;
+	const char *protocol;
+
+	name = get_string_val(service, "name");
+	recommended = json_object_get(service, "recommended");
+
+	if ((strcmp(name, "YouTube - RTMPS") == 0) ||
+	    (strcmp(name, "Facebook Live") == 0))
+		protocol = "RTMPS";
+	else if (!json_is_object(recommended))
+		protocol = "RTMP";
+	else {
+		output = get_string_val(recommended, "output");
+		if (!output)
+			protocol = "RTMP";
+		else {
+			if (strcmp(output, "ffmpeg_hls_muxer") == 0)
+				protocol = "HLS";
+			else if (strcmp(output, "ftl_output") == 0)
+				protocol = "FTL";
+		}
+	}
+
+	const char *prtcl;
+	size_t idx = 0;
+
+	while (obs_enum_protocol_types(idx++, &prtcl))
+		if (strcmp(protocol, prtcl) == 0)
+			return true;
+
+	return false;
+}
+
 static void add_service(obs_property_t *list, json_t *service, bool show_all,
 			const char *cur_service)
 {
@@ -253,6 +290,10 @@ static void add_services(obs_property_t *list, json_t *root, bool show_all,
 	}
 
 	json_array_foreach (root, index, service) {
+		/* skip service with non-available protocol */
+		if (!is_protocol_available(service))
+			continue;
+		;
 		add_service(list, service, show_all, cur_service);
 	}
 
@@ -434,6 +475,10 @@ static inline json_t *find_service(json_t *root, const char *name,
 		*p_new_name = NULL;
 
 	json_array_foreach (root, index, service) {
+		/* skip service with non-available protocol */
+		if (!is_protocol_available(service))
+			continue;
+
 		const char *cur_name = get_string_val(service, "name");
 
 		if (strcmp(name, cur_name) == 0)
