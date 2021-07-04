@@ -413,6 +413,7 @@ set(libobs_libobs_SOURCES
 	${libobs_PLATFORM_SOURCES}
 	obs-audio-controls.c
 	obs-avc.c
+	obs-protocol.c
 	obs-encoder.c
 	obs-service.c
 	obs-source.c
@@ -452,6 +453,7 @@ set(libobs_libobs_HEADERS
 	obs-audio-controls.h
 	obs-defs.h
 	obs-avc.h
+	obs-protocol.h
 	obs-encoder.h
 	obs-service.h
 	obs-internal.h
