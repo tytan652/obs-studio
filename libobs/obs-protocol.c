@@ -199,7 +199,8 @@ void obs_protocol_get_supported_video_codecs(const obs_protocol_t *protocol,
 					     struct obs_protocol_codec **codecs,
 					     size_t *count)
 {
-	if (!obs_protocol_valid(protocol, "obs_protocol_supported_video_codecs"))
+	if (!obs_protocol_valid(protocol,
+				"obs_protocol_supported_video_codecs"))
 		return;
 	if (!obs_ptr_valid(codecs, "obs_protocol_supported_video_codecs"))
 		return;
@@ -218,7 +219,8 @@ void obs_protocol_get_supported_audio_codecs(const obs_protocol_t *protocol,
 					     struct obs_protocol_codec **codecs,
 					     size_t *count)
 {
-	if (!obs_protocol_valid(protocol, "obs_protocol_supported_audio_codecs"))
+	if (!obs_protocol_valid(protocol,
+				"obs_protocol_supported_audio_codecs"))
 		return;
 	if (!obs_ptr_valid(codecs, "obs_protocol_supported_audio_codecs"))
 		return;
