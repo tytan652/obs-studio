@@ -600,6 +600,8 @@ cleanup:
 
 #define source_warn(format, ...) \
 	blog(LOG_WARNING, "obs_register_source: " format, ##__VA_ARGS__)
+#define protocol_warn(format, ...) \
+	blog(LOG_WARNING, "obs_register_protocol: " format, ##__VA_ARGS__)
 #define output_warn(format, ...) \
 	blog(LOG_WARNING, "obs_register_output: " format, ##__VA_ARGS__)
 #define encoder_warn(format, ...) \
@@ -711,6 +713,36 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 
 error:
 	HANDLE_ERROR(size, obs_source_info, info);
+}
+
+void obs_register_protocol_s(const struct obs_protocol_info *info, size_t size)
+{
+	if (find_protocol(info->id)) {
+		protocol_warn("Protocol id '%s' already exists!  "
+			      "Duplicate library?",
+			      info->id);
+		goto error;
+	}
+
+#define CHECK_REQUIRED_VAL_(info, val, func) \
+	CHECK_REQUIRED_VAL(struct obs_protocol_info, info, val, func)
+	CHECK_REQUIRED_VAL_(info, get_name, obs_register_protocol);
+	CHECK_REQUIRED_VAL_(info, create, obs_register_protocol);
+	CHECK_REQUIRED_VAL_(info, destroy, obs_register_protocol);
+
+	if (!info->video_codec_agnostic)
+		CHECK_REQUIRED_VAL_(info, get_supported_video_codecs,
+				    obs_register_protocol);
+	if (!info->audio_codec_agnostic)
+		CHECK_REQUIRED_VAL_(info, get_supported_audio_codecs,
+				    obs_register_protocol);
+#undef CHECK_REQUIRED_VAL_
+
+	REGISTER_OBS_DEF(size, obs_protocol_info, obs->protocol_types, info);
+	return;
+
+error:
+	HANDLE_ERROR(size, obs_protocol_info, info);
 }
 
 void obs_register_output_s(const struct obs_output_info *info, size_t size)

@@ -1023,6 +1023,7 @@ void obs_shutdown(void)
 		da_free(list);                                         \
 	} while (false)
 
+	FREE_REGISTERED_TYPES(obs_protocol_info, obs->protocol_types);
 	FREE_REGISTERED_TYPES(obs_output_info, obs->output_types);
 	FREE_REGISTERED_TYPES(obs_encoder_info, obs->encoder_types);
 	FREE_REGISTERED_TYPES(obs_service_info, obs->service_types);
@@ -1318,6 +1319,14 @@ bool obs_enum_transition_types(size_t idx, const char **id)
 	return true;
 }
 
+bool obs_enum_protocol_types(size_t idx, const char **id)
+{
+	if (idx >= obs->protocol_types.num)
+		return false;
+	*id = obs->protocol_types.array[idx].id;
+	return true;
+}
+
 bool obs_enum_output_types(size_t idx, const char **id)
 {
 	if (idx >= obs->output_types.num)
@@ -1542,6 +1551,13 @@ void obs_enum_all_sources(bool (*enum_proc)(void *, obs_source_t *),
 {
 	obs_enum(&obs->data.first_source, &obs->data.sources_mutex, enum_proc,
 		 param);
+}
+
+void obs_enum_protocols(bool (*enum_proc)(void *, obs_protocol_t *),
+			void *param)
+{
+	obs_enum(&obs->data.first_protocol, &obs->data.protocols_mutex,
+		 enum_proc, param);
 }
 
 void obs_enum_outputs(bool (*enum_proc)(void *, obs_output_t *), void *param)

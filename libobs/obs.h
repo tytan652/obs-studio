@@ -56,6 +56,7 @@ typedef struct obs_view obs_view_t;
 typedef struct obs_source obs_source_t;
 typedef struct obs_scene obs_scene_t;
 typedef struct obs_scene_item obs_sceneitem_t;
+typedef struct obs_protocol obs_protocol_t;
 typedef struct obs_output obs_output_t;
 typedef struct obs_encoder obs_encoder_t;
 typedef struct obs_service obs_service_t;
@@ -64,12 +65,14 @@ typedef struct obs_fader obs_fader_t;
 typedef struct obs_volmeter obs_volmeter_t;
 
 typedef struct obs_weak_source obs_weak_source_t;
+typedef struct obs_weak_protocol obs_weak_protocol_t;
 typedef struct obs_weak_output obs_weak_output_t;
 typedef struct obs_weak_encoder obs_weak_encoder_t;
 typedef struct obs_weak_service obs_weak_service_t;
 
 #include "obs-missing-files.h"
 #include "obs-source.h"
+#include "obs-protocol.h"
 #include "obs-encoder.h"
 #include "obs-output.h"
 #include "obs-service.h"
@@ -563,6 +566,9 @@ EXPORT bool obs_enum_filter_types(size_t idx, const char **id);
  */
 EXPORT bool obs_enum_transition_types(size_t idx, const char **id);
 
+/** Enumerates all available protocol types. */
+EXPORT bool obs_enum_protocol_types(size_t idx, const char **id);
+
 /** Enumerates all available output types. */
 EXPORT bool obs_enum_output_types(size_t idx, const char **id);
 
@@ -615,6 +621,10 @@ EXPORT void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *),
 /** Enumerates all sources (regardless of type) */
 EXPORT void obs_enum_all_sources(bool (*enum_proc)(void *, obs_source_t *),
 				 void *param);
+
+/** Enumerates protocols */
+EXPORT void obs_enum_protocols(bool (*enum_proc)(void *, obs_protocol_t *),
+			       void *param);
 
 /** Enumerates outputs */
 EXPORT void obs_enum_outputs(bool (*enum_proc)(void *, obs_output_t *),
@@ -1813,6 +1823,69 @@ EXPORT void obs_sceneitem_transition_load(struct obs_scene_item *item,
 EXPORT obs_data_t *obs_sceneitem_transition_save(struct obs_scene_item *item,
 						 bool show);
 
+/* ------------------------------------------------------------------------- */
+/* Protocols */
+
+EXPORT const char *obs_protocol_get_display_name(const char *id);
+
+/**
+ * Creates an output.
+ *
+ *   Outputs allow outputting to file, outputting to network, outputting to
+ * directshow, or other custom outputs.
+ */
+EXPORT obs_protocol_t *obs_protocol_create(const char *id, const char *name);
+
+/**
+ * Adds/releases a reference to a protocol.  When the last reference is
+ * released, the protocol is destroyed.
+ */
+EXPORT void obs_protocol_addref(obs_protocol_t *protocol);
+EXPORT void obs_protocol_release(obs_protocol_t *protocol);
+
+EXPORT void obs_weak_protocol_addref(obs_weak_protocol_t *weak);
+EXPORT void obs_weak_protocol_release(obs_weak_protocol_t *weak);
+
+EXPORT obs_protocol_t *obs_protocol_get_ref(obs_protocol_t *protocol);
+EXPORT obs_weak_protocol_t *
+obs_protocol_get_weak_protocol(obs_protocol_t *protocol);
+EXPORT obs_protocol_t *
+obs_weak_protocol_get_protocol(obs_weak_protocol_t *weak);
+
+EXPORT bool obs_weak_protocol_references_protocol(obs_weak_protocol_t *weak,
+						  obs_protocol_t *protocol);
+
+EXPORT const char *obs_protocol_get_name(const obs_protocol_t *protocol);
+
+EXPORT const char *obs_protocol_get_id(const obs_protocol_t *protocol);
+
+/* ------------------------------------------------------------------------- */
+/* Functions used by protocols */
+
+EXPORT const char *obs_protocol_get_url_prefix(const obs_protocol_t *protocol);
+EXPORT const char *obs_get_protocol_url_prefix(const char *id);
+
+EXPORT void *obs_protocol_get_type_data(obs_protocol_t *protocol);
+
+EXPORT bool
+obs_protocol_get_video_codec_agnostic(const obs_protocol_t *protocol);
+
+EXPORT bool
+obs_protocol_get_audio_codec_agnostic(const obs_protocol_t *protocol);
+
+EXPORT void
+obs_protocol_get_supported_video_codecs(const obs_protocol_t *protocol,
+					struct obs_protocol_codec **codecs,
+					size_t *count);
+
+EXPORT void
+obs_protocol_get_supported_audio_codecs(const obs_protocol_t *protocol,
+					struct obs_protocol_codec **codecs,
+					size_t *count);
+
+EXPORT const char *
+obs_protocol_get_recommended_output(const obs_protocol_t *protocol);
+EXPORT const char *obs_get_protocol_recommended_output(const char *id);
 /* ------------------------------------------------------------------------- */
 /* Outputs */
 
