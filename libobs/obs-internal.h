@@ -75,6 +75,7 @@ static inline bool obs_object_valid(const void *obj, const char *f,
 
 #define obs_ptr_valid(ptr, func) obs_object_valid(ptr, func, #ptr)
 #define obs_source_valid obs_ptr_valid
+#define obs_protocol_valid obs_ptr_valid
 #define obs_output_valid obs_ptr_valid
 #define obs_encoder_valid obs_ptr_valid
 #define obs_service_valid obs_ptr_valid
@@ -346,12 +347,14 @@ struct obs_core_data {
 	struct obs_source *first_source;
 	struct obs_source *first_audio_source;
 	struct obs_display *first_display;
+	struct obs_protocol *first_protocol;
 	struct obs_output *first_output;
 	struct obs_encoder *first_encoder;
 	struct obs_service *first_service;
 
 	pthread_mutex_t sources_mutex;
 	pthread_mutex_t displays_mutex;
+	pthread_mutex_t protocols_mutex;
 	pthread_mutex_t outputs_mutex;
 	pthread_mutex_t encoders_mutex;
 	pthread_mutex_t services_mutex;
@@ -412,6 +415,7 @@ struct obs_core {
 	DARRAY(struct obs_source_info) input_types;
 	DARRAY(struct obs_source_info) filter_types;
 	DARRAY(struct obs_source_info) transition_types;
+	DARRAY(struct obs_protocol_info) protocol_types;
 	DARRAY(struct obs_output_info) output_types;
 	DARRAY(struct obs_encoder_info) encoder_types;
 	DARRAY(struct obs_service_info) service_types;
@@ -883,6 +887,27 @@ extern void deinterlace_process_last_frame(obs_source_t *source,
 					   uint64_t sys_time);
 extern void deinterlace_update_async_video(obs_source_t *source);
 extern void deinterlace_render(obs_source_t *s);
+
+/* ------------------------------------------------------------------------- */
+/* protocols  */
+
+struct obs_weak_protocol {
+	struct obs_weak_ref ref;
+	struct obs_protocol *protocol;
+};
+
+struct obs_protocol {
+	struct obs_context_data context;
+	struct obs_protocol_info info;
+	struct obs_weak_protocol *control;
+
+	/* indicates ownership of the info.id buffer */
+	bool owns_info_id;
+};
+
+extern const struct obs_protocol_info *find_protocol(const char *id);
+
+void obs_protocol_destroy(obs_protocol_t *protocol);
 
 /* ------------------------------------------------------------------------- */
 /* outputs  */

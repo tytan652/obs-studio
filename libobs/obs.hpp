@@ -32,6 +32,8 @@ using OBSSceneItem =
 using OBSData = OBSRef<obs_data_t *, obs_data_addref, obs_data_release>;
 using OBSDataArray = OBSRef<obs_data_array_t *, obs_data_array_addref,
 			    obs_data_array_release>;
+using OBSProtocol =
+	OBSRef<obs_protocol_t *, obs_protocol_addref, obs_protocol_release>;
 using OBSOutput = OBSRef<obs_output_t *, obs_output_addref, obs_output_release>;
 using OBSEncoder =
 	OBSRef<obs_encoder_t *, obs_encoder_addref, obs_encoder_release>;
