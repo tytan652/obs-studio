@@ -110,7 +110,28 @@ static const char *rtmp_custom_password(void *data)
 	return service->password;
 }
 
+static const char *rtmp_custom_get_protocol(void *data)
+{
+	struct rtmp_custom *service = data;
+	const char *protocol;
+	size_t idx = 0;
+
+	while (obs_enum_protocol_types(idx++, &protocol)) {
+		const char *url_prefix;
+		url_prefix = obs_get_protocol_url_prefix(protocol);
+
+		if (!url_prefix)
+			continue;
+
+		if (strncmp(service->server, url_prefix, sizeof(const char *)))
+			return protocol;
+	}
+
+	return NULL;
+}
+
 #define RTMP_PROTOCOL "rtmp"
+#define RTMPS_PROTOCOL "rtmps"
 
 static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings,
 				       obs_data_t *audio_settings)
@@ -136,5 +157,6 @@ struct obs_service_info rtmp_custom_service = {
 	.get_key = rtmp_custom_key,
 	.get_username = rtmp_custom_username,
 	.get_password = rtmp_custom_password,
+	.get_protocol = rtmp_custom_get_protocol,
 	.apply_encoder_settings = rtmp_custom_apply_settings,
 };
