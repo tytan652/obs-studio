@@ -195,6 +195,7 @@ file(
   "${QtCore_BIN_DIR}/Qt${QT_VERSION}WinExtrasd.dll"
   "${QtCore_BIN_DIR}/Qt${QT_VERSION}Svgd.dll"
   "${QtCore_BIN_DIR}/Qt${QT_VERSION}Xmld.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Multimediad.dll"
   "${QtCore_BIN_DIR}/Qt${QT_VERSION}Networkd.dll"
   "${QtCore_BIN_DIR}/libGLESv2d.dll"
   "${QtCore_BIN_DIR}/libEGLd.dll")
@@ -210,6 +211,8 @@ file(
   "${QtCore_PLUGIN_DIR}/imageformats/qsvgd.dll"
   "${QtCore_PLUGIN_DIR}/imageformats/qgifd.dll"
   "${QtCore_PLUGIN_DIR}/imageformats/qjpegd.dll")
+file(GLOB QT_DEBUG_AUDIO_BIN_FILES
+     "${QtCore_PLUGIN_DIR}/audio/qtaudio_windowsd.dll")
 
 file(
   GLOB
@@ -220,6 +223,7 @@ file(
   "${QtCore_BIN_DIR}/Qt${QT_VERSION}WinExtras.dll"
   "${QtCore_BIN_DIR}/Qt${QT_VERSION}Svg.dll"
   "${QtCore_BIN_DIR}/Qt${QT_VERSION}Xml.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Multimedia.dll"
   "${QtCore_BIN_DIR}/Qt${QT_VERSION}Network.dll"
   "${QtCore_BIN_DIR}/libGLESv2.dll"
   "${QtCore_BIN_DIR}/libEGL.dll")
@@ -232,6 +236,7 @@ file(
   GLOB QT_IMAGEFORMATS_BIN_FILES "${QtCore_PLUGIN_DIR}/imageformats/qsvg.dll"
   "${QtCore_PLUGIN_DIR}/imageformats/qgif.dll"
   "${QtCore_PLUGIN_DIR}/imageformats/qjpeg.dll")
+file(GLOB QT_AUDIO_BIN_FILES "${QtCore_PLUGIN_DIR}/audio/qtaudio_windows.dll")
 
 file(GLOB QT_ICU_BIN_FILES "${QtCore_BIN_DIR}/icu*.dll")
 
@@ -267,6 +272,10 @@ set(ALL_IMAGEFORMATS_BIN_FILES)
 set(ALL_IMAGEFORMATS_REL_BIN_FILES ${QT_IMAGEFORMATS_BIN_FILES})
 set(ALL_IMAGEFORMATS_DBG_BIN_FILES ${QT_DEBUG_IMAGEFORMATS_BIN_FILES})
 
+set(ALL_AUDIO_BIN_FILES)
+set(ALL_AUDIO_REL_BIN_FILES ${QT_AUDIO_BIN_FILES})
+set(ALL_AUDIO_DBG_BIN_FILES ${QT_DEBUG_AUDIO_BIN_FILES})
+
 foreach(
   list
   ALL_BASE_BIN_FILES
@@ -283,7 +292,10 @@ foreach(
   ALL_ICONENGINE_DGB_BIN_FILES
   ALL_IMAGEFORMATS_BIN_FILES
   ALL_IMAGEFORMATS_REL_BIN_FILES
-  ALL_IMAGEFORMATS_DGB_BIN_FILES)
+  ALL_IMAGEFORMATS_DGB_BIN_FILES
+  ALL_AUDIO_BIN_FILES
+  ALL_AUDIO_REL_BIN_FILES
+  ALL_AUDIO_DBG_BIN_FILES)
   if(${list})
     list(REMOVE_DUPLICATES ${list})
   endif()
@@ -304,11 +316,13 @@ obs_status(STATUS "Qt Debug Styles files: ${QT_DEBUG_STYLES_BIN_FILES}")
 obs_status(STATUS "Qt Debug Iconengine files: ${QT_DEBUG_ICONENGINE_BIN_FILES}")
 obs_status(STATUS
            "Qt Debug Imageformat files: ${QT_DEBUG_IMAGEFORMATS_BIN_FILES}")
+obs_status(STATUS "QT Debug Audio files: ${QT_DEBUG_AUDIO_BIN_FILES}")
 obs_status(STATUS "Qt Release files: ${QT_BIN_FILES}")
 obs_status(STATUS "Qt Release Platform files: ${QT_PLAT_BIN_FILES}")
 obs_status(STATUS "Qt Release Styles files: ${QT_STYLES_BIN_FILES}")
 obs_status(STATUS "Qt Release Iconengine files: ${QT_ICONENGINE_BIN_FILES}")
 obs_status(STATUS "Qt Release Imageformat files: ${QT_IMAGEFORMATS_BIN_FILES}")
+obs_status(STATUS "QT Release Audio files: ${QT_AUDIO_BIN_FILES}")
 obs_status(STATUS "Qt ICU files: ${QT_ICU_BIN_FILES}")
 
 foreach(BinFile ${ALL_BASE_BIN_FILES})

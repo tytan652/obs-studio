@@ -79,11 +79,12 @@ endif()
 
 find_qt(
   VERSION ${QT_VERSION}
-  COMPONENTS Widgets Network Svg Xml
+  COMPONENTS Widgets Network Svg Xml Multimedia
   COMPONENTS_WIN ${UI_COMPONENTS_WIN}
   COMPONENTS_LINUX Gui)
 
-target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
+target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network
+                                  Qt::Multimedia)
 
 set_target_properties(
   obs
