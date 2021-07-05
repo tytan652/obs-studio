@@ -816,7 +816,7 @@ bool SimpleOutput::SetupStreaming(obs_service_t *service)
 				return false;
 			}
 
-			if (strcmp(codec, "aac") != 0) {
+			if (strcmp(codec, "AAC") != 0) {
 				const char *id =
 					FindAudioEncoderFromCodec(codec);
 				int audioBitrate = GetAudioBitrate();
@@ -1755,7 +1755,7 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 				return false;
 			}
 
-			if (strcmp(codec, "aac") != 0) {
+			if (strcmp(codec, "AAC") != 0) {
 				OBSData settings = obs_encoder_get_settings(
 					streamAudioEnc);
 				obs_data_release(settings);

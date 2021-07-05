@@ -968,7 +968,7 @@ void register_encoders()
 {
 	struct obs_encoder_info info = {
 		.type = OBS_ENCODER_VIDEO,
-		.codec = "h264",
+		.codec = "H.264",
 		.destroy = vt_h264_destroy,
 		.encode = vt_h264_encode,
 		.update = vt_h264_update,

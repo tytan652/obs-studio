@@ -649,7 +649,7 @@ static bool nvenc_sei_data(void *data, uint8_t **extra_data, size_t *size)
 struct obs_encoder_info nvenc_encoder_info = {
 	.id = "ffmpeg_nvenc",
 	.type = OBS_ENCODER_VIDEO,
-	.codec = "h264",
+	.codec = "H.264",
 	.get_name = nvenc_getname,
 	.create = nvenc_create,
 	.destroy = nvenc_destroy,

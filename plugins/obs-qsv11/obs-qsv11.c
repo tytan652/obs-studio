@@ -1018,7 +1018,7 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 struct obs_encoder_info obs_qsv_encoder = {
 	.id = "obs_qsv11_soft",
 	.type = OBS_ENCODER_VIDEO,
-	.codec = "h264",
+	.codec = "H.264",
 	.get_name = obs_qsv_getname,
 	.create = obs_qsv_create,
 	.destroy = obs_qsv_destroy,
@@ -1035,7 +1035,7 @@ struct obs_encoder_info obs_qsv_encoder = {
 struct obs_encoder_info obs_qsv_encoder_tex = {
 	.id = "obs_qsv11",
 	.type = OBS_ENCODER_VIDEO,
-	.codec = "h264",
+	.codec = "H.264",
 	.get_name = obs_qsv_getname,
 	.create = obs_qsv_create_tex,
 	.destroy = obs_qsv_destroy,

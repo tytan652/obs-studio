@@ -285,7 +285,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 	const char *audio_codec = obs_output_get_supported_audio_codecs(output);
 
-	if (strcmp(audio_codec, "aac") != 0) {
+	if (strcmp(audio_codec, "AAC") != 0) {
 		const char *id = FindAudioEncoderFromCodec(audio_codec);
 		aencoder = obs_audio_encoder_create(id, "test_audio", nullptr,
 						    0, nullptr);

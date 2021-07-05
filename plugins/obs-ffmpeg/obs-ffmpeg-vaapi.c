@@ -637,7 +637,7 @@ static bool vaapi_sei_data(void *data, uint8_t **extra_data, size_t *size)
 struct obs_encoder_info vaapi_encoder_info = {
 	.id = "ffmpeg_vaapi",
 	.type = OBS_ENCODER_VIDEO,
-	.codec = "h264",
+	.codec = "H.264",
 	.get_name = vaapi_getname,
 	.create = vaapi_create,
 	.destroy = vaapi_destroy,
