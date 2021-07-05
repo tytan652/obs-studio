@@ -215,8 +215,8 @@ callbacks related to your output:
           .stop                 = my_output_stop,
           .encoded_packet       = my_output_data,
           .get_total_bytes      = my_output_total_bytes,
-          .encoded_video_codecs = "h264",
-          .encoded_audio_codecs = "aac"
+          .encoded_video_codecs = "H.264",
+          .encoded_audio_codecs = "AAC"
   };
 
 Then, in my-plugin.c, you would call :c:func:`obs_register_output()` in
@@ -275,7 +275,7 @@ and callbacks related to your encoder:
   struct obs_encoder_info my_encoder_encoder = {
           .id             = "my_encoder",
           .type           = OBS_ENCODER_VIDEO,
-          .codec          = "h264",
+          .codec          = "H.264",
           .get_name       = my_encoder_name,
           .create         = my_encoder_create,
           .destroy        = my_encoder_destroy,

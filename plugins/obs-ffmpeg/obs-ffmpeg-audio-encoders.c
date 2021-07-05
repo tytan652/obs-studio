@@ -257,7 +257,7 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 			enc->context->sample_rate = closest;
 	}
 
-	if (strcmp(enc->codec->name, "aac") == 0) {
+	if (strcmp(enc->codec->name, "AAC") == 0) {
 		av_opt_set(enc->context->priv_data, "aac_coder", "fast", 0);
 	}
 
@@ -283,7 +283,7 @@ fail:
 
 static void *aac_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	return enc_create(settings, encoder, "aac", NULL);
+	return enc_create(settings, encoder, "AAC", NULL);
 }
 
 static void *opus_create(obs_data_t *settings, obs_encoder_t *encoder)

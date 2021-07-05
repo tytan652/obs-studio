@@ -1021,7 +1021,7 @@ static bool nvenc_sei_data(void *data, uint8_t **sei, size_t *size)
 
 struct obs_encoder_info nvenc_info = {
 	.id = "jim_nvenc",
-	.codec = "h264",
+	.codec = "H.264",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE,
 	.get_name = nvenc_get_name,

@@ -320,8 +320,8 @@ struct obs_output_info ffmpeg_hls_muxer = {
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
 		 OBS_OUTPUT_SERVICE,
 	.protocol = "HLS",
-	.encoded_video_codecs = "h264",
-	.encoded_audio_codecs = "aac",
+	.encoded_video_codecs = "H.264",
+	.encoded_audio_codecs = "AAC",
 	.get_name = ffmpeg_hls_mux_getname,
 	.create = ffmpeg_hls_mux_create,
 	.destroy = ffmpeg_hls_mux_destroy,

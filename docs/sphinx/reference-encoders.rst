@@ -39,7 +39,7 @@ Encoder Definition Structure (obs_encoder_info)
 
 .. member:: const char *obs_encoder_info.codec
 
-   The codec, in string form.  For example, "h264" for an H.264 encoder.
+   The codec, in string form.  For example, "H.264" for an H.264 encoder.
 
 .. member:: const char *(*obs_encoder_info.get_name)(void *type_data)
 

@@ -336,7 +336,7 @@ void RegisterDShowEncoders()
 {
 	obs_encoder_info info = {};
 	info.type = OBS_ENCODER_VIDEO;
-	info.codec = "h264";
+	info.codec = "H.264";
 	info.destroy = DestroyDShowEncoder;
 	info.encode = DShowEncode;
 	info.update = UpdateDShowEncoder;

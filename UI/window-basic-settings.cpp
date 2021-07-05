@@ -985,8 +985,8 @@ void OBSBasicSettings::LoadEncoderTypes()
 			continue;
 
 		const char *streaming_codecs[] = {
-			"h264",
-			//"hevc",
+			"H.264",
+			//"HEVC",
 		};
 		bool is_streaming_codec = false;
 		for (const char *test_codec : streaming_codecs) {
