@@ -427,6 +427,44 @@ const char *obs_service_get_output_type(const obs_service_t *service)
 	return NULL;
 }
 
+void obs_service_get_supported_video_codecs(const obs_service_t *service,
+					    struct obs_service_codec **codecs,
+					    size_t *count)
+{
+	if (!obs_service_valid(service, "obs_service_supported_video_codecs"))
+		return;
+	if (!obs_ptr_valid(codecs, "obs_service_supported_video_codecs"))
+		return;
+	if (!obs_ptr_valid(count, "obs_service_supported_video_codecs"))
+		return;
+
+	*codecs = NULL;
+	*count = 0;
+
+	if (service->info.get_supported_video_codecs)
+		service->info.get_supported_video_codecs(service->context.data,
+							 codecs, count);
+}
+
+void obs_service_get_supported_audio_codecs(const obs_service_t *service,
+					    struct obs_service_codec **codecs,
+					    size_t *count)
+{
+	if (!obs_service_valid(service, "obs_service_supported_audio_codecs"))
+		return;
+	if (!obs_ptr_valid(codecs, "obs_service_supported_audio_codecs"))
+		return;
+	if (!obs_ptr_valid(count, "obs_service_supported_audio_codecs"))
+		return;
+
+	*codecs = NULL;
+	*count = 0;
+
+	if (service->info.get_supported_audio_codecs)
+		service->info.get_supported_audio_codecs(service->context.data,
+							 codecs, count);
+}
+
 void obs_service_get_supported_resolutions(
 	const obs_service_t *service,
 	struct obs_service_resolution **resolutions, size_t *count)

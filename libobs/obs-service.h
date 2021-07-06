@@ -28,6 +28,10 @@
 extern "C" {
 #endif
 
+struct obs_service_codec {
+	char *name;
+};
+
 struct obs_service_resolution {
 	int cx;
 	int cy;
@@ -78,6 +82,13 @@ struct obs_service_info {
 	void (*free_type_data)(void *type_data);
 
 	const char *(*get_protocol)(void *type_data);
+
+	void (*get_supported_video_codecs)(void *data,
+					   struct obs_service_codec **codecs,
+					   size_t *count);
+	void (*get_supported_audio_codecs)(void *data,
+					   struct obs_service_codec **codecs,
+					   size_t *count);
 
 	const char *(*get_output_type)(void *data);
 
