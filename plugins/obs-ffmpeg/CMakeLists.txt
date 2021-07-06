@@ -29,7 +29,9 @@ set(obs-ffmpeg_SOURCES
 	obs-ffmpeg-audio-encoders.c
 	obs-ffmpeg-nvenc.c
 	obs-ffmpeg-output.c
+	srt-protocol.c
 	obs-ffmpeg-mux.c
+	hls-protocol.c
 	obs-ffmpeg-hls-mux.c
 	obs-ffmpeg-source.c)
 
