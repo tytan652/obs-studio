@@ -2418,6 +2418,16 @@ EXPORT void *obs_service_get_type_data(obs_service_t *service);
 
 EXPORT const char *obs_service_get_id(const obs_service_t *service);
 
+EXPORT void
+obs_service_get_supported_video_codecs(const obs_service_t *protocol,
+				       struct obs_service_codec **codecs,
+				       size_t *count);
+
+EXPORT void
+obs_service_get_supported_audio_codecs(const obs_service_t *protocol,
+				       struct obs_service_codec **codecs,
+				       size_t *count);
+
 EXPORT void obs_service_get_supported_resolutions(
 	const obs_service_t *service,
 	struct obs_service_resolution **resolutions, size_t *count);

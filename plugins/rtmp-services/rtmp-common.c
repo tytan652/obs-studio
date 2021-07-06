@@ -918,6 +918,37 @@ static const char *rtmp_common_get_protocol(void *data)
 	return "RTMP";
 }
 
+static void rtmp_common_get_video_codec(void *data,
+					struct obs_service_codec **codec,
+					size_t *count)
+{
+	UNUSED_PARAMETER(data);
+	struct obs_service_codec video_codec;
+
+	video_codec.name = "H.264";
+
+	*count = 1;
+	*codec = bmemdup(&video_codec, sizeof(struct obs_service_codec));
+}
+
+static void rtmp_common_get_audio_codec(void *data,
+					struct obs_service_codec **codec,
+					size_t *count)
+{
+	const char *protocol;
+	struct obs_service_codec audio_codec;
+
+	protocol = rtmp_common_get_protocol(data);
+
+	if (strcmp(protocol, "FTL") == 0)
+		audio_codec.name = "opus";
+	else
+		audio_codec.name = "AAC";
+
+	*count = 1;
+	*codec = bmemdup(&audio_codec, sizeof(struct obs_service_codec));
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -930,6 +961,8 @@ struct obs_service_info rtmp_common_service = {
 	.get_username = rtmp_common_username,
 	.get_password = rtmp_common_password,
 	.get_protocol = rtmp_common_get_protocol,
+	.get_supported_video_codecs = rtmp_common_get_video_codec,
+	.get_supported_audio_codecs = rtmp_common_get_audio_codec,
 	.apply_encoder_settings = rtmp_common_apply_settings,
 	.get_output_type = rtmp_common_get_output_type,
 	.get_supported_resolutions = rtmp_common_get_supported_resolutions,
