@@ -2527,6 +2527,19 @@ const char *obs_output_get_id(const obs_output_t *output)
 							     : NULL;
 }
 
+const char *obs_output_get_protocol(const obs_output_t *output)
+{
+	return obs_output_valid(output, "obs_output_get_protocol")
+		       ? output->info.protocol
+		       : NULL;
+}
+
+const char *obs_get_output_protocol(const char *id)
+{
+	const struct obs_output_info *info = find_output(id);
+	return info ? info->protocol : NULL;
+}
+
 void obs_output_caption(obs_output_t *output,
 			const struct obs_source_cea_708 *captions)
 {
