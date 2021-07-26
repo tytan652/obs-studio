@@ -35,7 +35,9 @@ if (FTL_FOUND)
 	find_package(Libcurl REQUIRED)
 	message(STATUS "Found ftl-sdk (system): ftl outputs enabled")
 
-	set(ftl_SOURCES ftl-stream.c)
+	set(ftl_SOURCES
+		ftl-protocol.c
+		ftl-stream.c)
 
 	include_directories(${LIBCURL_INCLUDE_DIRS} ${FTL_INCLUDE_DIRS})
 	set(COMPILE_FTL TRUE)
@@ -48,6 +50,7 @@ elseif (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
 	include_directories(${LIBCURL_INCLUDE_DIRS})
 
 	set(ftl_SOURCES
+		ftl-protocol.c
 		ftl-stream.c
 		ftl-sdk/libftl/hmac/hmac.c
 		ftl-sdk/libftl/hmac/sha2.c
@@ -163,6 +166,7 @@ set(obs-outputs_HEADERS
 set(obs-outputs_SOURCES
 	obs-outputs.c
 	null-output.c
+	rtmp-protocol.c
 	rtmp-stream.c
 	rtmp-windows.c
 	flv-output.c
