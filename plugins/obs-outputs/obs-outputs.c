@@ -15,10 +15,15 @@ MODULE_EXPORT const char *obs_module_description(void)
 	return "OBS core RTMP/FLV/null/FTL outputs";
 }
 
+extern struct obs_protocol_info rtmp_protocol_info;
 extern struct obs_output_info rtmp_output_info;
+#if !defined(NO_CRYPTO)
+extern struct obs_protocol_info rtmps_protocol_info;
+#endif
 extern struct obs_output_info null_output_info;
 extern struct obs_output_info flv_output_info;
 #if COMPILE_FTL
+extern struct obs_protocol_info ftl_protocol_info;
 extern struct obs_output_info ftl_output_info;
 #endif
 
@@ -65,10 +70,15 @@ bool obs_module_load(void)
 				  mbed_mutex_lock, mbed_mutex_unlock);
 #endif
 
+	obs_register_protocol(&rtmp_protocol_info);
 	obs_register_output(&rtmp_output_info);
+#if !defined(NO_CRYPTO)
+	obs_register_protocol(&rtmps_protocol_info);
+#endif
 	obs_register_output(&null_output_info);
 	obs_register_output(&flv_output_info);
 #if COMPILE_FTL
+	obs_register_protocol(&ftl_protocol_info);
 	obs_register_output(&ftl_output_info);
 #endif
 	return true;
