@@ -2087,6 +2087,9 @@ EXPORT void obs_output_set_last_error(obs_output_t *output,
 				      const char *message);
 EXPORT const char *obs_output_get_last_error(obs_output_t *output);
 
+EXPORT const char *obs_output_get_protocol(const obs_output_t *output);
+EXPORT const char *obs_get_output_protocol(const char *id);
+
 EXPORT const char *
 obs_output_get_supported_video_codecs(const obs_output_t *output);
 EXPORT const char *
