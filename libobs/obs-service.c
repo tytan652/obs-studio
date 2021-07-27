@@ -467,3 +467,11 @@ void obs_service_get_max_bitrate(const obs_service_t *service,
 		service->info.get_max_bitrate(service->context.data,
 					      video_bitrate, audio_bitrate);
 }
+
+const char *obs_service_get_protocol(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_get_protocol"))
+		return NULL;
+
+	return service->info.get_protocol(service->context.data);
+}
