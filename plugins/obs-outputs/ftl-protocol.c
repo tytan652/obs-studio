@@ -22,6 +22,7 @@ static void ftl_protocol_destroy(void *data)
 
 struct obs_protocol_info ftl_protocol_info = {
 	.id = "FTL",
+	.url_prefix = "ftl://",
 	.get_name = ftl_protocol_getname,
 	.create = ftl_protocol_create,
 	.destroy = ftl_protocol_destroy,

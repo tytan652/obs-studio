@@ -29,6 +29,7 @@ static void rtmp_protocol_destroy(void *data)
 
 struct obs_protocol_info rtmp_protocol_info = {
 	.id = "RTMP",
+	.url_prefix = "rtmp://",
 	.get_name = rtmp_protocol_getname,
 	.create = rtmp_protocol_create,
 	.destroy = rtmp_protocol_destroy,
@@ -36,6 +37,7 @@ struct obs_protocol_info rtmp_protocol_info = {
 
 struct obs_protocol_info rtmps_protocol_info = {
 	.id = "RTMPS",
+	.url_prefix = "rtmps://",
 	.get_name = rtmps_protocol_getname,
 	.create = rtmp_protocol_create,
 	.destroy = rtmp_protocol_destroy,
