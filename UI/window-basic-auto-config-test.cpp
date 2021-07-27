@@ -88,6 +88,7 @@ public:
 #define SUBTITLE_TESTING TEST_STR("Subtitle.Testing")
 #define SUBTITLE_COMPLETE TEST_STR("Subtitle.Complete")
 #define TEST_BW TEST_STR("TestingBandwidth")
+#define TEST_BW_NO_PRTCL TEST_STR("TestingBandwidth.NoProtocol")
 #define TEST_BW_CONNECTING TEST_STR("TestingBandwidth.Connecting")
 #define TEST_BW_CONNECT_FAIL TEST_STR("TestingBandwidth.ConnectFailed")
 #define TEST_BW_SERVER TEST_STR("TestingBandwidth.Server")
@@ -274,9 +275,16 @@ void AutoConfigTestPage::TestBandwidthThread()
 	/* -----------------------------------*/
 	/* create output                      */
 
-	const char *output_type = obs_service_get_output_type(service);
-	if (!output_type)
-		output_type = "rtmp_output";
+	const char *protocol = obs_service_get_protocol(service);
+	const char *output_type = obs_get_protocol_recommended_output(protocol);
+	if (!output_type) {
+		blog(LOG_WARNING, "The protocol '%s' is not registered",
+		     protocol);
+		QMetaObject::invokeMethod(this, "Failure",
+					  Q_ARG(QString,
+						QTStr(TEST_BW_NO_PRTCL)));
+		return;
+	}
 
 	OBSOutput output =
 		obs_output_create(output_type, "test_stream", nullptr, nullptr);

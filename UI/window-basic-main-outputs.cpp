@@ -759,17 +759,12 @@ bool SimpleOutput::SetupStreaming(obs_service_t *service)
 
 	/* --------------------- */
 
-	const char *type = obs_service_get_output_type(service);
+	const char *protocol = obs_service_get_protocol(service);
+	const char *type = obs_get_protocol_recommended_output(protocol);
 	if (!type) {
-		type = "rtmp_output";
-		const char *url = obs_service_get_url(service);
-		if (url != NULL &&
-		    strncmp(url, FTL_PROTOCOL, strlen(FTL_PROTOCOL)) == 0) {
-			type = "ftl_output";
-		} else if (url != NULL && strncmp(url, RTMP_PROTOCOL,
-						  strlen(RTMP_PROTOCOL)) != 0) {
-			type = "ffmpeg_mpegts_muxer";
-		}
+		blog(LOG_WARNING, "The protocol '%s' is not registered",
+		     protocol);
+		return false;
 	}
 
 	/* XXX: this is messy and disgusting and should be refactored */
@@ -945,7 +940,8 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	else
 		lastError = string();
 
-	const char *type = obs_service_get_output_type(service);
+	const char *protocol = obs_service_get_protocol(service);
+	const char *type = obs_get_protocol_recommended_output(protocol);
 	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s", type,
 	     hasLastError ? "  Last Error: " : "", hasLastError ? error : "");
 	return false;
@@ -1698,17 +1694,12 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 
 	/* --------------------- */
 
-	const char *type = obs_service_get_output_type(service);
+	const char *protocol = obs_service_get_protocol(service);
+	const char *type = obs_get_protocol_recommended_output(protocol);
 	if (!type) {
-		type = "rtmp_output";
-		const char *url = obs_service_get_url(service);
-		if (url != NULL &&
-		    strncmp(url, FTL_PROTOCOL, strlen(FTL_PROTOCOL)) == 0) {
-			type = "ftl_output";
-		} else if (url != NULL && strncmp(url, RTMP_PROTOCOL,
-						  strlen(RTMP_PROTOCOL)) != 0) {
-			type = "ffmpeg_mpegts_muxer";
-		}
+		blog(LOG_WARNING, "The protocol '%s' is not registered",
+		     protocol);
+		return false;
 	}
 
 	/* XXX: this is messy and disgusting and should be refactored */
@@ -1838,7 +1829,8 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	else
 		lastError = string();
 
-	const char *type = obs_service_get_output_type(service);
+	const char *protocol = obs_service_get_protocol(service);
+	const char *type = obs_get_protocol_recommended_output(protocol);
 	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s", type,
 	     hasLastError ? "  Last Error: " : "", hasLastError ? error : "");
 	return false;
