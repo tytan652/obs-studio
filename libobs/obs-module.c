@@ -729,6 +729,7 @@ void obs_register_protocol_s(const struct obs_protocol_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, get_name, obs_register_protocol);
 	CHECK_REQUIRED_VAL_(info, create, obs_register_protocol);
 	CHECK_REQUIRED_VAL_(info, destroy, obs_register_protocol);
+	CHECK_REQUIRED_VAL_(info, recommended_output, obs_register_protocol);
 #undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_protocol_info, obs->protocol_types, info);

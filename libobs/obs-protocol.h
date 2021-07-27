@@ -15,6 +15,7 @@ struct obs_protocol_info {
 
 	void *type_data;
 	void (*free_type_data)(void *type_data);
+	const char *recommended_output;
 };
 
 EXPORT void obs_register_protocol_s(const struct obs_protocol_info *info,
