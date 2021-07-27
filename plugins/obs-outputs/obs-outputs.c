@@ -19,6 +19,7 @@ extern struct obs_protocol_info rtmp_protocol_info;
 extern struct obs_output_info rtmp_output_info;
 #if !defined(NO_CRYPTO)
 extern struct obs_protocol_info rtmps_protocol_info;
+extern struct obs_output_info rtmps_output_info;
 #endif
 extern struct obs_output_info null_output_info;
 extern struct obs_output_info flv_output_info;
@@ -74,6 +75,7 @@ bool obs_module_load(void)
 	obs_register_output(&rtmp_output_info);
 #if !defined(NO_CRYPTO)
 	obs_register_protocol(&rtmps_protocol_info);
+	obs_register_output(&rtmps_output_info);
 #endif
 	obs_register_output(&null_output_info);
 	obs_register_output(&flv_output_info);
