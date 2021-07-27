@@ -167,3 +167,16 @@ const char *obs_protocol_get_id(const obs_protocol_t *protocol)
 		       ? protocol->info.id
 		       : NULL;
 }
+
+const char *obs_protocol_get_url_prefix(const obs_protocol_t *protocol)
+{
+	return obs_protocol_valid(protocol, "obs_protocol_get_url_prefix")
+		       ? protocol->info.url_prefix
+		       : NULL;
+}
+
+const char *obs_get_protocol_url_prefix(const char *id)
+{
+	const struct obs_protocol_info *info = find_protocol(id);
+	return info ? info->url_prefix : NULL;
+}

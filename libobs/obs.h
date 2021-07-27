@@ -1862,6 +1862,9 @@ EXPORT const char *obs_protocol_get_id(const obs_protocol_t *protocol);
 /* ------------------------------------------------------------------------- */
 /* Functions used by protocols */
 
+EXPORT const char *obs_protocol_get_url_prefix(const obs_protocol_t *protocol);
+EXPORT const char *obs_get_protocol_url_prefix(const char *id);
+
 EXPORT void *obs_protocol_get_type_data(obs_protocol_t *protocol);
 
 /* ------------------------------------------------------------------------- */

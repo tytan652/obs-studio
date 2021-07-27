@@ -6,6 +6,7 @@ extern "C" {
 
 struct obs_protocol_info {
 	const char *id;
+	const char *url_prefix;
 
 	const char *(*get_name)(void *type_data);
 
