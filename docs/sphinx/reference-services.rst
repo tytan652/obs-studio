@@ -139,6 +139,10 @@ Service Definition Structure
 
    :return: The output type that should be used with this service
 
+.. member:: const char *(*obs_service_info.get_protocol)(void *data)
+
+   :return: The protocol used by the service
+
 
 General Service Functions
 -------------------------
@@ -285,6 +289,12 @@ General Service Functions
   
    :param  video_encoder_settings: Video encoder settings.  Can be *NULL*
    :param  audio_encoder_settings: Audio encoder settings.  Can be *NULL*
+
+---------------------
+
+.. function:: const char *obs_service_get_protocol(const obs_service_t *service)
+
+   :return: Protocol currently used for this service
 
 .. ---------------------------------------------------------------------------
 
