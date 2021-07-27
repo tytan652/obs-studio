@@ -33,6 +33,7 @@ struct obs_protocol_info rtmp_protocol_info = {
 	.get_name = rtmp_protocol_getname,
 	.create = rtmp_protocol_create,
 	.destroy = rtmp_protocol_destroy,
+	.recommended_output = "rtmp_output",
 };
 
 struct obs_protocol_info rtmps_protocol_info = {
@@ -41,4 +42,5 @@ struct obs_protocol_info rtmps_protocol_info = {
 	.get_name = rtmps_protocol_getname,
 	.create = rtmp_protocol_create,
 	.destroy = rtmp_protocol_destroy,
+	.recommended_output = "rtmps_output",
 };

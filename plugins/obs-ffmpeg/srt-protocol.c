@@ -26,4 +26,5 @@ struct obs_protocol_info srt_protocol_info = {
 	.get_name = srt_protocol_getname,
 	.create = srt_protocol_create,
 	.destroy = srt_protocol_destroy,
+	.recommended_output = "ffmpeg_mpegts_muxer",
 };

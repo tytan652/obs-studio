@@ -26,4 +26,5 @@ struct obs_protocol_info ftl_protocol_info = {
 	.get_name = ftl_protocol_getname,
 	.create = ftl_protocol_create,
 	.destroy = ftl_protocol_destroy,
+	.recommended_output = "ftl_output",
 };

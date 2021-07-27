@@ -25,4 +25,5 @@ struct obs_protocol_info hls_protocol_info = {
 	.get_name = hls_protocol_getname,
 	.create = hls_protocol_create,
 	.destroy = hls_protocol_destroy,
+	.recommended_output = "ffmpeg_hls_muxer",
 };
