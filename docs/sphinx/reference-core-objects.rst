@@ -6,6 +6,7 @@ Core API Object Reference
 
    reference-sources
    reference-scenes
+   reference-protocols
    reference-outputs
    reference-encoders
    reference-services
