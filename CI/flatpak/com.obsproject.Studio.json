@@ -220,6 +220,9 @@
     },
     {
       "name": "cef",
+      "only-arches": [
+        "x86_64"
+      ],
       "buildsystem": "cmake-ninja",
       "no-make-install": true,
       "make-args": [
@@ -246,6 +249,9 @@
     },
     {
       "name": "obs",
+      "only-arches": [
+        "x86_64"
+      ],
       "buildsystem": "cmake-ninja",
       "builddir": true,
       "config-opts": [
@@ -253,6 +259,30 @@
         "-DENABLE_WAYLAND=ON",
         "-DBUILD_BROWSER=ON",
         "-DCEF_ROOT_DIR=/app/cef",
+        "-DUNIX_STRUCTURE=ON",
+        "-DUSE_XDG=ON",
+        "-DDISABLE_ALSA=ON",
+        "-DENABLE_PULSEAUDIO=ON",
+        "-DWITH_RTMPS=ON"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "../../"
+        }
+      ]
+    },
+    {
+      "name": "obs",
+      "skip-arches": [
+        "x86_64"
+      ],
+      "buildsystem": "cmake-ninja",
+      "builddir": true,
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DENABLE_WAYLAND=ON",
+        "-DBUILD_BROWSER=OFF",
         "-DUNIX_STRUCTURE=ON",
         "-DUSE_XDG=ON",
         "-DDISABLE_ALSA=ON",
