@@ -15,6 +15,9 @@ jobs:
     container:
       image: bilelmoussaoui/flatpak-github-actions:kde-5.15
       options: --privileged
+    strategy:
+      matrix:
+        arch: [x86_64, aarch64]
     steps:
     - name: 'Check for Github Labels'
       if: github.event_name == 'pull_request'
@@ -36,7 +39,10 @@ jobs:
 
     - name: Install packages
       if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
-      run: dnf install -y jq
+      run: |
+        PACKAGES="jq"
+        [ "${{ matrix.arch }}" != "x86_64" ] && PACKAGES="$PACKAGES docker"
+        dnf install -y $PACKAGES
 
     - name: Get Flatpak Manifest Deps Hash
       if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
@@ -45,10 +51,17 @@ jobs:
         FLATPAK_DEPS_HASH=`cat CI/flatpak/com.obsproject.Studio.json | jq '. | {runtime, "runtime-version", sdk, modules} | del(.modules[] | select(.name == "obs"))' | sha256sum | cut -f1 -d' '`
         echo "FLATPAK_DEPS_HASH=$FLATPAK_DEPS_HASH" >> $GITHUB_ENV
 
+    - name: Set up QEMU
+      if: success() && matrix.arch != 'x86_64' && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
+      uses: docker/setup-qemu-action@v1
+      with:
+        platforms: arm64
+
     - name: Build Flatpak Manifest
-      uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v3
+      uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v4
       if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
       with:
         bundle: obs-studio-${{ github.sha }}.flatpak
         manifest-path: CI/flatpak/com.obsproject.Studio.json
         cache-key: flatpak-builder-${{ env.FLATPAK_DEPS_HASH }}
+        arch: ${{ matrix.arch }}
