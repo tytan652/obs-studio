@@ -34,10 +34,21 @@ jobs:
       with:
         submodules: 'recursive'
 
+    - name: Install packages
+      if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
+      run: dnf install -y jq
+
+    - name: Get Flatpak Manifest Deps Hash
+      if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
+      shell: bash
+      run: |
+        FLATPAK_DEPS_HASH=`cat CI/flatpak/com.obsproject.Studio.json | jq '. | {runtime, "runtime-version", sdk, modules} | del(.modules[] | select(.name == "obs"))' | sha256sum | cut -f1 -d' '`
+        echo "FLATPAK_DEPS_HASH=$FLATPAK_DEPS_HASH" >> $GITHUB_ENV
+
     - name: Build Flatpak Manifest
       uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v3
       if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
       with:
         bundle: obs-studio-${{ github.sha }}.flatpak
         manifest-path: CI/flatpak/com.obsproject.Studio.json
-        cache-key: flatpak-builder-${{ github.sha }}
+        cache-key: flatpak-builder-${{ env.FLATPAK_DEPS_HASH }}
