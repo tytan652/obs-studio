@@ -50,13 +50,26 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Install jq
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
+        shell: bash
+        run: dnf install -y jq
+
+      - name: Generate Flatpak Manifest Deps Hash
+        id: deps_checksum
+        if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
+        shell: bash
+        run: |
+          DEPS_CHECKSUM=`cat CI/flatpak/com.obsproject.Studio.json | jq '. | {runtime, "runtime-version", sdk, modules} | del(.modules[] | select(.name == "obs")) | del(.modules[].cleanup)' | sha256sum | cut -f1 -d' '`
+          echo "::set-output name=checksum::$DEPS_CHECKSUM"
+
       - name: Build Flatpak Manifest
         uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v4
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         with:
           bundle: obs-studio-${{ github.sha }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
-          cache-key: flatpak-builder-${{ github.sha }}
+          cache-key: flatpak-builder-${{ steps.deps_checksum.outputs.checksum }}
 
   publish:
     name: Publish to Flathub
@@ -83,13 +96,26 @@ jobs:
         with:
           submodules: 'recursive'
 
+      - name: Install jq
+        if: steps.should_run.outputs.should_run == 'yes'
+        shell: bash
+        run: dnf install -y jq
+
+      - name: Generate Flatpak Manifest Deps Hash
+        id: deps_checksum
+        if: steps.should_run.outputs.should_run == 'yes'
+        shell: bash
+        run: |
+          DEPS_CHECKSUM=`cat CI/flatpak/com.obsproject.Studio.json | jq '. | {runtime, "runtime-version", sdk, modules} | del(.modules[] | select(.name == "obs")) | del(.modules[].cleanup)' | sha256sum | cut -f1 -d' '`
+          echo "::set-output name=checksum::$DEPS_CHECKSUM"
+
       - name: Build Flatpak Manifest
         uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@master
         if: steps.should_run.outputs.should_run == 'yes'
         with:
           bundle: obs-studio-${{ github.sha }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
-          cache-key: flatpak-builder-${{ github.sha }}
+          cache-key: flatpak-builder-${{ steps.deps_checksum.outputs.checksum }}
           mirror-screenshots-url: https://dl.flathub.org/repo/screenshots
           branch: ${{ matrix.branch }}
 
