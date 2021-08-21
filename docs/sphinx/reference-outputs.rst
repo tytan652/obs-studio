@@ -236,6 +236,10 @@ Output Definition Structure (obs_output_info)
 
    (Optional, though recommended)
 
+.. member:: const char *obs_output_info.protocol
+
+   Protocol string identifier for the output (required if **OBS_OUTPUT_SERVICE**).
+
 .. _output_signal_handler_reference:
 
 Output Signals
@@ -652,6 +656,21 @@ General Output Functions
               uint32_t obs_get_output_flags(const char *id)
 
    :return: The output capability flags
+
+---------------------
+
+.. function:: const char *obs_output_get_protocols(const obs_output_t *output)
+
+   :return: Supported protocols, separated by semicolon
+
+---------------------
+
+.. function:: bool obs_output_find_protocol(const char *protocol)
+
+   Check if one of the registered output use the given protocol.
+
+   :return:                 A boolean showing if an output with the given
+                            protocol is registered
 
 ---------------------
 
