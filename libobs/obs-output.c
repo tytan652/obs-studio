@@ -2684,3 +2684,30 @@ const char *obs_output_get_supported_audio_codecs(const obs_output_t *output)
 		       ? output->info.encoded_audio_codecs
 		       : NULL;
 }
+
+const char *obs_output_get_protocols(const obs_output_t *output)
+{
+	return obs_output_valid(output, "obs_output_get_protocols")
+		       ? output->info.protocols
+		       : NULL;
+}
+
+bool obs_output_is_protocol_registered(const char *protocol)
+{
+	for (size_t i = 0; i < obs->output_types.num; i++) {
+		if (!(obs->output_types.array[i].flags & OBS_OUTPUT_SERVICE))
+			continue;
+
+		char *protocols = strdup(obs->output_types.array[i].protocols);
+
+		char *prtcl = strtok(protocols, ";");
+		while (prtcl != NULL) {
+			if (strcmp(prtcl, protocol) == 0)
+				return true;
+
+			prtcl = strtok(NULL, ";");
+		}
+	}
+
+	return false;
+}

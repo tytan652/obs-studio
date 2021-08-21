@@ -234,7 +234,15 @@ Output Definition Structure (obs_output_info)
    This variable specifies which codecs are supported by an encoded
    output, separated by semicolon.
 
-   (Optional, though recommended)
+   Required if **OBS_OUTPUT_SERVICE** flag is set, otherwise
+   recommended.
+
+.. member:: const char *obs_output_info.protocols
+
+   This variable specifies which protocols are supported by an output,
+   separated by semicolon.
+
+   Required only if **OBS_OUTPUT_SERVICE** flag is set.
 
 .. _output_signal_handler_reference:
 
@@ -652,6 +660,21 @@ General Output Functions
               uint32_t obs_get_output_flags(const char *id)
 
    :return: The output capability flags
+
+---------------------
+
+.. function:: const char *obs_output_get_protocols(const obs_output_t *output)
+
+   :return: Supported protocols, separated by semicolon
+
+---------------------
+
+.. function:: bool obs_output_is_protocol_registered(const char *protocol)
+
+   Check if one of the registered output use the given protocol.
+
+   :return:                 A boolean showing if an output with the given
+                            protocol is registered
 
 ---------------------
 

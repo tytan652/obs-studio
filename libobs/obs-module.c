@@ -751,6 +751,9 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, start, obs_register_output);
 	CHECK_REQUIRED_VAL_(info, stop, obs_register_output);
 
+	if (info->flags & OBS_OUTPUT_SERVICE)
+		CHECK_REQUIRED_VAL_(info, protocols, obs_register_output);
+
 	if (info->flags & OBS_OUTPUT_ENCODED) {
 		CHECK_REQUIRED_VAL_(info, encoded_packet, obs_register_output);
 	} else {
