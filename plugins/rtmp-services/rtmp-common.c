@@ -913,6 +913,20 @@ static const char *rtmp_common_password(void *data)
 	return NULL;
 }
 
+static const char *rtmp_common_get_protocol(void *data)
+{
+	struct rtmp_common *service = data;
+	if (strcmp(service->output, "ffmpeg_hls_muxer") == 0)
+		return "HLS";
+	if (strcmp(service->output, "ftl_output") == 0)
+		return "FTL";
+	if (strncmp(service->server, RTMPS_PROTOCOL, strlen(RTMPS_PROTOCOL)) ==
+	    0)
+		return "RTMPS";
+
+	return "RTMP";
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -924,6 +938,7 @@ struct obs_service_info rtmp_common_service = {
 	.get_key = rtmp_common_key,
 	.get_username = rtmp_common_username,
 	.get_password = rtmp_common_password,
+	.get_protocol = rtmp_common_get_protocol,
 	.apply_encoder_settings = rtmp_common_apply_settings,
 	.get_output_type = rtmp_common_get_output_type,
 	.get_supported_resolutions = rtmp_common_get_supported_resolutions,
