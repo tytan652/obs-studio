@@ -755,33 +755,64 @@ bool SimpleOutput::SetupStreaming(obs_service_t *service)
 
 	/* --------------------- */
 
-	const char *type = obs_service_get_output_type(service);
-	if (!type) {
-		type = "rtmp_output";
-		const char *url = obs_service_get_url(service);
-		if (url != NULL &&
-		    strncmp(url, FTL_PROTOCOL, strlen(FTL_PROTOCOL)) == 0) {
-			type = "ftl_output";
-		} else if (url != NULL && strncmp(url, RTMP_PROTOCOL,
-						  strlen(RTMP_PROTOCOL)) != 0) {
-			type = "ffmpeg_mpegts_muxer";
-		}
+	const char *protocol = obs_service_get_protocol(service);
+
+	if (!protocol) {
+		blog(LOG_ERROR,
+		     "The service '%s' is not registered with a protocol",
+		     obs_service_get_id(service));
+		return false;
 	}
 
+	if (!obs_output_find_protocol(protocol)) {
+		blog(LOG_ERROR, "The protocol '%s' is not registered",
+		     protocol);
+		return false;
+	}
+
+	QStringList output_types;
+	const char *output_type;
+
+	for (size_t i = 0;
+	     obs_output_enum_types_with_protocol(protocol, i, &output_type);
+	     i++)
+		output_types.append(output_type);
+	output_type = NULL;
+
+	if (output_types.empty()) {
+		blog(LOG_ERROR, "No output registered for the protocol '%s'",
+		     protocol);
+		return false;
+	}
+
+	if (output_types.size() == 1)
+		output_type = QT_TO_UTF8(output_types[0]);
+	else {
+		size_t count = output_types.size();
+		for (size_t i = 0; i < count; i++)
+			if (strcmp(QT_TO_UTF8(output_types[i]),
+				   obs_service_get_preferred_output(service)) ==
+			    0)
+				output_type = QT_TO_UTF8(output_types[i]);
+
+		if (!output_type)
+			output_type = QT_TO_UTF8(output_types[0]);
+	};
+
 	/* XXX: this is messy and disgusting and should be refactored */
-	if (outputType != type) {
+	if (outputType != output_type) {
 		streamDelayStarting.Disconnect();
 		streamStopping.Disconnect();
 		startStreaming.Disconnect();
 		stopStreaming.Disconnect();
 
-		streamOutput = obs_output_create(type, "simple_stream", nullptr,
-						 nullptr);
+		streamOutput = obs_output_create(output_type, "simple_stream",
+						 nullptr, nullptr);
 		if (!streamOutput) {
 			blog(LOG_WARNING,
 			     "Creation of stream output type '%s' "
 			     "failed!",
-			     type);
+			     output_type);
 			return false;
 		}
 
@@ -832,7 +863,7 @@ bool SimpleOutput::SetupStreaming(obs_service_t *service)
 			}
 		}
 
-		outputType = type;
+		outputType = output_type;
 	}
 
 	obs_output_set_video_encoder(streamOutput, h264Streaming);
@@ -935,9 +966,9 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	else
 		lastError = string();
 
-	const char *type = obs_service_get_output_type(service);
-	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s", type,
-	     hasLastError ? "  Last Error: " : "", hasLastError ? error : "");
+	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s",
+	     outputType.c_str(), hasLastError ? "  Last Error: " : "",
+	     hasLastError ? error : "");
 	return false;
 }
 
@@ -1688,33 +1719,64 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 
 	/* --------------------- */
 
-	const char *type = obs_service_get_output_type(service);
-	if (!type) {
-		type = "rtmp_output";
-		const char *url = obs_service_get_url(service);
-		if (url != NULL &&
-		    strncmp(url, FTL_PROTOCOL, strlen(FTL_PROTOCOL)) == 0) {
-			type = "ftl_output";
-		} else if (url != NULL && strncmp(url, RTMP_PROTOCOL,
-						  strlen(RTMP_PROTOCOL)) != 0) {
-			type = "ffmpeg_mpegts_muxer";
-		}
+	const char *protocol = obs_service_get_protocol(service);
+
+	if (!protocol) {
+		blog(LOG_WARNING, "The service '%s' is not registered",
+		     obs_service_get_id(service));
+		return false;
 	}
 
+	if (!obs_output_find_protocol(protocol)) {
+		blog(LOG_WARNING, "The protocol '%s' is not registered",
+		     protocol);
+		return false;
+	}
+
+	QStringList output_types;
+	const char *output_type;
+
+	for (size_t i = 0;
+	     obs_output_enum_types_with_protocol(protocol, i, &output_type);
+	     i++)
+		output_types.append(output_type);
+	output_type = NULL;
+
+	if (output_types.empty()) {
+		blog(LOG_WARNING, "No output registered for the protocol '%s'",
+		     protocol);
+		return false;
+	}
+
+	if (output_types.size() == 1)
+		output_type = QT_TO_UTF8(output_types[0]);
+	else {
+		// TODO: Add Output selection as an advanced settings
+		size_t count = output_types.size();
+		for (size_t i = 0; i < count; i++)
+			if (strcmp(QT_TO_UTF8(output_types[i]),
+				   obs_service_get_preferred_output(service)) ==
+			    0)
+				output_type = QT_TO_UTF8(output_types[i]);
+
+		if (!output_type)
+			output_type = QT_TO_UTF8(output_types[0]);
+	};
+
 	/* XXX: this is messy and disgusting and should be refactored */
-	if (outputType != type) {
+	if (outputType != output_type) {
 		streamDelayStarting.Disconnect();
 		streamStopping.Disconnect();
 		startStreaming.Disconnect();
 		stopStreaming.Disconnect();
 
-		streamOutput =
-			obs_output_create(type, "adv_stream", nullptr, nullptr);
+		streamOutput = obs_output_create(output_type, "adv_stream",
+						 nullptr, nullptr);
 		if (!streamOutput) {
 			blog(LOG_WARNING,
 			     "Creation of stream output type '%s' "
 			     "failed!",
-			     type);
+			     output_type);
 			return false;
 		}
 
@@ -1766,7 +1828,7 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 			}
 		}
 
-		outputType = type;
+		outputType = output_type;
 	}
 
 	obs_output_set_video_encoder(streamOutput, h264Streaming);
@@ -1826,9 +1888,9 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	else
 		lastError = string();
 
-	const char *type = obs_service_get_output_type(service);
-	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s", type,
-	     hasLastError ? "  Last Error: " : "", hasLastError ? error : "");
+	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s",
+	     outputType.c_str(), hasLastError ? "  Last Error: " : "",
+	     hasLastError ? error : "");
 	return false;
 }
 

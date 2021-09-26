@@ -89,6 +89,10 @@ public:
 #define SUBTITLE_TESTING TEST_STR("Subtitle.Testing")
 #define SUBTITLE_COMPLETE TEST_STR("Subtitle.Complete")
 #define TEST_BW TEST_STR("TestingBandwidth")
+#define TEST_BW_SRVC_WO_PRTCL \
+	TEST_STR("TestingBandwidth.ServiceWithoutProtocol")
+#define TEST_BW_PRTCL_NOT_FOUND TEST_STR("TestingBandwidth.ProtocolNotFound")
+#define TEST_BW_NO_OUTPUT TEST_STR("TestingBandwidth.NoOutput")
 #define TEST_BW_CONNECTING TEST_STR("TestingBandwidth.Connecting")
 #define TEST_BW_CONNECT_FAIL TEST_STR("TestingBandwidth.ConnectFailed")
 #define TEST_BW_SERVER TEST_STR("TestingBandwidth.Server")
@@ -261,9 +265,58 @@ void AutoConfigTestPage::TestBandwidthThread()
 	/* -----------------------------------*/
 	/* create output                      */
 
-	const char *output_type = obs_service_get_output_type(service);
-	if (!output_type)
-		output_type = "rtmp_output";
+	const char *protocol = obs_service_get_protocol(service);
+
+	if (!protocol) {
+		blog(LOG_WARNING,
+		     "The service '%s' is not registered with a protocol",
+		     obs_service_get_id(service));
+		QMetaObject::invokeMethod(this, "Failure",
+					  Q_ARG(QString,
+						QTStr(TEST_BW_SRVC_WO_PRTCL)));
+		return;
+	}
+
+	if (!obs_output_find_protocol(protocol)) {
+		blog(LOG_WARNING, "The protocol '%s' is not registered",
+		     protocol);
+		QMetaObject::invokeMethod(
+			this, "Failure",
+			Q_ARG(QString, QTStr(TEST_BW_PRTCL_NOT_FOUND)));
+		return;
+	}
+
+	QStringList output_types;
+	const char *output_type;
+
+	for (size_t i = 0;
+	     obs_output_enum_types_with_protocol(protocol, i, &output_type);
+	     i++)
+		output_types.append(output_type);
+	output_type = NULL;
+
+	if (output_types.empty()) {
+		blog(LOG_WARNING, "No output registered for the protocol '%s'",
+		     protocol);
+		QMetaObject::invokeMethod(this, "Failure",
+					  Q_ARG(QString,
+						QTStr(TEST_BW_NO_OUTPUT)));
+		return;
+	}
+
+	if (output_types.size() == 1)
+		output_type = QT_TO_UTF8(output_types[0]);
+	else {
+		size_t count = output_types.size();
+		for (size_t i = 0; i < count; i++)
+			if (strcmp(QT_TO_UTF8(output_types[i]),
+				   obs_service_get_preferred_output(service)) ==
+			    0)
+				output_type = QT_TO_UTF8(output_types[i]);
+
+		if (!output_type)
+			output_type = QT_TO_UTF8(output_types[0]);
+	};
 
 	OBSOutputAutoRelease output =
 		obs_output_create(output_type, "test_stream", nullptr, nullptr);
