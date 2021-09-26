@@ -143,6 +143,12 @@ Service Definition Structure
 
    :return: The protocol used by the service
 
+.. member:: const char *(*obs_service_info.get_preferred_output)(void *data)
+
+   (Optional)
+
+   :return: The preferred output based on the protocol
+
 
 General Service Functions
 -------------------------
@@ -295,6 +301,12 @@ General Service Functions
 .. function:: const char *obs_service_get_protocol(const obs_service_t *service)
 
    :return: Protocol currently used for this service
+
+---------------------
+
+.. function:: const char *obs_service_get_preferred_output(const obs_service_t *service)
+
+   :return: Preferred output based on the protocol
 
 .. ---------------------------------------------------------------------------
 

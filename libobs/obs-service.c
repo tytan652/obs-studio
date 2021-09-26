@@ -410,6 +410,7 @@ const char *obs_service_get_id(const obs_service_t *service)
 		       : NULL;
 }
 
+/* OBS_DEPRECATED */
 const char *obs_service_get_output_type(const obs_service_t *service)
 {
 	if (!obs_service_valid(service, "obs_service_get_output_type"))
@@ -474,4 +475,38 @@ const char *obs_service_get_protocol(const obs_service_t *service)
 		return NULL;
 
 	return service->info.get_protocol(service->context.data);
+}
+
+const char *obs_service_get_preferred_output(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_get_preferred_output"))
+		return NULL;
+
+	if (service->info.get_preferred_output)
+		return service->info.get_preferred_output(
+			service->context.data);
+
+	const char *protocol = obs_service_get_protocol(service);
+
+	if (!protocol && !obs_output_find_protocol(protocol))
+		return NULL;
+
+	// XXX: Need to mover into a flavoured version of this function in the UI
+	if (strcmp(protocol, "RTMP") == 0 || strcmp(protocol, "RTMPS") == 0)
+		if (find_output("rtmp_output"))
+			return "rtmp_output";
+
+	if (strcmp(protocol, "FTL") == 0)
+		if (find_output("ftl_output"))
+			return "ftl_output";
+
+	if (strcmp(protocol, "HLS") == 0)
+		if (find_output("ffmpeg_hls_muxer"))
+			return "ffmpeg_hls_muxer";
+
+	if (strcmp(protocol, "SRT") == 0 || strcmp(protocol, "RIST") == 0)
+		if (find_output("ffmpeg_mpegts_muxer"))
+			return "ffmpeg_mpegts_muxer";
+
+	return NULL;
 }

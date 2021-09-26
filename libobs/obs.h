@@ -2470,10 +2470,16 @@ EXPORT void obs_service_get_max_bitrate(const obs_service_t *service,
 
 /* NOTE: This function is temporary and should be removed/replaced at a later
  * date. */
-EXPORT const char *obs_service_get_output_type(const obs_service_t *service);
+#ifndef SWIG
+OBS_DEPRECATED EXPORT const char *
+obs_service_get_output_type(const obs_service_t *service);
+#endif
 
 /** Returns the protocol for this service context */
 EXPORT const char *obs_service_get_protocol(const obs_service_t *service);
+
+EXPORT const char *
+obs_service_get_preferred_output(const obs_service_t *service);
 
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */
