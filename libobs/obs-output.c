@@ -2699,3 +2699,29 @@ bool obs_output_find_protocol(const char *protocol)
 
 	return false;
 }
+
+bool obs_output_enum_types_with_protocol(const char *protocol, size_t idx,
+					 const char **id)
+{
+	size_t count = 0;
+	for (size_t i = 0; i < obs->output_types.num; i++)
+		if (obs->output_types.array[i].flags & OBS_OUTPUT_SERVICE) {
+
+			char *protocols =
+				strdup(obs->output_types.array[i].protocols);
+
+			char *prtcl = strtok(protocols, ";");
+			while (prtcl != NULL) {
+
+				if (count == idx &&
+				    strcmp(prtcl, protocol) == 0) {
+					*id = obs->output_types.array[i].id;
+					return true;
+				}
+				prtcl = strtok(NULL, ";");
+			}
+			count++;
+		}
+
+	return false;
+}

@@ -674,6 +674,14 @@ General Output Functions
 
 ---------------------
 
+.. function::  bool obs_output_enum_types_with_protocol(const char *protocol, size_t idx, const char **id)
+
+   Enumerates all available output types for the given protocol.
+
+   :param    protocol:      The protocol string identifier
+
+---------------------
+
 Functions used by outputs
 -------------------------
 
