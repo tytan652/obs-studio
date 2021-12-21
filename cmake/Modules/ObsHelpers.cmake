@@ -327,12 +327,15 @@ macro(find_qt)
       REQUIRED)
   endif()
 
-  foreach(_COMPONENT IN
-          LISTS ${FIND_QT_COMPONENTS} ${FIND_QT_COMPONENTS_WIN}
-                ${FIND_QT_COMPONENTS_MAC} ${FIND_QT_COMPONENTS_LINUX})
+  foreach(_COMPONENT IN LISTS FIND_QT_COMPONENTS FIND_QT_COMPONENTS_WIN
+                              FIND_QT_COMPONENTS_MAC FIND_QT_COMPONENTS_LINUX)
     if(NOT TARGET Qt::${_COMPONENT} AND TARGET
                                         Qt${FIND_QT_VERSION}::${_COMPONENT})
-      add_library(Qt::${_COMPONENT} ALIAS Qt${FIND_QT_VERSION}::${_COMPONENT})
+
+      add_library(Qt::${_COMPONENT} INTERFACE IMPORTED)
+      set_target_properties(
+        Qt::${_COMPONENT} PROPERTIES INTERFACE_LINK_LIBRARIES
+                                     "Qt${FIND_QT_VERSION}::${_COMPONENT}")
     endif()
   endforeach()
 endmacro()
