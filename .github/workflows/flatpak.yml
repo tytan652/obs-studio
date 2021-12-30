@@ -102,18 +102,22 @@ jobs:
         run: |
           ostree commit --repo=repo --canonical-permissions --branch=screenshots/x86_64 flatpak_app/screenshots
 
-      - name: "Publish to Flathub Beta"
-        uses: bilelmoussaoui/flatpak-github-actions/flat-manager@v4
-        if: "matrix.branch == 'beta'"
-        with:
-          flat-manager-url: https://hub.flathub.org/
-          repository: beta
-          token: ${{ secrets.FLATHUB_BETA_TOKEN }}
+      - name: Setup Publish
+        shell: bash
+        run: |
+          [[ '${{ matrix.branch }}' == 'beta' ]] && FLATHUB_TOKEN=${{ secrets.FLATHUB_BETA_TOKEN }}
+          [[ '${{ matrix.branch }}' == 'stable' ]] && FLATHUB_TOKEN=${{ secrets.FLATHUB_TOKEN }}
+          echo "FLATHUB_TOKEN=$FLATHUB_TOKEN" >> $GITHUB_ENV
+
+          PUBLISH_TO_STABLE=true
+          [[ '${{ github.ref }}' == *"-beta"* ]] && PUBLISH_TO_STABLE=false
+          [[ '${{ github.ref }}' == *"-rc"* ]] && PUBLISH_TO_STABLE=false
+          echo "PUBLISH_TO_STABLE=$PUBLISH_TO_STABLE" >> $GITHUB_ENV
 
       - name: "Publish to Flathub"
         uses: bilelmoussaoui/flatpak-github-actions/flat-manager@v4
-        if: "!contains(github.ref, '-beta') && !contains(github.ref, '-rc') && matrix.branch == 'stable'"
+        if: "matrix.branch == 'beta' || (matrix.branch == 'stable' && env.PUBLISH_TO_STABLE == 'true')"
         with:
           flat-manager-url: https://hub.flathub.org/
-          repository: stable
-          token: ${{ secrets.FLATHUB_TOKEN }}
+          repository: ${{ matrix.branch }}
+          token: ${{ env.FLATHUB_TOKEN }}
