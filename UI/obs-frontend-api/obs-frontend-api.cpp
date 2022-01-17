@@ -330,6 +330,12 @@ bool obs_frontend_browser_available()
 				   : false;
 }
 
+bool obs_frontend_browser_initialised()
+{
+	return !!callbacks_valid() ? c->obs_frontend_browser_initialised()
+				   : false;
+}
+
 void *obs_frontend_add_browser_dock(struct obs_frontend_browser_dock *params)
 {
 	return !!callbacks_valid() ? c->obs_frontend_add_browser_dock(params)

@@ -1156,6 +1156,7 @@ public:
 	virtual int GetProfilePath(char *path, size_t size,
 				   const char *file) const override;
 
+	bool IsBrowserInitialised();
 	static void InitBrowserPanelSafeBlock();
 
 private:

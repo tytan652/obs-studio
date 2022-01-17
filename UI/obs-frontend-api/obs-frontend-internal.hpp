@@ -66,6 +66,7 @@ struct obs_frontend_callbacks {
 	virtual void *obs_frontend_add_dock(void *dock) = 0;
 
 	virtual bool obs_frontend_browser_available() = 0;
+	virtual bool obs_frontend_browser_initialised() = 0;
 	virtual void *obs_frontend_add_browser_dock(
 		struct obs_frontend_browser_dock *params) = 0;
 	virtual void obs_frontend_remove_browser_dock(void *dock) = 0;

@@ -162,3 +162,12 @@ void OBSBasic::InitBrowserPanelSafeBlock()
 	InitPanelCookieManager();
 #endif
 }
+
+bool OBSBasic::IsBrowserInitialised()
+{
+#ifdef BROWSER_AVAILABLE
+	return !!cef;
+#else
+	return false
+#endif
+}

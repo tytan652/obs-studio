@@ -450,6 +450,12 @@ Functions
 
 ---------------------------------------
 
+.. function:: bool obs_frontend_browser_initialised()
+
+   Indicate if the browser is initialised when the function is called.
+
+---------------------------------------
+
 .. function:: void *obs_frontend_add_browser_dock(struct obs_frontend_browser_dock *params)
 
    Adds a plugin-controlled browser dock to the UI. The dock will automatically

@@ -382,6 +382,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 #endif
 	}
 
+	bool obs_frontend_browser_initialised() override
+	{
+		return main->IsBrowserInitialised();
+	}
+
 	void *obs_frontend_add_browser_dock(
 		struct obs_frontend_browser_dock *params) override
 	{
