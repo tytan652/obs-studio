@@ -4,6 +4,10 @@
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
 
+#ifdef ENABLE_WAYLAND
+#include <obs-nix-platform.h>
+#endif
+
 #include <functional>
 
 using namespace std;
@@ -363,6 +367,19 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void *obs_frontend_add_dock(void *dock) override
 	{
 		return (void *)main->AddDockWidget((QDockWidget *)dock);
+	}
+
+	bool obs_frontend_browser_available() override
+	{
+#ifdef BROWSER_AVAILABLE
+#ifdef ENABLE_WAYLAND
+		return !(obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND);
+#else
+		return true;
+#endif
+#else
+		return false;
+#endif
 	}
 
 	void *obs_frontend_add_browser_dock(

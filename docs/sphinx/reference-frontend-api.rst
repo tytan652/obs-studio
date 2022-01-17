@@ -444,6 +444,12 @@ Functions
 
 ---------------------------------------
 
+.. function:: bool obs_frontend_browser_available()
+
+   Indicate if the browser features like docks are available.
+
+---------------------------------------
+
 .. function:: void *obs_frontend_add_browser_dock(struct obs_frontend_browser_dock *params)
 
    Adds a plugin-controlled browser dock to the UI. The dock will automatically

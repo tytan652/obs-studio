@@ -144,6 +144,8 @@ EXPORT void obs_frontend_add_tools_menu_item(const char *name,
 
 /* takes QDockWidget and returns QAction */
 EXPORT void *obs_frontend_add_dock(void *dock);
+
+EXPORT bool obs_frontend_browser_available();
 /* returns QDockWidget */
 EXPORT void *
 obs_frontend_add_browser_dock(struct obs_frontend_browser_dock *params);
