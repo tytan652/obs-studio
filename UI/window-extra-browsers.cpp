@@ -577,6 +577,8 @@ void *OBSBasic::AddPluginBrowserDock(struct obs_frontend_browser_dock *params)
 	BrowserDockParam dockParam;
 	dockParam.url = QT_UTF8(params->url);
 	dockParam.enableCookie = params->enable_cookie;
+	dockParam.startupScript = QT_UTF8(strndup(params->startup_script.array,
+						  params->startup_script.len));
 	BrowserDock *dock = new BrowserDock();
 	QString bId(QUuid::createUuid().toString());
 	bId.replace(QRegularExpression("[{}-]"), "");
@@ -641,8 +643,10 @@ static QAction *PrepareBrowserDockWindow(OBSBasic *api, BrowserDock *dock,
 
 	dock->SetWidget(browser);
 
-	/* Add support for Twitch Dashboard panels */
-	if (params.url.contains("twitch.tv/popout") &&
+	if (!params.startupScript.isEmpty()) {
+		browser->setStartupScript(params.startupScript.toStdString());
+	} /* Add support for Twitch Dashboard panels */
+	else if (params.url.contains("twitch.tv/popout") &&
 		 params.url.contains("dashboard/live")) {
 		QRegularExpression re("twitch.tv\\/popout\\/([^/]+)\\/");
 		QRegularExpressionMatch match = re.match(params.url);

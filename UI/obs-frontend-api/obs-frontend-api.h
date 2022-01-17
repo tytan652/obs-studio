@@ -2,6 +2,7 @@
 
 #include <obs.h>
 #include <util/darray.h>
+#include <util/dstr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,7 +87,15 @@ struct obs_frontend_browser_dock {
 	int min_width;
 	int min_height;
 	bool enable_cookie;
+	struct dstr startup_script;
 };
+
+static inline void
+obs_frontend_browser_dock_free(struct obs_frontend_browser_dock *params)
+{
+	if (params->startup_script.len > 0)
+		dstr_free(&params->startup_script);
+}
 #endif //!SWIG
 
 /* ------------------------------------------------------------------------- */

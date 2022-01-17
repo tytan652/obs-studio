@@ -127,6 +127,7 @@ private:
 struct BrowserDockParam {
 	QString url;
 	bool enableCookie;
+	QString startupScript;
 };
 #endif
 

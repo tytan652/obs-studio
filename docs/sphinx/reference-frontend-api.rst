@@ -211,6 +211,7 @@ Structures/Enumerations
    - int **min_width**
    - int **min_height**
    - bool **enable_cookie**
+   - struct dstr **startup_script**
 
    This struture was made allow to pass more parameter when creating a browser dock.
 
@@ -239,6 +240,12 @@ Functions
    Releases sources within a source list and frees the list.
 
    :param source_list: Source list to free
+
+---------------------------------------
+
+.. function:: void obs_frontend_browser_dock_free(struct obs_frontend_browser_dock *params)
+
+   Free every dynamic type member of the struture.
 
 ---------------------------------------
 
