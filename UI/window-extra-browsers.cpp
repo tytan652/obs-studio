@@ -459,7 +459,8 @@ void OBSExtraBrowsers::on_apply_clicked()
 /* ------------------------------------------------------------------------- */
 
 static QAction *PrepareBrowserDockWindow(OBSBasic *api, BrowserDock *dock,
-					 QString url, bool firstCreate);
+					 BrowserDockParam params,
+					 bool firstCreate);
 
 void OBSBasic::ClearExtraBrowserDocks()
 {
@@ -537,8 +538,12 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	dock->setWindowTitle(title);
 	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
+	BrowserDockParam params;
+	params.url = url;
+	params.enableCookie = false;
+
 	QAction *action =
-		PrepareBrowserDockWindow(this, dock, url, firstCreate);
+		PrepareBrowserDockWindow(this, dock, params, firstCreate);
 	if (!action) {
 		return;
 	}
@@ -563,13 +568,15 @@ void OBSBasic::LoadPluginBrowserDocks()
 		auto dock = static_cast<BrowserDock *>(
 			pluginBrowserDocks[i].data());
 		(void)PrepareBrowserDockWindow(
-			this, dock, pluginBrowserDockTargets[i], true);
+			this, dock, pluginBrowserDockParams[i], true);
 	}
 }
 
 void *OBSBasic::AddPluginBrowserDock(struct obs_frontend_browser_dock *params)
 {
-
+	BrowserDockParam dockParam;
+	dockParam.url = QT_UTF8(params->url);
+	dockParam.enableCookie = params->enable_cookie;
 	BrowserDock *dock = new BrowserDock();
 	QString bId(QUuid::createUuid().toString());
 	bId.replace(QRegularExpression("[{}-]"), "");
@@ -591,10 +598,10 @@ void *OBSBasic::AddPluginBrowserDock(struct obs_frontend_browser_dock *params)
 	dock->setVisible(false);
 
 	pluginBrowserDocks.push_back(dock);
-	pluginBrowserDockTargets.push_back(QT_UTF8(params->url));
+	pluginBrowserDockParams.push_back(dockParam);
 
 	if (cef) {
-		(void)PrepareBrowserDockWindow(this, dock, QT_UTF8(params->url), true);
+		(void)PrepareBrowserDockWindow(this, dock, dockParam, true);
 	}
 
 	return static_cast<QDockWidget *>(dock);
@@ -613,7 +620,8 @@ void OBSBasic::RemovePluginBrowserDock(QDockWidget *dock)
 
 /* fills a browser dock window with CEF and adds compatibility shims */
 static QAction *PrepareBrowserDockWindow(OBSBasic *api, BrowserDock *dock,
-					 QString url, bool firstCreate)
+					 BrowserDockParam params,
+					 bool firstCreate)
 {
 	if (!dock) {
 		return nullptr;
@@ -623,18 +631,21 @@ static QAction *PrepareBrowserDockWindow(OBSBasic *api, BrowserDock *dock,
 		panel_version = obs_browser_qcef_version();
 	}
 
-	QCefWidget *browser =
-		cef->create_widget(dock, QT_TO_UTF8(url), nullptr);
+	OBSBasic::InitBrowserPanelSafeBlock();
+
+	QCefWidget *browser = cef->create_widget(
+		dock, QT_TO_UTF8(params.url),
+		params.enableCookie ? panel_cookies : nullptr);
 	if (browser && panel_version >= 1)
 		browser->allowAllPopups(true);
 
 	dock->SetWidget(browser);
 
 	/* Add support for Twitch Dashboard panels */
-	if (url.contains("twitch.tv/popout") &&
-	    url.contains("dashboard/live")) {
+	if (params.url.contains("twitch.tv/popout") &&
+		 params.url.contains("dashboard/live")) {
 		QRegularExpression re("twitch.tv\\/popout\\/([^/]+)\\/");
-		QRegularExpressionMatch match = re.match(url);
+		QRegularExpressionMatch match = re.match(params.url);
 		QString username = match.captured(1);
 		if (username.length() > 0) {
 			std::string script;

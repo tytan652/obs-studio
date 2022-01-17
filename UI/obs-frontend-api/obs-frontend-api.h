@@ -85,6 +85,7 @@ struct obs_frontend_browser_dock {
 	int height;
 	int min_width;
 	int min_height;
+	bool enable_cookie;
 };
 #endif //!SWIG
 
@@ -152,6 +153,7 @@ EXPORT void *
 obs_frontend_add_browser_dock(struct obs_frontend_browser_dock *params);
 /* takes QDockWidget, calls delete on dock and its corresponding QAction */
 EXPORT void obs_frontend_remove_browser_dock(void *dock);
+EXPORT void obs_frontend_delete_browser_cookie(const char *url);
 
 typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event,
 				      void *private_data);

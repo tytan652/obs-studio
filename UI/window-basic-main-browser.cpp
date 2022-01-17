@@ -171,3 +171,11 @@ bool OBSBasic::IsBrowserInitialised()
 	return false
 #endif
 }
+
+void OBSBasic::DeleteBrowserCookie(const QString &url)
+{
+#ifdef BROWSER_AVAILABLE
+	if (panel_cookies)
+		panel_cookies->DeleteCookies(url.toStdString(), std::string());
+#endif
+}

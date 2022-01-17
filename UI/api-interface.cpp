@@ -407,6 +407,16 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 #endif
 	}
 
+	void obs_frontend_delete_browser_cookie(const char *url) override
+	{
+#ifdef BROWSER_AVAILABLE
+		QString qUrl = QT_UTF8(url);
+		main->DeleteBrowserCookie(qUrl);
+#else
+		UNUSED_PARAMETER(url);
+#endif
+	}
+
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 					     void *private_data) override
 	{

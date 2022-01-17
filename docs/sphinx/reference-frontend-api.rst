@@ -210,6 +210,7 @@ Structures/Enumerations
    - int **height**
    - int **min_width**
    - int **min_height**
+   - bool **enable_cookie**
 
    This struture was made allow to pass more parameter when creating a browser dock.
 
@@ -475,6 +476,12 @@ Functions
 
    :param dock: A pointer to a QDockWidget returned from
         :c:func:`obs_frontend_add_browser_dock()`
+
+---------------------------------------
+
+.. function:: void obs_frontend_delete_browser_cookie(const char *url)
+
+   Deletes cookie related to the URL.
 
 ---------------------------------------
 

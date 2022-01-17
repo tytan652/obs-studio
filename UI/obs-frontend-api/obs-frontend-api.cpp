@@ -348,6 +348,12 @@ void obs_frontend_remove_browser_dock(void *dock)
 		c->obs_frontend_remove_browser_dock(dock);
 }
 
+void obs_frontend_delete_browser_cookie(const char *url)
+{
+	if (callbacks_valid())
+		c->obs_frontend_delete_browser_cookie(url);
+}
+
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 				     void *private_data)
 {

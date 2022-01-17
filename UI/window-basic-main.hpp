@@ -123,6 +123,13 @@ private:
 	std::shared_ptr<OBSSignal> renamedSignal;
 };
 
+#ifdef BROWSER_AVAILABLE
+struct BrowserDockParam {
+	QString url;
+	bool enableCookie;
+};
+#endif
+
 class ColorSelect : public QWidget {
 
 public:
@@ -545,8 +552,8 @@ private:
 	void AddExtraBrowserDock(const QString &title, const QString &url,
 				 const QString &uuid, bool firstCreate);
 
-	QStringList pluginBrowserDockTargets;
 	QList<QPointer<QDockWidget>> pluginBrowserDocks;
+	QList<BrowserDockParam> pluginBrowserDockParams;
 
 	void LoadPluginBrowserDocks();
 	void *AddPluginBrowserDock(struct obs_frontend_browser_dock *params);
@@ -1158,6 +1165,7 @@ public:
 
 	bool IsBrowserInitialised();
 	static void InitBrowserPanelSafeBlock();
+	static void DeleteBrowserCookie(const QString &url);
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;
