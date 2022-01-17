@@ -579,6 +579,9 @@ void *OBSBasic::AddPluginBrowserDock(struct obs_frontend_browser_dock *params)
 	dockParam.enableCookie = params->enable_cookie;
 	dockParam.startupScript = QT_UTF8(strndup(params->startup_script.array,
 						  params->startup_script.len));
+	for (size_t i = 0; i < params->force_popup_url.num; i++)
+		dockParam.forcePopupUrl.append(
+			params->force_popup_url.array[i]);
 	BrowserDock *dock = new BrowserDock();
 	QString bId(QUuid::createUuid().toString());
 	bId.replace(QRegularExpression("[{}-]"), "");
@@ -662,6 +665,10 @@ static QAction *PrepareBrowserDockWindow(OBSBasic *api, BrowserDock *dock,
 			browser->setStartupScript(script);
 		}
 	}
+
+	for (int i = 0; i < params.forcePopupUrl.size(); i++)
+		cef->add_force_popup_url(params.forcePopupUrl[i].toStdString(),
+					 dock);
 
 	api->addDockWidget(Qt::RightDockWidgetArea, dock);
 

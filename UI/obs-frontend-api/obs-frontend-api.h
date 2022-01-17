@@ -88,6 +88,7 @@ struct obs_frontend_browser_dock {
 	int min_height;
 	bool enable_cookie;
 	struct dstr startup_script;
+	DARRAY(char *) force_popup_url;
 };
 
 static inline void
@@ -95,6 +96,9 @@ obs_frontend_browser_dock_free(struct obs_frontend_browser_dock *params)
 {
 	if (params->startup_script.len > 0)
 		dstr_free(&params->startup_script);
+
+	if (params->force_popup_url.num > 0)
+		da_free(params->force_popup_url);
 }
 #endif //!SWIG
 

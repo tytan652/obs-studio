@@ -128,6 +128,7 @@ struct BrowserDockParam {
 	QString url;
 	bool enableCookie;
 	QString startupScript;
+	QStringList forcePopupUrl;
 };
 #endif
 

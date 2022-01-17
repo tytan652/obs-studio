@@ -212,6 +212,7 @@ Structures/Enumerations
    - int **min_height**
    - bool **enable_cookie**
    - struct dstr **startup_script**
+   - DARRAY(char \*) **force_popup_url**
 
    This struture was made allow to pass more parameter when creating a browser dock.
 
