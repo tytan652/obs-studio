@@ -192,6 +192,27 @@ Structures/Enumerations
 
    obs_frontend_source_list_free(&scenes);
 
+.. type:: struct obs_frontend_browser_dock
+
+   - const char **\*id**
+
+     A unique ID used to identify this dock
+
+   - const char **\*title**
+
+     Name of the dock to create
+
+   - const char **\*url**
+
+     URL of page to show in the new dock
+
+   - int **width**
+   - int **height**
+   - int **min_width**
+   - int **min_height**
+
+   This struture was made allow to pass more parameter when creating a browser dock.
+
 .. type:: typedef void (*obs_frontend_cb)(void *private_data)
 
    Frontend tool menu callback
@@ -423,16 +444,14 @@ Functions
 
 ---------------------------------------
 
-.. function:: void *obs_frontend_add_browser_dock(const char *id, const char *title, const char *url)
+.. function:: void *obs_frontend_add_browser_dock(struct obs_frontend_browser_dock *params)
 
    Adds a plugin-controlled browser dock to the UI. The dock will automatically
    be added to the Docks menu, however in order to retrieve the associated
    QAction, you must call :c:func:`obs_frontend_add_dock()` with the returned
    pointer.
 
-   :param id: A unique ID used to identify this dock
-   :param title: Name of the dock to create
-   :param url: URL of page to show in the new dock
+   :param params: Parameters given to the browser dock
    :return: A pointer to a new QDockWidget
 
 ---------------------------------------

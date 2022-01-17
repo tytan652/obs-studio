@@ -549,8 +549,7 @@ private:
 	QList<QPointer<QDockWidget>> pluginBrowserDocks;
 
 	void LoadPluginBrowserDocks();
-	void *AddPluginBrowserDock(const QString &id, const QString &title,
-				   const QString &url);
+	void *AddPluginBrowserDock(struct obs_frontend_browser_dock *params);
 	void RemovePluginBrowserDock(QDockWidget *dock);
 
 #endif

@@ -365,19 +365,13 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return (void *)main->AddDockWidget((QDockWidget *)dock);
 	}
 
-	void *obs_frontend_add_browser_dock(const char *id, const char *title,
-					    const char *url) override
+	void *obs_frontend_add_browser_dock(
+		struct obs_frontend_browser_dock *params) override
 	{
 #ifdef BROWSER_AVAILABLE
-		QString qstrID = QT_UTF8(id);
-		QString qstrTitle = QT_UTF8(title);
-		QString qstrURL = QT_UTF8(url);
-
-		return main->AddPluginBrowserDock(qstrID, qstrTitle, qstrURL);
+		return main->AddPluginBrowserDock(params);
 #else
-		UNUSED_PARAMETER(id);
-		UNUSED_PARAMETER(title);
-		UNUSED_PARAMETER(url);
+		UNUSED_PARAMETER(params);
 		return nullptr;
 #endif
 	}

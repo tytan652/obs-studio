@@ -567,26 +567,34 @@ void OBSBasic::LoadPluginBrowserDocks()
 	}
 }
 
-void *OBSBasic::AddPluginBrowserDock(const QString &id, const QString &title,
-				     const QString &url)
+void *OBSBasic::AddPluginBrowserDock(struct obs_frontend_browser_dock *params)
 {
 
 	BrowserDock *dock = new BrowserDock();
 	QString bId(QUuid::createUuid().toString());
 	bId.replace(QRegularExpression("[{}-]"), "");
 	dock->setProperty("uuid", bId);
-	dock->setObjectName(id + "_pluginBrowser");
-	dock->resize(460, 600);
-	dock->setMinimumSize(80, 80);
-	dock->setWindowTitle(title);
+	dock->setObjectName(QT_UTF8(params->id) + "_pluginBrowser");
+
+	if (params->width >= 80 && params->height >= 80)
+		dock->resize(params->width, params->height);
+	else
+		dock->resize(460, 600);
+
+	if (params->min_width > 80 && params->min_height > 80)
+		dock->setMinimumSize(params->min_width, params->min_height);
+	else
+		dock->setMinimumSize(80, 80);
+
+	dock->setWindowTitle(QT_UTF8(params->title));
 	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 	dock->setVisible(false);
 
 	pluginBrowserDocks.push_back(dock);
-	pluginBrowserDockTargets.push_back(url);
+	pluginBrowserDockTargets.push_back(QT_UTF8(params->url));
 
 	if (cef) {
-		(void)PrepareBrowserDockWindow(this, dock, url, true);
+		(void)PrepareBrowserDockWindow(this, dock, QT_UTF8(params->url), true);
 	}
 
 	return static_cast<QDockWidget *>(dock);

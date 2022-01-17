@@ -324,12 +324,10 @@ void *obs_frontend_add_dock(void *dock)
 	return !!callbacks_valid() ? c->obs_frontend_add_dock(dock) : nullptr;
 }
 
-void *obs_frontend_add_browser_dock(const char *id, const char *title,
-				    const char *url)
+void *obs_frontend_add_browser_dock(struct obs_frontend_browser_dock *params)
 {
-	return !!callbacks_valid()
-		       ? c->obs_frontend_add_browser_dock(id, title, url)
-		       : nullptr;
+	return !!callbacks_valid() ? c->obs_frontend_add_browser_dock(params)
+				   : nullptr;
 }
 
 void obs_frontend_remove_browser_dock(void *dock)

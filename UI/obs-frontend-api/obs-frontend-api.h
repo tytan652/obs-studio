@@ -77,6 +77,15 @@ obs_frontend_source_list_free(struct obs_frontend_source_list *source_list)
 	da_free(source_list->sources);
 }
 
+struct obs_frontend_browser_dock {
+	const char *id;
+	const char *title;
+	const char *url;
+	int width;
+	int height;
+	int min_width;
+	int min_height;
+};
 #endif //!SWIG
 
 /* ------------------------------------------------------------------------- */
@@ -136,8 +145,8 @@ EXPORT void obs_frontend_add_tools_menu_item(const char *name,
 /* takes QDockWidget and returns QAction */
 EXPORT void *obs_frontend_add_dock(void *dock);
 /* returns QDockWidget */
-EXPORT void *obs_frontend_add_browser_dock(const char *id, const char *title,
-					   const char *url);
+EXPORT void *
+obs_frontend_add_browser_dock(struct obs_frontend_browser_dock *params);
 /* takes QDockWidget, calls delete on dock and its corresponding QAction */
 EXPORT void obs_frontend_remove_browser_dock(void *dock);
 
