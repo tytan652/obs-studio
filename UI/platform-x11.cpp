@@ -21,12 +21,14 @@
 
 #include <QGuiApplication>
 #include <QScreen>
+#include <QStandardPaths>
 
 #include <unistd.h>
 #include <sstream>
 #include <locale.h>
 
 #include "platform.hpp"
+#include "ui-config.h"
 
 #ifdef __linux__
 #include <sys/socket.h>
@@ -208,6 +210,15 @@ bool InitApplicationBundle()
 
 string GetDefaultVideoSavePath()
 {
+#ifdef USE_XDG
+	string xdg_dir =
+		QStandardPaths::writableLocation(QStandardPaths::MoviesLocation)
+			.toStdString();
+
+	if (!xdg_dir.empty())
+		return xdg_dir;
+#endif
+
 	return string(getenv("HOME"));
 }
 
