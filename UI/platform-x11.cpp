@@ -21,12 +21,14 @@
 
 #include <QGuiApplication>
 #include <QScreen>
+#include <QProcess>
 
 #include <unistd.h>
 #include <sstream>
 #include <locale.h>
 
 #include "platform.hpp"
+#include "ui-config.h"
 
 #ifdef __linux__
 #include <sys/socket.h>
@@ -208,6 +210,27 @@ bool InitApplicationBundle()
 
 string GetDefaultVideoSavePath()
 {
+#ifdef USE_XDG
+	char path[512];
+	os_get_config_path(path, sizeof(path), "user-dirs.dirs");
+
+	QString command("source ");
+	command += path;
+	command += "; echo $XDG_VIDEOS_DIR";
+
+	QProcess process;
+	process.setProgram("sh");
+	process.setArguments(QStringList() << "-c" << command);
+	process.start();
+	process.waitForFinished(-1);
+
+	QString video_dir = process.readAllStandardOutput();
+	video_dir.replace("\n", "");
+
+	if (!video_dir.isEmpty())
+		return video_dir.toStdString();
+#endif
+
 	return string(getenv("HOME"));
 }
 
