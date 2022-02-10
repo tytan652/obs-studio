@@ -620,6 +620,9 @@ void OBSBasic::RemovePluginBrowserDock(QDockWidget *dock)
 			delete action;
 		}
 	}
+	int dock_index = pluginBrowserDocks.indexOf(dock);
+	pluginBrowserDockParams.removeAt(dock_index);
+	pluginBrowserDocks.removeAt(dock_index);
 	delete dock;
 }
 
