@@ -574,6 +574,13 @@ void OBSBasic::LoadPluginBrowserDocks()
 
 void *OBSBasic::AddPluginBrowserDock(struct obs_frontend_browser_dock *params)
 {
+	/* prune deleted plugin browser docks */
+	for (int i = pluginBrowserDocks.size() - 1; i >= 0; i--) {
+		if (!pluginBrowserDocks[i]) {
+			pluginBrowserDockParams.removeAt(i);
+			pluginBrowserDocks.removeAt(i);
+		}
+	}
 	BrowserDockParam dockParam;
 	dockParam.url = QT_UTF8(params->url);
 	dockParam.enableCookie = params->enable_cookie;
