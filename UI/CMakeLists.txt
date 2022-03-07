@@ -107,6 +107,7 @@ target_sources(
           forms/OBSBasicInteraction.ui
           forms/OBSBasicMixer.ui
           forms/OBSBasicSettings.ui
+          forms/OBSBasicSources.ui
           forms/OBSBasicSourceSelect.ui
           forms/OBSBasicTransform.ui
           forms/OBSBasicTransitions.ui
@@ -259,6 +260,8 @@ target_sources(
           window-basic-settings.cpp
           window-basic-settings.hpp
           window-basic-settings-stream.cpp
+          window-basic-sources.cpp
+          window-basic-sources.hpp
           window-basic-source-select.cpp
           window-basic-source-select.hpp
           window-basic-stats.cpp

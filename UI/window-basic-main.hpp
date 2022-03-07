@@ -53,9 +53,11 @@
 
 class QMessageBox;
 class QListWidgetItem;
+class SourceTreeItem;
 class VolControl;
 class OBSBasicControls;
 class OBSBasicMixer;
+class OBSBasicSources;
 class OBSBasicStats;
 
 #include "ui_OBSBasic.h"
@@ -188,6 +190,7 @@ class OBSBasic : public OBSMainWindow {
 	friend struct OBSStudioAPI;
 
 	// Allow those classes to connect OBSBasic private slots
+	friend class OBSBasicSources;
 	friend class OBSBasicMixer;
 	friend class OBSBasicTransitions;
 	friend class OBSBasicControls;
@@ -614,6 +617,10 @@ private:
 
 	bool IsRecordingPausable();
 
+	/* Sources dock */
+	QPointer<OBSBasicSources> sourcesWidget;
+	QPointer<QDockWidget> sourcesDock;
+
 	/* Mixer dock */
 	QPointer<OBSBasicMixer> mixerWidget;
 	QPointer<QDockWidget> mixerDock;
@@ -1015,14 +1022,14 @@ private slots:
 	void on_actionRemoveScene_triggered();
 	void on_actionSceneUp_triggered();
 	void on_actionSceneDown_triggered();
-	void on_sources_customContextMenuRequested(const QPoint &pos);
+	void SourcesContextMenuRequested(const QPoint &pos);
 	void on_scenes_itemDoubleClicked(QListWidgetItem *item);
-	void on_actionAddSource_triggered();
-	void on_actionRemoveSource_triggered();
+	void AddSourceActionTriggered();
+	void RemoveSourceActionTriggered();
 	void on_actionInteract_triggered();
-	void on_actionSourceProperties_triggered();
-	void on_actionSourceUp_triggered();
-	void on_actionSourceDown_triggered();
+	void SourcePropertiesActionTriggered();
+	void SourceUpActionTriggered();
+	void SourceDownActionTriggered();
 
 	void on_actionMoveUp_triggered();
 	void on_actionMoveDown_triggered();
