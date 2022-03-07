@@ -260,6 +260,14 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->previewDisabledWidget->setVisible(false);
 	ui->contextContainer->setStyle(new OBSContextBarProxyStyle);
 
+	/* Add transitions dock */
+	transitionsWidget = new OBSBasicTransitions(this);
+	transitionsDock = new OBSDock(this);
+	transitionsDock->setObjectName("transitionsDock");
+	transitionsDock->setWindowTitle(QTStr("Basic.SceneTransitions"));
+	transitionsDock->setWidget(transitionsWidget);
+	addDockWidget(Qt::BottomDockWidgetArea, transitionsDock);
+
 	/* Add controls dock */
 	controlsWidget = new OBSBasicControls(this);
 	controlsDock = new OBSDock(this);
@@ -407,8 +415,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	assignDockToggle(ui->scenesDock, ui->toggleScenes);
 	assignDockToggle(ui->sourcesDock, ui->toggleSources);
 	assignDockToggle(ui->mixerDock, ui->toggleMixer);
-	assignDockToggle(ui->transitionsDock, ui->toggleTransitions);
-	assignDockToggle(controlsDock, ui->toggleControls);
+	assignDockToggle(transitionsDock.data(), ui->toggleTransitions);
+	assignDockToggle(controlsDock.data(), ui->toggleControls);
 	assignDockToggle(statsDock, ui->toggleStats);
 
 	// Register shortcuts for Undo/Redo
@@ -710,8 +718,8 @@ void OBSBasic::Save(const char *file)
 	OBSDataArrayAutoRelease quickTrData = SaveQuickTransitions();
 	OBSDataArrayAutoRelease savedProjectorList = SaveProjectors();
 	OBSDataAutoRelease saveData = GenerateSaveData(
-		sceneOrder, quickTrData, ui->transitionDuration->value(),
-		transitions, scene, curProgramScene, savedProjectorList);
+		sceneOrder, quickTrData, GetTransitionDuration(), transitions,
+		scene, curProgramScene, savedProjectorList);
 
 	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled",
@@ -813,7 +821,7 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	ClearSceneData();
 	InitDefaultTransitions();
 	CreateDefaultQuickTransitions();
-	ui->transitionDuration->setValue(300);
+	SetTransitionDuration(300);
 	SetTransition(fadeTransition);
 
 	OBSSceneAutoRelease scene = obs_scene_create(Str("Basic.Scene"));
@@ -1063,7 +1071,7 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 	if (!curTransition)
 		curTransition = fadeTransition;
 
-	ui->transitionDuration->setValue(newDuration);
+	SetTransitionDuration(newDuration);
 	SetTransition(curTransition);
 
 retryScene:
@@ -4224,11 +4232,6 @@ void OBSBasic::SetService(obs_service_t *newService)
 	}
 }
 
-int OBSBasic::GetTransitionDuration()
-{
-	return ui->transitionDuration->value();
-}
-
 bool OBSBasic::Active() const
 {
 	if (!outputHandler)
@@ -4569,7 +4572,7 @@ void OBSBasic::ClearSceneData()
 	ClearListItems(ui->scenes);
 	ui->sources->Clear();
 	ClearQuickTransitions();
-	ui->transitions->clear();
+	transitionsWidget->ui->transitions->clear();
 
 	ClearProjectors();
 
@@ -8773,7 +8776,7 @@ void OBSBasic::on_resetUI_triggered()
 	int mixerSize = cx - (cx22_5 * 2 + cx5 * 2);
 
 	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock,
-				   ui->mixerDock, ui->transitionsDock,
+				   ui->mixerDock, transitionsDock.data(),
 				   controlsDock.data()};
 
 	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx5};
@@ -8781,7 +8784,7 @@ void OBSBasic::on_resetUI_triggered()
 	ui->scenesDock->setVisible(true);
 	ui->sourcesDock->setVisible(true);
 	ui->mixerDock->setVisible(true);
-	ui->transitionsDock->setVisible(true);
+	transitionsDock->setVisible(true);
 	controlsDock->setVisible(true);
 	statsDock->setVisible(false);
 	statsDock->setFloating(true);
@@ -8806,7 +8809,7 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 	ui->scenesDock->setFeatures(mainFeatures);
 	ui->sourcesDock->setFeatures(mainFeatures);
 	ui->mixerDock->setFeatures(mainFeatures);
-	ui->transitionsDock->setFeatures(mainFeatures);
+	transitionsDock->setFeatures(mainFeatures);
 	controlsDock->setFeatures(mainFeatures);
 	statsDock->setFeatures(features);
 

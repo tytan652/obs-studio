@@ -108,6 +108,7 @@ target_sources(
           forms/OBSBasicSettings.ui
           forms/OBSBasicSourceSelect.ui
           forms/OBSBasicTransform.ui
+          forms/OBSBasicTransitions.ui
           forms/OBSExtraBrowsers.ui
           forms/OBSImporter.ui
           forms/OBSLogReply.ui
@@ -250,6 +251,8 @@ target_sources(
           window-basic-preview.cpp
           window-basic-properties.cpp
           window-basic-properties.hpp
+          window-basic-transitions.cpp
+          window-basic-transitions.hpp
           window-basic-settings.cpp
           window-basic-settings.hpp
           window-basic-settings-stream.cpp
