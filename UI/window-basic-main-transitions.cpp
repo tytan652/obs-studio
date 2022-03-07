@@ -999,7 +999,8 @@ void OBSBasic::on_tbar_position_valueChanged(int value)
 
 	UNUSED_PARAMETER(value);
 }
-void OBSBasic::on_modeSwitch_clicked()
+
+void OBSBasic::ModeSwitchActionTriggered()
 {
 	SetPreviewProgramMode(!IsPreviewProgramMode());
 }
@@ -1625,7 +1626,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 	ui->previewLabel->setHidden(!enabled);
 
-	ui->modeSwitch->setChecked(enabled);
+	emit PreviewProgramModeChanged(enabled);
 	os_atomic_set_bool(&previewProgramMode, enabled);
 
 	if (IsPreviewProgramMode()) {
