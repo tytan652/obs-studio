@@ -33,6 +33,7 @@
 #include "window-basic-interaction.hpp"
 #include "window-basic-properties.hpp"
 #include "window-basic-transform.hpp"
+#include "window-basic-transitions.hpp"
 #include "window-basic-adv-audio.hpp"
 #include "window-basic-filters.hpp"
 #include "window-missing-files.hpp"
@@ -185,7 +186,8 @@ class OBSBasic : public OBSMainWindow {
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
 
-	// Allow this class to connect OBSBasic private slots
+	// Allow those classes to connect OBSBasic private slots
+	friend class OBSBasicTransitions;
 	friend class OBSBasicControls;
 
 	enum class MoveDir { Up, Down, Left, Right };
@@ -610,6 +612,15 @@ private:
 	bool drawSafeAreas = false;
 
 	bool IsRecordingPausable();
+
+	/* Transitions dock */
+	QPointer<OBSBasicTransitions> transitionsWidget;
+	QPointer<QDockWidget> transitionsDock;
+	int transitionDuration = 300;
+	inline QComboBox *GetTransitions()
+	{
+		return transitionsWidget->ui->transitions;
+	}
 
 	/* Controls dock */
 	QPointer<OBSBasicControls> controlsWidget;
@@ -1063,10 +1074,10 @@ private slots:
 	void on_toggleStatusBar_toggled(bool visible);
 	void on_toggleSourceIcons_toggled(bool visible);
 
-	void on_transitions_currentIndexChanged(int index);
+	void TransitionsCurrentIndexChanged(int index);
 	void RemoveTransitionClicked();
-	void on_transitionProps_clicked();
-	void on_transitionDuration_valueChanged(int value);
+	void TransitionPropsClicked();
+	void SetTransitionDuration(int duration);
 	void on_tbar_position_valueChanged(int value);
 
 	void on_actionShowTransitionProperties_triggered();
@@ -1167,6 +1178,11 @@ private:
 	std::unique_ptr<Ui::OBSBasic> ui;
 
 signals:
+	// Transitions signals
+	void CurrentTransitionChanged(bool has_duration, bool has_config);
+	void TransitionPropsEnabled(bool enabled);
+	void TransitionDurationChanged(int duration);
+
 	// Streaming signals
 	void StreamingStarting(bool broadcast_auto_start);
 	void StreamingStartAborted();
