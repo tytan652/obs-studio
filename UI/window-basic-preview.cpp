@@ -7,6 +7,7 @@
 #include <graphics/matrix4.h>
 #include "window-basic-preview.hpp"
 #include "window-basic-main.hpp"
+#include "window-basic-central.hpp"
 #include "obs-app.hpp"
 #include "platform.hpp"
 
@@ -2005,5 +2006,5 @@ void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal)
 
 OBSBasicPreview *OBSBasicPreview::Get()
 {
-	return OBSBasic::Get()->ui->preview;
+	return OBSBasic::Get()->centralWidget->ui->preview;
 }

@@ -56,6 +56,7 @@ class QMessageBox;
 class QListWidgetItem;
 class SourceTreeItem;
 class VolControl;
+class OBSBasicCentral;
 class OBSBasicControls;
 class OBSBasicMixer;
 class OBSBasicSources;
@@ -191,6 +192,7 @@ class OBSBasic : public OBSMainWindow {
 	friend struct OBSStudioAPI;
 
 	// Allow those classes to connect OBSBasic private slots
+	friend class OBSBasicCentral;
 	friend class OBSBasicScenes;
 	friend class OBSBasicSources;
 	friend class OBSBasicMixer;
@@ -618,6 +620,9 @@ private:
 	bool drawSafeAreas = false;
 
 	bool IsRecordingPausable();
+
+	/* Central widget */
+	QPointer<OBSBasicCentral> centralWidget;
 
 	/* Scenes dock */
 	QPointer<OBSBasicScenes> scenesWidget;
@@ -1135,7 +1140,6 @@ private slots:
 	void OpenProperties(OBSSource source = nullptr);
 	void OpenInteraction(OBSSource source = nullptr);
 
-	void EnablePreviewDisplay(bool enable);
 	void TogglePreview();
 
 	void NudgeUp();
@@ -1171,7 +1175,6 @@ public slots:
 	bool ReplayBufferActive();
 	bool VirtualCamActive();
 
-	void ClearContextBar();
 	void UpdateContextBar(bool force = false);
 	void UpdateContextBarDeferred(bool force = false);
 	void UpdateContextBarVisibility();
