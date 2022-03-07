@@ -21,6 +21,7 @@
 #include <QMessageBox>
 #include <util/dstr.hpp>
 #include "window-basic-main.hpp"
+#include "window-basic-central.hpp"
 #include "window-basic-sources.hpp"
 #include "display-helpers.hpp"
 #include "window-namedialog.hpp"
@@ -1652,14 +1653,14 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 	if (IsPreviewProgramMode() == enabled)
 		return;
 
-	ui->previewLabel->setHidden(!enabled);
+	centralWidget->ui->previewLabel->setHidden(!enabled);
 
 	emit PreviewProgramModeChanged(enabled);
 	os_atomic_set_bool(&previewProgramMode, enabled);
 
 	if (IsPreviewProgramMode()) {
 		if (!previewEnabled)
-			EnablePreviewDisplay(true);
+			centralWidget->EnablePreviewDisplay(true);
 
 		CreateProgramDisplay();
 		CreateProgramOptions();
@@ -1714,10 +1715,10 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		programWidget->setLayout(programLayout);
 
-		ui->previewLayout->addWidget(programOptions);
-		ui->previewLayout->addWidget(programWidget);
-		ui->previewLayout->setAlignment(programOptions,
-						Qt::AlignCenter);
+		centralWidget->ui->previewLayout->addWidget(programOptions);
+		centralWidget->ui->previewLayout->addWidget(programWidget);
+		centralWidget->ui->previewLayout->setAlignment(programOptions,
+							       Qt::AlignCenter);
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
@@ -1753,7 +1754,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 			qt.button = nullptr;
 
 		if (!previewEnabled)
-			EnablePreviewDisplay(false);
+			centralWidget->EnablePreviewDisplay(false);
 
 		transitionsWidget->ui->transitions->setEnabled(true);
 		tBarActive = false;

@@ -102,6 +102,7 @@ target_sources(
           forms/ColorSelect.ui
           forms/OBSAbout.ui
           forms/OBSBasic.ui
+          forms/OBSBasicCentral.ui
           forms/OBSBasicControls.ui
           forms/OBSBasicFilters.ui
           forms/OBSBasicInteraction.ui
@@ -234,6 +235,8 @@ target_sources(
           window-basic-auto-config-test.cpp
           window-basic-adv-audio.cpp
           window-basic-adv-audio.hpp
+          window-basic-central.cpp
+          window-basic-central.hpp
           window-basic-controls.cpp
           window-basic-controls.hpp
           window-basic-filters.cpp

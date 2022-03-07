@@ -50,6 +50,7 @@
 #include "window-basic-auto-config.hpp"
 #include "window-basic-source-select.hpp"
 #include "window-basic-main.hpp"
+#include "window-basic-central.hpp"
 #include "window-basic-controls.hpp"
 #include "window-basic-sources.hpp"
 #include "window-basic-mixer.hpp"
@@ -66,7 +67,6 @@
 #endif
 #include "qt-wrappers.hpp"
 #include "context-bar-controls.hpp"
-#include "obs-proxy-style.hpp"
 #include "display-helpers.hpp"
 #include "volume-control.hpp"
 #include "remote-text.hpp"
@@ -260,8 +260,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 	api = InitializeAPIInterface(this);
 
 	ui->setupUi(this);
-	ui->previewDisabledWidget->setVisible(false);
-	ui->contextContainer->setStyle(new OBSContextBarProxyStyle);
+
+	/* Add central widget */
+	centralWidget = new OBSBasicCentral(this);
+	setCentralWidget(centralWidget);
 
 	/* Add scenes dock */
 	scenesWidget = new OBSBasicScenes(this);
@@ -351,7 +353,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	};
 
 	connect(windowHandle(), &QWindow::screenChanged, displayResize);
-	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
+	connect(centralWidget->ui->preview, &OBSQTDisplay::DisplayResized,
+		displayResize);
 
 	delete shortcutFilter;
 	shortcutFilter = CreateShortcutFilter();
@@ -402,10 +405,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 #endif
 
 	auto addNudge = [this](const QKeySequence &seq, const char *s) {
-		QAction *nudge = new QAction(ui->preview);
+		QAction *nudge = new QAction(centralWidget->ui->preview);
 		nudge->setShortcut(seq);
 		nudge->setShortcutContext(Qt::WidgetShortcut);
-		ui->preview->addAction(nudge);
+		centralWidget->ui->preview->addAction(nudge);
 		connect(nudge, SIGNAL(triggered()), this, s);
 	};
 
@@ -476,24 +479,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 	QPoint statsDockPos = curSize / 2 - statsDockSize / 2;
 	QPoint newPos = curPos + statsDockPos;
 	statsDock->move(newPos);
-
-	ui->previewLabel->setProperty("themeID", "previewProgramLabels");
-	ui->previewLabel->style()->polish(ui->previewLabel);
-
-	bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
-				      "StudioModeLabels");
-
-	if (!previewProgramMode)
-		ui->previewLabel->setHidden(true);
-	else
-		ui->previewLabel->setHidden(!labels);
-
-	ui->previewDisabledWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(ui->previewDisabledWidget,
-		SIGNAL(customContextMenuRequested(const QPoint &)), this,
-		SLOT(PreviewDisabledMenu(const QPoint &)));
-	connect(ui->enablePreviewButton, SIGNAL(clicked()), this,
-		SLOT(TogglePreview()));
 
 	UpdatePreviewSafeAreas();
 }
@@ -705,15 +690,16 @@ void OBSBasic::Save(const char *file)
 		sceneOrder, quickTrData, GetTransitionDuration(), transitions,
 		scene, curProgramScene, savedProjectorList);
 
-	obs_data_set_bool(saveData, "preview_locked", ui->preview->Locked());
+	obs_data_set_bool(saveData, "preview_locked",
+			  centralWidget->ui->preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled",
-			  ui->preview->IsFixedScaling());
+			  centralWidget->ui->preview->IsFixedScaling());
 	obs_data_set_int(saveData, "scaling_level",
-			 ui->preview->GetScalingLevel());
+			 centralWidget->ui->preview->GetScalingLevel());
 	obs_data_set_double(saveData, "scaling_off_x",
-			    ui->preview->GetScrollX());
+			    centralWidget->ui->preview->GetScrollX());
 	obs_data_set_double(saveData, "scaling_off_y",
-			    ui->preview->GetScrollY());
+			    centralWidget->ui->preview->GetScrollY());
 
 	if (api) {
 		OBSDataAutoRelease moduleObj = obs_data_create();
@@ -968,7 +954,7 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 {
 	ClearSceneData();
 	InitDefaultTransitions();
-	ClearContextBar();
+	centralWidget->ClearContextBar();
 
 	if (devicePropertiesThread && devicePropertiesThread->isRunning()) {
 		devicePropertiesThread->wait();
@@ -1112,7 +1098,7 @@ retryScene:
 	RefreshQuickTransitions();
 
 	bool previewLocked = obs_data_get_bool(data, "preview_locked");
-	ui->preview->SetLocked(previewLocked);
+	centralWidget->ui->preview->SetLocked(previewLocked);
 	ui->actionLockPreview->setChecked(previewLocked);
 
 	/* ---------------------- */
@@ -1123,11 +1109,12 @@ retryScene:
 	float scrollOffY = (float)obs_data_get_double(data, "scaling_off_y");
 
 	if (fixedScaling) {
-		ui->preview->SetScalingLevel(scalingLevel);
-		ui->preview->SetScrollingOffset(scrollOffX, scrollOffY);
+		centralWidget->ui->preview->SetScalingLevel(scalingLevel);
+		centralWidget->ui->preview->SetScrollingOffset(scrollOffX,
+							       scrollOffY);
 	}
-	ui->preview->SetFixedScaling(fixedScaling);
-	emit ui->preview->DisplayResized();
+	centralWidget->ui->preview->SetFixedScaling(fixedScaling);
+	emit centralWidget->ui->preview->DisplayResized();
 
 	/* ---------------------- */
 
@@ -1829,7 +1816,7 @@ void OBSBasic::OBSInit()
 	bool contextVisible = config_get_bool(
 		App()->GlobalConfig(), "BasicWindow", "ShowContextToolbars");
 	ui->toggleContextBar->setChecked(contextVisible);
-	ui->contextContainer->setVisible(contextVisible);
+	centralWidget->ui->contextContainer->setVisible(contextVisible);
 	if (contextVisible)
 		UpdateContextBar(true);
 	UpdateEditMenu();
@@ -1848,7 +1835,7 @@ void OBSBasic::OBSInit()
 					 "PreviewEnabled");
 
 	if (!previewEnabled && !IsPreviewProgramMode())
-		QMetaObject::invokeMethod(this, "EnablePreviewDisplay",
+		QMetaObject::invokeMethod(centralWidget, "EnablePreviewDisplay",
 					  Qt::QueuedConnection,
 					  Q_ARG(bool, previewEnabled));
 
@@ -1874,7 +1861,8 @@ void OBSBasic::OBSInit()
 			ResizePreview(ovi.base_width, ovi.base_height);
 	};
 
-	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDisplay);
+	connect(centralWidget->ui->preview, &OBSQTDisplay::DisplayCreated,
+		addDisplay);
 
 	/* Show the main window, unless the tray icon isn't available
 	 * or neither the setting nor flag for starting minimized is set. */
@@ -2458,9 +2446,9 @@ void OBSBasic::CreateHotkeys()
 	contextBarHotkeys = obs_hotkey_pair_register_frontend(
 		"OBSBasic.ShowContextBar", Str("Basic.Main.ShowContextBar"),
 		"OBSBasic.HideContextBar", Str("Basic.Main.HideContextBar"),
-		MAKE_CALLBACK(!basic.ui->contextContainer->isVisible(),
+		MAKE_CALLBACK(!basic.centralWidget->IsContextContainerVisible(),
 			      basic.ShowContextBar, "Showing Context Bar"),
-		MAKE_CALLBACK(basic.ui->contextContainer->isVisible(),
+		MAKE_CALLBACK(basic.centralWidget->IsContextContainerVisible(),
 			      basic.HideContextBar, "Hiding Context Bar"),
 		this, this);
 	LoadHotkeyPair(contextBarHotkeys, "OBSBasic.ShowContextBar",
@@ -2611,8 +2599,9 @@ OBSBasic::~OBSBasic()
 	if (about)
 		delete about;
 
-	obs_display_remove_draw_callback(ui->preview->GetDisplay(),
-					 OBSBasic::RenderMain, this);
+	obs_display_remove_draw_callback(
+		centralWidget->ui->preview->GetDisplay(), OBSBasic::RenderMain,
+		this);
 
 	obs_enter_graphics();
 	gs_vertexbuffer_destroy(box);
@@ -2758,8 +2747,8 @@ OBSSceneItem OBSBasic::GetCurrentSceneItem()
 
 void OBSBasic::UpdatePreviewScalingMenu()
 {
-	bool fixedScaling = ui->preview->IsFixedScaling();
-	float scalingAmount = ui->preview->GetScalingAmount();
+	bool fixedScaling = centralWidget->ui->preview->IsFixedScaling();
+	float scalingAmount = centralWidget->ui->preview->GetScalingAmount();
 	if (!fixedScaling) {
 		ui->actionScaleWindow->setChecked(true);
 		ui->actionScaleCanvas->setChecked(false);
@@ -2998,18 +2987,9 @@ void OBSBasic::RenameSources(OBSSource source, QString newName,
 	UpdateContextBar();
 }
 
-void OBSBasic::ClearContextBar()
-{
-	QLayoutItem *la = ui->emptySpace->layout()->itemAt(0);
-	if (la) {
-		delete la->widget();
-		ui->emptySpace->layout()->removeItem(la);
-	}
-}
-
 void OBSBasic::UpdateContextBarVisibility()
 {
-	int width = ui->centralwidget->size().width();
+	int width = centralWidget->size().width();
 
 	ContextBarSize contextBarSizeNew;
 	if (width >= 740) {
@@ -3046,7 +3026,7 @@ void OBSBasic::UpdateContextBarDeferred(bool force)
 
 void OBSBasic::UpdateContextBar(bool force)
 {
-	if (!ui->contextContainer->isVisible() && !force)
+	if (!centralWidget->IsContextContainerVisible() && !force)
 		return;
 
 	OBSSceneItem item = GetCurrentSceneItem();
@@ -3055,7 +3035,8 @@ void OBSBasic::UpdateContextBar(bool force)
 		obs_source_t *source = obs_sceneitem_get_source(item);
 
 		bool updateNeeded = true;
-		QLayoutItem *la = ui->emptySpace->layout()->itemAt(0);
+		QLayoutItem *la =
+			centralWidget->ui->emptySpace->layout()->itemAt(0);
 		if (la) {
 			if (SourceToolbar *toolbar =
 				    dynamic_cast<SourceToolbar *>(
@@ -3073,26 +3054,28 @@ void OBSBasic::UpdateContextBar(bool force)
 		const char *id = obs_source_get_unversioned_id(source);
 		uint32_t flags = obs_source_get_output_flags(source);
 
-		ui->sourceInteractButton->setVisible(flags &
-						     OBS_SOURCE_INTERACTION);
+		centralWidget->ui->sourceInteractButton->setVisible(
+			flags & OBS_SOURCE_INTERACTION);
 
 		if (contextBarSize >= ContextBarSize_Reduced &&
 		    (updateNeeded || force)) {
-			ClearContextBar();
+			centralWidget->ClearContextBar();
 			if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
 				if (!is_network_media_source(source, id)) {
 					MediaControls *mediaControls =
 						new MediaControls(
-							ui->emptySpace);
+							centralWidget->ui
+								->emptySpace);
 					mediaControls->SetSource(source);
 
-					ui->emptySpace->layout()->addWidget(
-						mediaControls);
+					centralWidget->ui->emptySpace->layout()
+						->addWidget(mediaControls);
 				}
 			} else if (strcmp(id, "browser_source") == 0) {
 				BrowserToolbar *c = new BrowserToolbar(
-					ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+					centralWidget->ui->emptySpace, source);
+				centralWidget->ui->emptySpace->layout()
+					->addWidget(c);
 
 			} else if (strcmp(id, "wasapi_input_capture") == 0 ||
 				   strcmp(id, "wasapi_output_capture") == 0 ||
@@ -3102,58 +3085,68 @@ void OBSBasic::UpdateContextBar(bool force)
 				   strcmp(id, "pulse_input_capture") == 0 ||
 				   strcmp(id, "pulse_output_capture") == 0 ||
 				   strcmp(id, "alsa_input_capture") == 0) {
-				AudioCaptureToolbar *c =
-					new AudioCaptureToolbar(ui->emptySpace,
-								source);
+				AudioCaptureToolbar *c = new AudioCaptureToolbar(
+					centralWidget->ui->emptySpace, source);
 				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
+				centralWidget->ui->emptySpace->layout()
+					->addWidget(c);
 
 			} else if (strcmp(id, "window_capture") == 0 ||
 				   strcmp(id, "xcomposite_input") == 0) {
 				WindowCaptureToolbar *c =
-					new WindowCaptureToolbar(ui->emptySpace,
-								 source);
+					new WindowCaptureToolbar(
+						centralWidget->ui->emptySpace,
+						source);
 				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
+				centralWidget->ui->emptySpace->layout()
+					->addWidget(c);
 
 			} else if (strcmp(id, "monitor_capture") == 0 ||
 				   strcmp(id, "display_capture") == 0 ||
 				   strcmp(id, "xshm_input") == 0) {
 				DisplayCaptureToolbar *c =
 					new DisplayCaptureToolbar(
-						ui->emptySpace, source);
+						centralWidget->ui->emptySpace,
+						source);
 				c->Init();
-				ui->emptySpace->layout()->addWidget(c);
+				centralWidget->ui->emptySpace->layout()
+					->addWidget(c);
 
 			} else if (strcmp(id, "dshow_input") == 0) {
 				DeviceCaptureToolbar *c =
-					new DeviceCaptureToolbar(ui->emptySpace,
-								 source);
-				ui->emptySpace->layout()->addWidget(c);
+					new DeviceCaptureToolbar(
+						centralWidget->ui->emptySpace,
+						source);
+				centralWidget->ui->emptySpace->layout()
+					->addWidget(c);
 
 			} else if (strcmp(id, "game_capture") == 0) {
 				GameCaptureToolbar *c = new GameCaptureToolbar(
-					ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+					centralWidget->ui->emptySpace, source);
+				centralWidget->ui->emptySpace->layout()
+					->addWidget(c);
 
 			} else if (strcmp(id, "image_source") == 0) {
 				ImageSourceToolbar *c = new ImageSourceToolbar(
-					ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+					centralWidget->ui->emptySpace, source);
+				centralWidget->ui->emptySpace->layout()
+					->addWidget(c);
 
 			} else if (strcmp(id, "color_source") == 0) {
 				ColorSourceToolbar *c = new ColorSourceToolbar(
-					ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+					centralWidget->ui->emptySpace, source);
+				centralWidget->ui->emptySpace->layout()
+					->addWidget(c);
 
 			} else if (strcmp(id, "text_ft2_source") == 0 ||
 				   strcmp(id, "text_gdiplus") == 0) {
 				TextSourceToolbar *c = new TextSourceToolbar(
-					ui->emptySpace, source);
-				ui->emptySpace->layout()->addWidget(c);
+					centralWidget->ui->emptySpace, source);
+				centralWidget->ui->emptySpace->layout()
+					->addWidget(c);
 			}
 		} else if (contextBarSize == ContextBarSize_Minimized) {
-			ClearContextBar();
+			centralWidget->ClearContextBar();
 		}
 
 		QIcon icon;
@@ -3166,36 +3159,39 @@ void OBSBasic::UpdateContextBar(bool force)
 			icon = GetSourceIcon(id);
 
 		QPixmap pixmap = icon.pixmap(QSize(16, 16));
-		ui->contextSourceIcon->setPixmap(pixmap);
-		ui->contextSourceIconSpacer->hide();
-		ui->contextSourceIcon->show();
+		centralWidget->ui->contextSourceIcon->setPixmap(pixmap);
+		centralWidget->ui->contextSourceIconSpacer->hide();
+		centralWidget->ui->contextSourceIcon->show();
 
 		const char *name = obs_source_get_name(source);
-		ui->contextSourceLabel->setText(name);
+		centralWidget->ui->contextSourceLabel->setText(name);
 
-		ui->sourceFiltersButton->setEnabled(true);
-		ui->sourcePropertiesButton->setEnabled(
+		centralWidget->ui->sourceFiltersButton->setEnabled(true);
+		centralWidget->ui->sourcePropertiesButton->setEnabled(
 			obs_source_configurable(source));
 	} else {
-		ClearContextBar();
-		ui->contextSourceIcon->hide();
-		ui->contextSourceIconSpacer->show();
-		ui->contextSourceLabel->setText(
+		centralWidget->ClearContextBar();
+		centralWidget->ui->contextSourceIcon->hide();
+		centralWidget->ui->contextSourceIconSpacer->show();
+		centralWidget->ui->contextSourceLabel->setText(
 			QTStr("ContextBar.NoSelectedSource"));
 
-		ui->sourceFiltersButton->setEnabled(false);
-		ui->sourcePropertiesButton->setEnabled(false);
-		ui->sourceInteractButton->setVisible(false);
+		centralWidget->ui->sourceFiltersButton->setEnabled(false);
+		centralWidget->ui->sourcePropertiesButton->setEnabled(false);
+		centralWidget->ui->sourceInteractButton->setVisible(false);
 	}
 
 	if (contextBarSize == ContextBarSize_Normal) {
-		ui->sourcePropertiesButton->setText(QTStr("Properties"));
-		ui->sourceFiltersButton->setText(QTStr("Filters"));
-		ui->sourceInteractButton->setText(QTStr("Interact"));
+		centralWidget->ui->sourcePropertiesButton->setText(
+			QTStr("Properties"));
+		centralWidget->ui->sourceFiltersButton->setText(
+			QTStr("Filters"));
+		centralWidget->ui->sourceInteractButton->setText(
+			QTStr("Interact"));
 	} else {
-		ui->sourcePropertiesButton->setText("");
-		ui->sourceFiltersButton->setText("");
-		ui->sourceInteractButton->setText("");
+		centralWidget->ui->sourcePropertiesButton->setText("");
+		centralWidget->ui->sourceFiltersButton->setText("");
+		centralWidget->ui->sourceInteractButton->setText("");
 	}
 }
 
@@ -4113,7 +4109,8 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 	gs_viewport_push();
 	gs_projection_push();
 
-	obs_display_t *display = window->ui->preview->GetDisplay();
+	obs_display_t *display =
+		window->centralWidget->ui->preview->GetDisplay();
 	uint32_t width, height;
 	obs_display_size(display, &width, &height);
 	float right = float(width) - window->previewX;
@@ -4122,7 +4119,7 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 	gs_ortho(-window->previewX, right, -window->previewY, bottom, -100.0f,
 		 100.0f);
 
-	window->ui->preview->DrawOverflow();
+	window->centralWidget->ui->preview->DrawOverflow();
 
 	/* --------------------------------------- */
 
@@ -4150,7 +4147,7 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 		 100.0f);
 	gs_reset_viewport();
 
-	window->ui->preview->DrawSceneEditing();
+	window->centralWidget->ui->preview->DrawSceneEditing();
 
 	uint32_t targetCX = window->previewCX;
 	uint32_t targetCY = window->previewCY;
@@ -4269,19 +4266,10 @@ static inline enum video_colorspace GetVideoColorSpaceFromName(const char *name)
 
 void OBSBasic::ResetUI()
 {
-	bool studioPortraitLayout = config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "StudioPortraitLayout");
-
 	bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
 				      "StudioModeLabels");
 
-	if (studioPortraitLayout)
-		ui->previewLayout->setDirection(QBoxLayout::TopToBottom);
-	else
-		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
-
-	if (previewProgramMode)
-		ui->previewLabel->setHidden(!labels);
+	centralWidget->ResetUI();
 
 	if (programLabel)
 		programLabel->setHidden(!labels);
@@ -4448,20 +4436,20 @@ void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
 	obs_video_info ovi;
 
 	/* resize preview panel to fix to the top section of the window */
-	targetSize = GetPixelSize(ui->preview);
+	targetSize = GetPixelSize(centralWidget->ui->preview);
 
-	isFixedScaling = ui->preview->IsFixedScaling();
+	isFixedScaling = centralWidget->ui->preview->IsFixedScaling();
 	obs_get_video_info(&ovi);
 
 	if (isFixedScaling) {
-		previewScale = ui->preview->GetScalingAmount();
+		previewScale = centralWidget->ui->preview->GetScalingAmount();
 		GetCenterPosFromFixedScale(
 			int(cx), int(cy),
 			targetSize.width() - PREVIEW_EDGE_SIZE * 2,
 			targetSize.height() - PREVIEW_EDGE_SIZE * 2, previewX,
 			previewY, previewScale);
-		previewX += ui->preview->GetScrollX();
-		previewY += ui->preview->GetScrollY();
+		previewX += centralWidget->ui->preview->GetScrollX();
+		previewY += centralWidget->ui->preview->GetScrollY();
 
 	} else {
 		GetScaleAndCenterPos(int(cx), int(cy),
@@ -4717,11 +4705,11 @@ void OBSBasic::changeEvent(QEvent *event)
 			}
 
 			if (previewEnabled)
-				EnablePreviewDisplay(false);
+				centralWidget->EnablePreviewDisplay(false);
 		} else if (stateEvent->oldState() & Qt::WindowMinimized &&
 			   isVisible()) {
 			if (previewEnabled)
-				EnablePreviewDisplay(true);
+				centralWidget->EnablePreviewDisplay(true);
 		}
 	}
 }
@@ -5439,8 +5427,8 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			QTStr("Basic.Main.PreviewConextMenu.Enable"), this,
 			SLOT(TogglePreview()));
 		action->setCheckable(true);
-		action->setChecked(
-			obs_display_enabled(ui->preview->GetDisplay()));
+		action->setChecked(obs_display_enabled(
+			centralWidget->ui->preview->GetDisplay()));
 		if (IsPreviewProgramMode())
 			action->setEnabled(false);
 
@@ -7658,7 +7646,8 @@ void OBSBasic::PreviewDisabledMenu(const QPoint &pos)
 		popup.addAction(QTStr("Basic.Main.PreviewConextMenu.Enable"),
 				this, SLOT(TogglePreview()));
 	action->setCheckable(true);
-	action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
+	action->setChecked(
+		obs_display_enabled(centralWidget->ui->preview->GetDisplay()));
 
 	previewProjectorMain = new QMenu(QTStr("PreviewProjector"));
 	AddProjectorMenuMonitors(previewProjectorMain, this,
@@ -8315,17 +8304,10 @@ void OBSBasic::on_actionHorizontalCenter_triggered()
 			  undo_redo, undo_redo, undo_data, redo_data);
 }
 
-void OBSBasic::EnablePreviewDisplay(bool enable)
-{
-	obs_display_set_enabled(ui->preview->GetDisplay(), enable);
-	ui->preview->setVisible(enable);
-	ui->previewDisabledWidget->setVisible(!enable);
-}
-
 void OBSBasic::TogglePreview()
 {
 	previewEnabled = !previewEnabled;
-	EnablePreviewDisplay(previewEnabled);
+	centralWidget->EnablePreviewDisplay(previewEnabled);
 }
 
 void OBSBasic::EnablePreview()
@@ -8334,7 +8316,7 @@ void OBSBasic::EnablePreview()
 		return;
 
 	previewEnabled = true;
-	EnablePreviewDisplay(true);
+	centralWidget->EnablePreviewDisplay(true);
 }
 
 void OBSBasic::DisablePreview()
@@ -8343,7 +8325,7 @@ void OBSBasic::DisablePreview()
 		return;
 
 	previewEnabled = false;
-	EnablePreviewDisplay(false);
+	centralWidget->EnablePreviewDisplay(false);
 }
 
 static bool nudge_callback(obs_scene_t *, obs_sceneitem_t *item, void *param)
@@ -8382,7 +8364,7 @@ static bool nudge_callback(obs_scene_t *, obs_sceneitem_t *item, void *param)
 
 void OBSBasic::Nudge(int dist, MoveDir dir)
 {
-	if (ui->preview->Locked())
+	if (centralWidget->ui->preview->Locked())
 		return;
 
 	struct vec2 offset;
@@ -8808,7 +8790,7 @@ void OBSBasic::on_toggleContextBar_toggled(bool visible)
 {
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
 			"ShowContextToolbars", visible);
-	this->ui->contextContainer->setVisible(visible);
+	centralWidget->ui->contextContainer->setVisible(visible);
 	UpdateContextBar(true);
 }
 
@@ -8832,8 +8814,8 @@ void OBSBasic::on_toggleSourceIcons_toggled(bool visible)
 
 void OBSBasic::on_actionLockPreview_triggered()
 {
-	ui->preview->ToggleLocked();
-	ui->actionLockPreview->setChecked(ui->preview->Locked());
+	centralWidget->ui->preview->ToggleLocked();
+	ui->actionLockPreview->setChecked(centralWidget->ui->preview->Locked());
 }
 
 void OBSBasic::on_scalingMenu_aboutToShow()
@@ -8860,16 +8842,16 @@ void OBSBasic::on_scalingMenu_aboutToShow()
 
 void OBSBasic::on_actionScaleWindow_triggered()
 {
-	ui->preview->SetFixedScaling(false);
-	ui->preview->ResetScrollingOffset();
-	emit ui->preview->DisplayResized();
+	centralWidget->ui->preview->SetFixedScaling(false);
+	centralWidget->ui->preview->ResetScrollingOffset();
+	emit centralWidget->ui->preview->DisplayResized();
 }
 
 void OBSBasic::on_actionScaleCanvas_triggered()
 {
-	ui->preview->SetFixedScaling(true);
-	ui->preview->SetScalingLevel(0);
-	emit ui->preview->DisplayResized();
+	centralWidget->ui->preview->SetFixedScaling(true);
+	centralWidget->ui->preview->SetScalingLevel(0);
+	emit centralWidget->ui->preview->DisplayResized();
 }
 
 void OBSBasic::on_actionScaleOutput_triggered()
@@ -8877,14 +8859,14 @@ void OBSBasic::on_actionScaleOutput_triggered()
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
-	ui->preview->SetFixedScaling(true);
+	centralWidget->ui->preview->SetFixedScaling(true);
 	float scalingAmount = float(ovi.output_width) / float(ovi.base_width);
 	// log base ZOOM_SENSITIVITY of x = log(x) / log(ZOOM_SENSITIVITY)
 	int32_t approxScalingLevel =
 		int32_t(round(log(scalingAmount) / log(ZOOM_SENSITIVITY)));
-	ui->preview->SetScalingLevel(approxScalingLevel);
-	ui->preview->SetScalingAmount(scalingAmount);
-	emit ui->preview->DisplayResized();
+	centralWidget->ui->preview->SetScalingLevel(approxScalingLevel);
+	centralWidget->ui->preview->SetScalingAmount(scalingAmount);
+	emit centralWidget->ui->preview->DisplayResized();
 }
 
 void OBSBasic::SetShowing(bool showing)
@@ -8908,7 +8890,7 @@ void OBSBasic::SetShowing(bool showing)
 		QTimer::singleShot(0, this, SLOT(hide()));
 
 		if (previewEnabled)
-			EnablePreviewDisplay(false);
+			centralWidget->EnablePreviewDisplay(false);
 
 #ifdef __APPLE__
 		EnableOSXDockIcon(false);
@@ -8920,7 +8902,7 @@ void OBSBasic::SetShowing(bool showing)
 		QTimer::singleShot(0, this, SLOT(show()));
 
 		if (previewEnabled)
-			EnablePreviewDisplay(true);
+			centralWidget->EnablePreviewDisplay(true);
 
 #ifdef __APPLE__
 		EnableOSXDockIcon(true);
@@ -9051,7 +9033,8 @@ void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 	UNUSED_PARAMETER(reason);
 #else
 	if (reason == QSystemTrayIcon::Trigger) {
-		EnablePreviewDisplay(previewEnabled && !isVisible());
+		centralWidget->EnablePreviewDisplay(previewEnabled &&
+						    !isVisible());
 		ToggleShowHide();
 	}
 #endif
@@ -9088,7 +9071,7 @@ void OBSBasic::SystemTray(bool firstStarted)
 	} else {
 		trayIcon->show();
 		if (firstStarted && (sysTrayWhenStarted || opt_minimize_tray)) {
-			EnablePreviewDisplay(false);
+			centralWidget->EnablePreviewDisplay(false);
 #ifdef __APPLE__
 			EnableOSXDockIcon(false);
 #endif

@@ -2,6 +2,8 @@
 
 #include <util/util.hpp>
 
+#include "obs-app.hpp"
+
 #define MAX_STACK_SIZE 5000
 
 undo_stack::undo_stack(ui_ptr ui) : ui(ui)
