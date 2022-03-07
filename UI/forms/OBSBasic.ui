@@ -840,155 +840,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="OBSDock" name="sourcesDock">
-   <property name="features">
-    <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
-   </property>
-   <property name="windowTitle">
-    <string>Basic.Main.Sources</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>8</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_6">
-    <layout class="QVBoxLayout" name="verticalLayout_5">
-     <property name="spacing">
-      <number>0</number>
-     </property>
-     <property name="leftMargin">
-      <number>0</number>
-     </property>
-     <property name="topMargin">
-      <number>0</number>
-     </property>
-     <property name="rightMargin">
-      <number>0</number>
-     </property>
-     <property name="bottomMargin">
-      <number>0</number>
-     </property>
-     <item>
-      <widget class="QFrame" name="sourcesFrame">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>160</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Sunken</enum>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_17">
-        <property name="spacing">
-         <number>0</number>
-        </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="SourceTree" name="sources">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="contextMenuPolicy">
-           <enum>Qt::CustomContextMenu</enum>
-          </property>
-          <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
-          </property>
-          <property name="showDropIndicator" stdset="0">
-           <bool>true</bool>
-          </property>
-          <property name="dragEnabled">
-           <bool>true</bool>
-          </property>
-          <property name="dragDropMode">
-           <enum>QAbstractItemView::InternalMove</enum>
-          </property>
-          <property name="defaultDropAction">
-           <enum>Qt::TargetMoveAction</enum>
-          </property>
-          <property name="selectionMode">
-           <enum>QAbstractItemView::ExtendedSelection</enum>
-          </property>
-          <addaction name="actionRemoveSource"/>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolBar" name="sourcesToolbar">
-          <property name="iconSize">
-           <size>
-            <width>16</width>
-            <height>16</height>
-           </size>
-          </property>
-          <property name="floatable">
-           <bool>false</bool>
-          </property>
-          <addaction name="actionAddSource"/>
-          <addaction name="actionRemoveSource"/>
-          <addaction name="actionSourceProperties"/>
-          <addaction name="separator"/>
-          <addaction name="actionSourceUp"/>
-          <addaction name="actionSourceDown"/>
-         </widget>
-        </item>
-        <item>
-         <spacer name="sourcesFixedSizeHSpacer">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeType">
-           <enum>QSizePolicy::Fixed</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>150</width>
-            <height>0</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-       </layout>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-  </widget>
   <action name="actionAddScene">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
-   </property>
-   <property name="text">
-    <string>Add</string>
-   </property>
-   <property name="themeID" stdset="0">
-    <string notr="true">addIconSmall</string>
-   </property>
-  </action>
-  <action name="actionAddSource">
    <property name="icon">
     <iconset>
      <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
@@ -1036,21 +888,6 @@
     <string notr="true">removeIconSmall</string>
    </property>
   </action>
-  <action name="actionSourceProperties">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset>
-     <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
-   </property>
-   <property name="text">
-    <string>Properties</string>
-   </property>
-   <property name="themeID" stdset="0">
-    <string notr="true">propertiesIconSmall</string>
-   </property>
-  </action>
   <action name="actionSceneUp">
    <property name="icon">
     <iconset>
@@ -1063,37 +900,7 @@
     <string notr="true">upArrowIconSmall</string>
    </property>
   </action>
-  <action name="actionSourceUp">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset>
-     <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
-   </property>
-   <property name="text">
-    <string>MoveUp</string>
-   </property>
-   <property name="themeID" stdset="0">
-    <string notr="true">upArrowIconSmall</string>
-   </property>
-  </action>
   <action name="actionSceneDown">
-   <property name="icon">
-    <iconset>
-     <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
-   </property>
-   <property name="text">
-    <string>MoveDown</string>
-   </property>
-   <property name="themeID" stdset="0">
-    <string notr="true">downArrowIconSmall</string>
-   </property>
-  </action>
-  <action name="actionSourceDown">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
    <property name="icon">
     <iconset>
      <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
@@ -1629,11 +1436,6 @@
    <class>OBSBasicStatusBar</class>
    <extends>QStatusBar</extends>
    <header>window-basic-status-bar.hpp</header>
-  </customwidget>
-  <customwidget>
-   <class>SourceTree</class>
-   <extends>QListView</extends>
-   <header>source-tree.hpp</header>
   </customwidget>
   <customwidget>
    <class>SceneTree</class>
