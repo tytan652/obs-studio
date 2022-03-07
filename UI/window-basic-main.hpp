@@ -55,6 +55,7 @@ class QMessageBox;
 class QListWidgetItem;
 class VolControl;
 class OBSBasicControls;
+class OBSBasicMixer;
 class OBSBasicStats;
 
 #include "ui_OBSBasic.h"
@@ -187,6 +188,7 @@ class OBSBasic : public OBSMainWindow {
 	friend struct OBSStudioAPI;
 
 	// Allow those classes to connect OBSBasic private slots
+	friend class OBSBasicMixer;
 	friend class OBSBasicTransitions;
 	friend class OBSBasicControls;
 
@@ -405,7 +407,6 @@ private:
 	void GetAudioSourceProperties();
 	void VolControlContextMenu();
 	void ToggleVolControlLayout();
-	void ToggleMixerLayout(bool vertical);
 
 	void RefreshSceneCollections();
 	void ChangeSceneCollection();
@@ -613,6 +614,10 @@ private:
 
 	bool IsRecordingPausable();
 
+	/* Mixer dock */
+	QPointer<OBSBasicMixer> mixerWidget;
+	QPointer<QDockWidget> mixerDock;
+
 	/* Transitions dock */
 	QPointer<OBSBasicTransitions> transitionsWidget;
 	QPointer<QDockWidget> transitionsDock;
@@ -743,9 +748,6 @@ private slots:
 	void ToggleHideMixer();
 
 	void MixerRenameSource();
-
-	void on_vMixerScrollArea_customContextMenuRequested();
-	void on_hMixerScrollArea_customContextMenuRequested();
 
 	void on_actionCopySource_triggered();
 	void on_actionPasteRef_triggered();
