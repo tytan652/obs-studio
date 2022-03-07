@@ -746,15 +746,16 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 	}
 
 	if (obs_scene_get_source(GetCurrentScene()) != scene) {
-		for (int i = 0; i < ui->scenes->count(); i++) {
-			QListWidgetItem *item = ui->scenes->item(i);
+		for (int i = 0; i < scenesWidget->ui->scenes->count(); i++) {
+			QListWidgetItem *item =
+				scenesWidget->ui->scenes->item(i);
 			OBSScene itemScene = GetOBSRef<OBSScene>(item);
 			obs_source_t *source = obs_scene_get_source(itemScene);
 
 			if (source == scene) {
-				ui->scenes->blockSignals(true);
-				ui->scenes->setCurrentItem(item);
-				ui->scenes->blockSignals(false);
+				scenesWidget->ui->scenes->blockSignals(true);
+				scenesWidget->ui->scenes->setCurrentItem(item);
+				scenesWidget->ui->scenes->blockSignals(false);
 				if (api)
 					api->on_event(
 						OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);

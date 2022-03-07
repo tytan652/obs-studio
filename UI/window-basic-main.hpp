@@ -34,6 +34,7 @@
 #include "window-basic-properties.hpp"
 #include "window-basic-transform.hpp"
 #include "window-basic-transitions.hpp"
+#include "window-basic-scenes.hpp"
 #include "window-basic-adv-audio.hpp"
 #include "window-basic-filters.hpp"
 #include "window-missing-files.hpp"
@@ -190,6 +191,7 @@ class OBSBasic : public OBSMainWindow {
 	friend struct OBSStudioAPI;
 
 	// Allow those classes to connect OBSBasic private slots
+	friend class OBSBasicScenes;
 	friend class OBSBasicSources;
 	friend class OBSBasicMixer;
 	friend class OBSBasicTransitions;
@@ -617,6 +619,11 @@ private:
 
 	bool IsRecordingPausable();
 
+	/* Scenes dock */
+	QPointer<OBSBasicScenes> scenesWidget;
+	QPointer<QDockWidget> scenesDock;
+	inline SceneTree *GetScenes() { return scenesWidget->ui->scenes; }
+
 	/* Sources dock */
 	QPointer<OBSBasicSources> sourcesWidget;
 	QPointer<QDockWidget> sourcesDock;
@@ -825,7 +832,6 @@ private:
 	void AddSource(const char *id);
 	QMenu *CreateAddSourcePopupMenu();
 	void AddSourcePopupMenu(const QPoint &pos);
-	void copyActionsDynamicProperties();
 
 	static void HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed);
 
@@ -1014,16 +1020,16 @@ private slots:
 
 	void on_customContextMenuRequested(const QPoint &pos);
 
-	void on_scenes_currentItemChanged(QListWidgetItem *current,
-					  QListWidgetItem *prev);
-	void on_scenes_customContextMenuRequested(const QPoint &pos);
+	void ScenesCurrentItemChanged(QListWidgetItem *current,
+				      QListWidgetItem *prev);
+	void ScenesContextMenuRequested(const QPoint &pos);
 	void GridActionClicked();
-	void on_actionAddScene_triggered();
-	void on_actionRemoveScene_triggered();
-	void on_actionSceneUp_triggered();
-	void on_actionSceneDown_triggered();
+	void AddSceneActionTriggered();
+	void RemoveSceneActionTriggered();
+	void SceneUpActionTriggered();
+	void SceneDownActionTriggered();
 	void SourcesContextMenuRequested(const QPoint &pos);
-	void on_scenes_itemDoubleClicked(QListWidgetItem *item);
+	void ScenesItemDoubleClicked(QListWidgetItem *item);
 	void AddSourceActionTriggered();
 	void RemoveSourceActionTriggered();
 	void on_actionInteract_triggered();
