@@ -51,6 +51,7 @@
 #include "window-basic-source-select.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-controls.hpp"
+#include "window-basic-mixer.hpp"
 #include "window-basic-stats.hpp"
 #include "window-basic-main-outputs.hpp"
 #include "window-log-reply.hpp"
@@ -260,6 +261,14 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->previewDisabledWidget->setVisible(false);
 	ui->contextContainer->setStyle(new OBSContextBarProxyStyle);
 
+	/* Add mixer dock */
+	mixerWidget = new OBSBasicMixer(this);
+	mixerDock = new OBSDock(this);
+	mixerDock->setObjectName("mixerDock");
+	mixerDock->setWindowTitle(QTStr("Mixer"));
+	mixerDock->setWidget(mixerWidget);
+	addDockWidget(Qt::BottomDockWidgetArea, mixerDock);
+
 	/* Add transitions dock */
 	transitionsWidget = new OBSBasicTransitions(this);
 	transitionsDock = new OBSDock(this);
@@ -414,7 +423,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	assignDockToggle(ui->scenesDock, ui->toggleScenes);
 	assignDockToggle(ui->sourcesDock, ui->toggleSources);
-	assignDockToggle(ui->mixerDock, ui->toggleMixer);
+	assignDockToggle(mixerDock.data(), ui->toggleMixer);
 	assignDockToggle(transitionsDock.data(), ui->toggleTransitions);
 	assignDockToggle(controlsDock.data(), ui->toggleControls);
 	assignDockToggle(statsDock, ui->toggleStats);
@@ -2013,8 +2022,8 @@ void OBSBasic::OBSInit()
 		QMetaObject::invokeMethod(this, "on_autoConfigure_triggered",
 					  Qt::QueuedConnection);
 
-	ToggleMixerLayout(config_get_bool(App()->GlobalConfig(), "BasicWindow",
-					  "VerticalVolControl"));
+	mixerWidget->ToggleMixerLayout(config_get_bool(
+		App()->GlobalConfig(), "BasicWindow", "VerticalVolControl"));
 
 	if (config_get_bool(basicConfig, "General", "OpenStatsOnStartup"))
 		on_stats_triggered();
@@ -3464,16 +3473,6 @@ void OBSBasic::VolControlContextMenu()
 	vol->SetContextMenu(nullptr);
 }
 
-void OBSBasic::on_hMixerScrollArea_customContextMenuRequested()
-{
-	StackedMixerAreaContextMenuRequested();
-}
-
-void OBSBasic::on_vMixerScrollArea_customContextMenuRequested()
-{
-	StackedMixerAreaContextMenuRequested();
-}
-
 void OBSBasic::StackedMixerAreaContextMenuRequested()
 {
 	QAction unhideAllAction(QTStr("UnhideAll"), this);
@@ -3510,24 +3509,13 @@ void OBSBasic::StackedMixerAreaContextMenuRequested()
 	popup.exec(QCursor::pos());
 }
 
-void OBSBasic::ToggleMixerLayout(bool vertical)
-{
-	if (vertical) {
-		ui->stackedMixerArea->setMinimumSize(180, 220);
-		ui->stackedMixerArea->setCurrentIndex(1);
-	} else {
-		ui->stackedMixerArea->setMinimumSize(220, 0);
-		ui->stackedMixerArea->setCurrentIndex(0);
-	}
-}
-
 void OBSBasic::ToggleVolControlLayout()
 {
 	bool vertical = !config_get_bool(GetGlobalConfig(), "BasicWindow",
 					 "VerticalVolControl");
 	config_set_bool(GetGlobalConfig(), "BasicWindow", "VerticalVolControl",
 			vertical);
-	ToggleMixerLayout(vertical);
+	mixerWidget->ToggleMixerLayout(vertical);
 
 	// We need to store it so we can delete current and then add
 	// at the right order
@@ -3588,10 +3576,7 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 	InsertQObjectByName(volumes, vol);
 
 	for (auto volume : volumes) {
-		if (vertical)
-			ui->vVolControlLayout->addWidget(volume);
-		else
-			ui->hVolControlLayout->addWidget(volume);
+		mixerWidget->AddVolumeControl(volume);
 	}
 }
 
@@ -8776,14 +8761,14 @@ void OBSBasic::on_resetUI_triggered()
 	int mixerSize = cx - (cx22_5 * 2 + cx5 * 2);
 
 	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock,
-				   ui->mixerDock, transitionsDock.data(),
+				   mixerDock.data(), transitionsDock.data(),
 				   controlsDock.data()};
 
 	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx5};
 
 	ui->scenesDock->setVisible(true);
 	ui->sourcesDock->setVisible(true);
-	ui->mixerDock->setVisible(true);
+	mixerDock->setVisible(true);
 	transitionsDock->setVisible(true);
 	controlsDock->setVisible(true);
 	statsDock->setVisible(false);
@@ -8808,7 +8793,7 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 
 	ui->scenesDock->setFeatures(mainFeatures);
 	ui->sourcesDock->setFeatures(mainFeatures);
-	ui->mixerDock->setFeatures(mainFeatures);
+	mixerDock->setFeatures(mainFeatures);
 	transitionsDock->setFeatures(mainFeatures);
 	controlsDock->setFeatures(mainFeatures);
 	statsDock->setFeatures(features);
