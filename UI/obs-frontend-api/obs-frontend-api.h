@@ -152,6 +152,14 @@ EXPORT void obs_frontend_add_module_adv_dock(obs_module_t *module,
 EXPORT void obs_frontend_remove_module_adv_dock(obs_module_t *module,
 						const char *unique_name);
 
+/* takes ads::CDockWidget */
+#define obs_frontend_add_custom_adv_dock(unique_name, dock)           \
+	obs_frontend_add_module_custom_adv_dock(obs_current_module(), \
+						unique_name, dock)
+EXPORT void obs_frontend_add_module_custom_adv_dock(obs_module_t *module,
+						    const char *unique_name,
+						    void *dock);
+
 typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event,
 				      void *private_data);
 

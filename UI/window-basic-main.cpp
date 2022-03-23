@@ -8252,6 +8252,7 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 	QStringList dockNames;
 	dockNames << OBS_DOCK_NAMELIST;
 	dockNames << extraDockNames;
+	dockNames << extraCustomDockNames;
 #if BROWSER_AVAILABLE
 	dockNames << extraBrowserDockNames;
 #endif
@@ -9075,12 +9076,16 @@ void OBSBasic::AddAdvDockWidget(OBSAdvDock *dock, bool browser)
 
 void OBSBasic::RemoveAdvDockWidget(const QString &title)
 {
-	if (!extraDockNames.contains(title))
-		return;
-
-	extraDockNames.removeAll(title);
-	ads::CDockWidget *dock = dockManager->findDockWidget(title);
-	dock->deleteDockWidget();
+	if (!extraDockNames.contains(title)) {
+		extraDockNames.removeAll(title);
+		ads::CDockWidget *dock = dockManager->findDockWidget(title);
+		dock->deleteDockWidget();
+	} else if (!extraCustomDockNames.contains(title)) {
+		extraCustomDockNames.removeAll(title);
+		ads::CDockWidget *dock = dockManager->findDockWidget(title);
+		// Remove only the reference in the dock manager
+		dockManager->removeDockWidget(dock);
+	}
 }
 
 bool OBSBasic::ApplyDocksLayout(const QByteArray &state)

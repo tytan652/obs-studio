@@ -350,6 +350,20 @@ void obs_frontend_remove_module_adv_dock(obs_module_t *module,
 	c->obs_frontend_remove_adv_dock(dock_name);
 }
 
+void obs_frontend_add_module_custom_adv_dock(obs_module_t *module,
+					     const char *unique_name,
+					     void *dock)
+{
+	if (!callbacks_valid())
+		return;
+
+	string dock_name(obs_get_module_mod_name(module));
+	dock_name.append("_");
+	dock_name.append(unique_name);
+
+	c->obs_frontend_add_custom_adv_dock(dock_name, dock);
+}
+
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 				     void *private_data)
 {

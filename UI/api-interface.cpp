@@ -394,6 +394,19 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		main->RemoveAdvDockWidget(QString::fromStdString(name));
 	}
 
+	void obs_frontend_add_custom_adv_dock(const std::string &name,
+					      void *dock) override
+	{
+		ads::CDockWidget *new_dock =
+			reinterpret_cast<ads::CDockWidget *>(dock);
+		new_dock->setObjectName(QString::fromStdString(name));
+
+		main->dockManager->addDockWidgetFloating(new_dock);
+		new_dock->closeDockWidget();
+
+		main->extraCustomDockNames.push_back(new_dock->objectName());
+	}
+
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 					     void *private_data) override
 	{

@@ -500,6 +500,47 @@ Functions
 
 ---------------------------------------
 
+.. function:: void obs_frontend_add_custom_adv_dock(const char *unique_name, void *dock)
+
+   Adds a dock with the widget to the UI without a toggle in the Docks
+   menu. Unlike :c:func:`obs_frontend_add_adv_dock`, the module can manipulate
+   entirely the dock object.
+
+   Note: Use :c:func:`obs_frontend_remove_adv_dock` to remove the dock
+   reference from the UI.
+
+   :param unique_name: Object name of the dock, will be prefixed with
+                       module name (:c:func:`obs_get_module_name`) internally.
+   :param dock: ads::CDockidget to insert in the dock
+
+   Equivalent to:
+
+.. code:: cpp
+
+      obs_frontend_add_module_custom_adv_dock(obs_current_module(), unique_name, dock);
+
+---------------------------------------
+
+.. function:: void obs_frontend_add_module_custom_adv_dock(obs_module_t *module, const char *unique_name, void *dock)
+
+   Adds a dock with the widget to the UI without a toggle in the Docks
+   menu. Unlike :c:func:`obs_frontend_add_adv_dock`, the module can manipulate
+   entirely the dock object.
+
+   Note: Use :c:func:`obs_frontend_remove_adv_dock` to remove the dock
+   reference from the UI.
+
+   Note 2: Modules should use obs_frontend_add_custom_adv_dock function as a
+   more elegant means of getting their files without having to
+   specify the module parameter.
+
+   :param module: The module associated with the dock to add
+   :param unique_name: Object name of the dock, will be prefixed with
+                       module name (:c:func:`obs_get_module_name`) internally.
+   :param dock: ads::CDockidget to insert in the dock
+
+---------------------------------------
+
 .. function:: void obs_frontend_add_event_callback(obs_frontend_event_cb callback, void *private_data)
 
    Adds a callback that will be called when a frontend event occurs.

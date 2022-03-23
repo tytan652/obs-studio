@@ -633,6 +633,8 @@ private:
 	QPointer<OBSAdvDock> controlsDock;
 
 	QStringList extraDockNames;
+	// For docks added with obs_frontend_add_custom_adv_dock()
+	QStringList extraCustomDockNames;
 
 public slots:
 	void DeferSaveBegin();
