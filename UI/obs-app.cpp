@@ -1624,6 +1624,14 @@ QString OBSTranslator::translate(const char *context, const char *sourceText,
 				 const char *disambiguation, int n) const
 {
 	const char *out = nullptr;
+
+	/* Allow to convert ADS source text to translation keys
+	 * by removing any spaces from it */
+	if (QT_UTF8(sourceText).contains(" ")) {
+		QString text(QT_UTF8(sourceText).remove(" "));
+		sourceText = strdup(QT_TO_UTF8(text));
+	}
+
 	if (!App()->TranslateString(sourceText, &out))
 		return QString(sourceText);
 
