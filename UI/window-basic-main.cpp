@@ -204,6 +204,27 @@ static void AddExtraModulePaths()
 
 extern obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main);
 
+static inline void legacyDockMessage()
+{
+	QMessageBox msgbox(App()->GetMainWindow());
+	msgbox.setWindowTitle(
+		QTStr("Basic.MainMenu.Docks.LegacyDocksWarning.Title"));
+	msgbox.setText(QTStr("Basic.MainMenu.Docks.LegacyDocksWarning.Text"));
+	msgbox.setIcon(QMessageBox::Icon::Information);
+	msgbox.addButton(QMessageBox::Ok);
+
+	QCheckBox *cb = new QCheckBox(QTStr("DoNotShowAgain"));
+	msgbox.setCheckBox(cb);
+
+	msgbox.exec();
+
+	if (cb->isChecked()) {
+		config_set_bool(App()->GlobalConfig(), "General",
+				"InformedOfLegacyDocks", true);
+		config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+	}
+}
+
 void assignLegacyDockToggle(QDockWidget *dock, QAction *action)
 {
 	auto handleWindowToggle = [action](bool vis) {
@@ -212,6 +233,14 @@ void assignLegacyDockToggle(QDockWidget *dock, QAction *action)
 		action->blockSignals(false);
 	};
 	auto handleMenuToggle = [dock](bool check) {
+		if (check) {
+			bool informed = config_get_bool(
+				App()->GlobalConfig(), "General",
+				"InformedOfLegacyDocks");
+
+			if (!informed)
+				legacyDockMessage();
+		}
 		dock->blockSignals(true);
 		dock->setVisible(check);
 		dock->blockSignals(false);
