@@ -1,14 +1,19 @@
 #include "window-dock-browser.hpp"
-#include <QCloseEvent>
+#include <DockContainerWidget.h>
 
-void BrowserDock::closeEvent(QCloseEvent *event)
+void BrowserAdvDock::SetCefWidget(QCefWidget *widget_)
 {
-	OBSDock::closeEvent(event);
+	if (widget())
+		takeWidget();
 
-	if (!event->isAccepted()) {
-		return;
-	}
+	setWidget(widget_, ads::CDockWidget::ForceNoScrollArea);
+	cefWidget.reset(widget_);
 
+	connect(this, SIGNAL(closeRequested()), SLOT(CloseBrowser()));
+}
+
+void BrowserAdvDock::CloseBrowser()
+{
 	static int panel_version = -1;
 	if (panel_version == -1) {
 		panel_version = obs_browser_qcef_version();

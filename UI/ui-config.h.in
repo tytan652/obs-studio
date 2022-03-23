@@ -33,3 +33,48 @@
 #define YOUTUBE_SECRET_HASH   0x@YOUTUBE_SECRET_HASH@
 
 #define DEFAULT_THEME "Dark"
+
+#define SCENES_DOCK_NAME "scenesDock"
+#define SOURCES_DOCK_NAME "sourcesDock"
+#define MIXER_DOCK_NAME "mixerDock"
+#define TRANSITIONS_DOCK_NAME "transitionsDock"
+#define CONTROLS_DOCK_NAME "controlsDock"
+#define STATS_DOCK_NAME "statsDock"
+
+#define OBS_DOCK_NAMELIST QStringList(\
+{ SCENES_DOCK_NAME, SOURCES_DOCK_NAME, MIXER_DOCK_NAME, \
+TRANSITIONS_DOCK_NAME, CONTROLS_DOCK_NAME, STATS_DOCK_NAME })
+
+#define DEFAULT_DOCK_STATE QString(\
+	"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\
+<QtAdvancedDockingSystem Version=\"1\" UserVersion=\"0\" Containers=\"1\" CentralWidget=\"centralDock\">\
+  <Container Floating=\"0\">\
+    <Splitter Orientation=\"-\" Count=\"2\">\
+      <Area Tabs=\"1\" Current=\"centralDock\" Flags=\"1\">\
+        <Widget Name=\"centralDock\" Closed=\"0\"/>\
+      </Area>\
+      <Splitter Orientation=\"|\" Count=\"5\">\
+        <Area Tabs=\"1\" Current=\"%1\">\
+          <Widget Name=\"%1\" Closed=\"0\"/>\
+        </Area>\
+        <Area Tabs=\"1\" Current=\"%2\">\
+          <Widget Name=\"%2\" Closed=\"0\"/>\
+        </Area>\
+        <Area Tabs=\"1\" Current=\"%3\">\
+          <Widget Name=\"%3\" Closed=\"0\"/>\
+        </Area>\
+        <Area Tabs=\"1\" Current=\"%4\">\
+          <Widget Name=\"%4\" Closed=\"0\"/>\
+        </Area>\
+        <Area Tabs=\"1\" Current=\"%5\">\
+          <Widget Name=\"%5\" Closed=\"0\"/>\
+        </Area>\
+        <Sizes>225 225 450 50 50 </Sizes>\
+      </Splitter>\
+      <Sizes>775 225 </Sizes>\
+    </Splitter>\
+  </Container>\
+</QtAdvancedDockingSystem>").arg(\
+SCENES_DOCK_NAME, SOURCES_DOCK_NAME, MIXER_DOCK_NAME, \
+TRANSITIONS_DOCK_NAME, CONTROLS_DOCK_NAME\
+).toLatin1()

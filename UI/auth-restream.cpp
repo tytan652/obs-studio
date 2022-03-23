@@ -25,11 +25,24 @@ using namespace json11;
 #define RESTREAM_STREAMKEY_URL "https://api.restream.io/v2/user/streamKey"
 #define RESTREAM_SCOPE_VERSION 1
 
+#define RESTREAM_CHAT_DOCK_NAME "obs-restream_chat"
+#define RESTREAM_INFO_DOCK_NAME "obs-restream_info"
+#define RESTREAM_CHANNELS_DOCK_NAME "obs-restream_channels"
+
 static Auth::Def restreamDef = {"Restream", Auth::Type::OAuth_StreamKey};
 
 /* ------------------------------------------------------------------------- */
 
 RestreamAuth::RestreamAuth(const Def &d) : OAuthStreamKey(d) {}
+
+RestreamAuth::~RestreamAuth()
+{
+	OBSBasic *main = OBSBasic::Get();
+
+	main->RemoveAdvDockWidget(RESTREAM_CHAT_DOCK_NAME);
+	main->RemoveAdvDockWidget(RESTREAM_INFO_DOCK_NAME);
+	main->RemoveAdvDockWidget(RESTREAM_CHANNELS_DOCK_NAME);
+}
 
 bool RestreamAuth::GetChannelInfo()
 try {
@@ -96,8 +109,8 @@ try {
 void RestreamAuth::SaveInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
-	config_set_string(main->Config(), service(), "DockState",
-			  main->saveState().toBase64().constData());
+	config_set_string(main->Config(), service(), "AdvDockState",
+			  main->AdvDockState().toBase64().constData());
 	OAuthStreamKey::SaveInternal();
 }
 
@@ -132,76 +145,89 @@ void RestreamAuth::LoadUI()
 
 	url = "https://restream.io/chat-application";
 
-	QSize size = main->frameSize();
-	QPoint pos = main->pos();
-
-	chat.reset(new BrowserDock());
-	chat->setObjectName("restreamChat");
-	chat->resize(420, 600);
+	BrowserAdvDock *chat =
+		new BrowserAdvDock(QTStr("Auth.Chat"), RESTREAM_CHAT_DOCK_NAME);
+	chat->SetDefaultSize(420, 600);
 	chat->setMinimumSize(200, 300);
-	chat->setWindowTitle(QTStr("Auth.Chat"));
-	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(chat.data(), url, panel_cookies);
-	chat->SetWidget(browser);
+	browser = cef->create_widget(chat, url, panel_cookies);
+	chat->SetCefWidget(browser);
 
-	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
-	chatMenu.reset(main->AddDockWidget(chat.data()));
+	main->AddAdvDockWidget(chat);
 
 	/* ----------------------------------- */
 
 	url = "https://restream.io/titles/embed";
 
-	info.reset(new BrowserDock());
-	info->setObjectName("restreamInfo");
-	info->resize(410, 600);
+	BrowserAdvDock *info = new BrowserAdvDock(QTStr("Auth.StreamInfo"),
+						  RESTREAM_INFO_DOCK_NAME);
+	info->SetDefaultSize(410, 600);
 	info->setMinimumSize(200, 150);
-	info->setWindowTitle(QTStr("Auth.StreamInfo"));
-	info->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(info.data(), url, panel_cookies);
-	info->SetWidget(browser);
+	browser = cef->create_widget(info, url, panel_cookies);
+	info->SetCefWidget(browser);
 
-	main->addDockWidget(Qt::LeftDockWidgetArea, info.data());
-	infoMenu.reset(main->AddDockWidget(info.data()));
+	main->AddAdvDockWidget(info);
 
 	/* ----------------------------------- */
 
 	url = "https://restream.io/channel/embed";
 
-	channels.reset(new BrowserDock());
-	channels->setObjectName("restreamChannel");
-	channels->resize(410, 600);
+	BrowserAdvDock *channels = new BrowserAdvDock(
+		QTStr("RestreamAuth.Channels"), RESTREAM_CHANNELS_DOCK_NAME);
+	channels->SetDefaultSize(410, 600);
 	channels->setMinimumSize(410, 300);
-	channels->setWindowTitle(QTStr("RestreamAuth.Channels"));
-	channels->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(channels.data(), url, panel_cookies);
-	channels->SetWidget(browser);
+	browser = cef->create_widget(channels, url, panel_cookies);
+	channels->SetCefWidget(browser);
 
-	main->addDockWidget(Qt::LeftDockWidgetArea, channels.data());
-	channelMenu.reset(main->AddDockWidget(channels.data()));
+	main->AddAdvDockWidget(channels);
 
 	/* ----------------------------------- */
 
-	chat->setFloating(true);
-	info->setFloating(true);
-	channels->setFloating(true);
-
-	chat->move(pos.x() + size.width() - chat->width() - 30, pos.y() + 60);
-	info->move(pos.x() + 20, pos.y() + 60);
-	channels->move(pos.x() + 20 + info->width() + 10, pos.y() + 60);
-
 	if (firstLoad) {
-		chat->setVisible(true);
-		info->setVisible(true);
-		channels->setVisible(true);
+		QSize size = main->frameSize();
+		QPoint pos = main->pos();
+
+		ads::CFloatingDockContainer *container =
+			chat->dockContainer()->floatingWidget();
+		container->resize(420, 600);
+		container->move(pos.x() + size.width() - container->width() -
+					30,
+				pos.y() + 60);
+
+		container = info->dockContainer()->floatingWidget();
+		container->resize(410, 600);
+		container->move(pos.x() + 20, pos.y() + 60);
+
+		int infoWidth = container->width();
+
+		container = channels->dockContainer()->floatingWidget();
+		container->resize(410, 600);
+		container->move(pos.x() + 20 + infoWidth + 10, pos.y() + 60);
+
+		chat->toggleView(true);
+		info->toggleView(true);
+		channels->toggleView(true);
 	} else {
-		const char *dockStateStr = config_get_string(
-			main->Config(), service(), "DockState");
-		QByteArray dockState =
-			QByteArray::fromBase64(QByteArray(dockStateStr));
-		main->restoreState(dockState);
+		const char *advDockStateStr = config_get_string(
+			main->Config(), service(), "AdvDockState");
+
+		if (!advDockStateStr) {
+			/* Use deprecated "DockState" value if available */
+			const char *dockStateStr = config_get_string(
+				main->Config(), service(), "DockState");
+
+			if (dockStateStr) {
+				QByteArray dockState = QByteArray::fromBase64(
+					QByteArray(dockStateStr));
+				main->restoreState(dockState);
+			}
+		} else {
+			QByteArray state = QByteArray::fromBase64(
+				QByteArray(advDockStateStr));
+			main->RestoreAdvDocksState(state);
+		}
 	}
 
 	uiLoaded = true;

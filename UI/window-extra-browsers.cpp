@@ -13,7 +13,7 @@
 
 using namespace json11;
 
-#define OBJ_NAME_SUFFIX "_extraBrowser"
+#define OBS_NAME_PREFIX "extraBrowser_"
 
 enum class Column : int {
 	Title,
@@ -31,9 +31,10 @@ void ExtraBrowsersModel::Reset()
 
 	OBSBasic *main = OBSBasic::Get();
 
-	for (int i = 0; i < main->extraBrowserDocks.size(); i++) {
-		BrowserDock *dock = reinterpret_cast<BrowserDock *>(
-			main->extraBrowserDocks[i].data());
+	for (int i = 0; i < main->extraBrowserDockNames.size(); i++) {
+		BrowserAdvDock *dock = reinterpret_cast<BrowserAdvDock *>(
+			main->dockManager->findDockWidget(
+				main->extraBrowserDockNames[i]));
 
 		Item item;
 		item.prevIdx = i;
@@ -175,14 +176,14 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 	int idx = item.prevIdx;
 
 	OBSBasic *main = OBSBasic::Get();
-	BrowserDock *dock = reinterpret_cast<BrowserDock *>(
-		main->extraBrowserDocks[idx].data());
+	BrowserAdvDock *dock = reinterpret_cast<BrowserAdvDock *>(
+		main->dockManager->findDockWidget(
+			main->extraBrowserDockNames[idx]));
+
 	dock->setWindowTitle(item.title);
-	dock->setObjectName(item.title + OBJ_NAME_SUFFIX);
-	main->extraBrowserDockActions[idx]->setText(item.title);
 
 	if (main->extraBrowserDockTargets[idx] != item.url) {
-		dock->cefWidget->setURL(QT_TO_UTF8(item.url));
+		dock->CefWidget()->setURL(QT_TO_UTF8(item.url));
 		main->extraBrowserDockTargets[idx] = item.url;
 	}
 }
@@ -234,9 +235,9 @@ void ExtraBrowsersModel::Apply()
 
 	for (int i = deleted.size() - 1; i >= 0; i--) {
 		int idx = deleted[i];
-		main->extraBrowserDockActions.removeAt(idx);
 		main->extraBrowserDockTargets.removeAt(idx);
-		main->extraBrowserDocks.removeAt(idx);
+		main->RemoveAdvDockWidget(main->extraBrowserDockNames[idx]);
+		main->extraBrowserDockNames.removeAt(idx);
 	}
 
 	deleted.clear();
@@ -459,8 +460,13 @@ void OBSExtraBrowsers::on_apply_clicked()
 void OBSBasic::ClearExtraBrowserDocks()
 {
 	extraBrowserDockTargets.clear();
-	extraBrowserDockActions.clear();
-	extraBrowserDocks.clear();
+
+	for (int i = 0; i < extraBrowserDockNames.size(); i++) {
+		ads::CDockWidget *dock =
+			dockManager->findDockWidget(extraBrowserDockNames[i]);
+		dock->deleteDockWidget();
+	}
+	extraBrowserDockNames.clear();
 }
 
 void OBSBasic::LoadExtraBrowserDocks()
@@ -475,7 +481,7 @@ void OBSBasic::LoadExtraBrowserDocks()
 
 	Json::array array = json.array_items();
 	if (!array.empty())
-		ui->menuDocks->addSeparator();
+		extraBrowserMenuDocksSeparator = ui->menuDocks->addSeparator();
 
 	for (Json &item : array) {
 		std::string title = item["title"].string_value();
@@ -490,10 +496,12 @@ void OBSBasic::LoadExtraBrowserDocks()
 void OBSBasic::SaveExtraBrowserDocks()
 {
 	Json::array array;
-	for (int i = 0; i < extraBrowserDocks.size(); i++) {
-		QDockWidget *dock = extraBrowserDocks[i].data();
+	for (int i = 0; i < extraBrowserDockNames.size(); i++) {
+		ads::CDockWidget *dock =
+			dockManager->findDockWidget(extraBrowserDockNames[i]);
 		QString url = extraBrowserDockTargets[i];
 		QString uuid = dock->property("uuid").toString();
+
 		Json::object obj{
 			{"title", QT_TO_UTF8(dock->windowTitle())},
 			{"url", QT_TO_UTF8(url)},
@@ -527,22 +535,19 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		panel_version = obs_browser_qcef_version();
 	}
 
-	BrowserDock *dock = new BrowserDock();
 	QString bId(uuid.isEmpty() ? QUuid::createUuid().toString() : uuid);
 	bId.replace(QRegularExpression("[{}-]"), "");
+	BrowserAdvDock *dock = new BrowserAdvDock(title, OBS_NAME_PREFIX + bId);
 	dock->setProperty("uuid", bId);
-	dock->setObjectName(title + OBJ_NAME_SUFFIX);
-	dock->resize(460, 600);
+	dock->SetDefaultSize(460, 600);
 	dock->setMinimumSize(80, 80);
-	dock->setWindowTitle(title);
-	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	QCefWidget *browser =
 		cef->create_widget(dock, QT_TO_UTF8(url), nullptr);
 	if (browser && panel_version >= 1)
 		browser->allowAllPopups(true);
 
-	dock->SetWidget(browser);
+	dock->SetCefWidget(browser);
 
 	/* Add support for Twitch Dashboard panels */
 	if (url.contains("twitch.tv/popout") &&
@@ -562,30 +567,13 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		}
 	}
 
-	addDockWidget(Qt::RightDockWidgetArea, dock);
+	AddAdvDockWidget(dock, true);
 
-	if (firstCreate) {
-		dock->setFloating(true);
+	dock->ResetPosOnNextOpen(firstCreate);
 
-		QPoint curPos = pos();
-		QSize wSizeD2 = size() / 2;
-		QSize dSizeD2 = dock->size() / 2;
+	if (firstCreate)
+		dock->toggleView(true);
 
-		curPos.setX(curPos.x() + wSizeD2.width() - dSizeD2.width());
-		curPos.setY(curPos.y() + wSizeD2.height() - dSizeD2.height());
-
-		dock->move(curPos);
-		dock->setVisible(true);
-	}
-
-	QAction *action = AddDockWidget(dock);
-	if (firstCreate) {
-		action->blockSignals(true);
-		action->setChecked(true);
-		action->blockSignals(false);
-	}
-
-	extraBrowserDocks.push_back(QSharedPointer<QDockWidget>(dock));
-	extraBrowserDockActions.push_back(QSharedPointer<QAction>(action));
+	extraBrowserDockNames.push_back(dock->objectName());
 	extraBrowserDockTargets.push_back(url);
 }

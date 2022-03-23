@@ -7,17 +7,21 @@
 extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
 
-class BrowserDock : public OBSDock {
-public:
-	inline BrowserDock() : OBSDock() { setAttribute(Qt::WA_NativeWindow); }
+class BrowserAdvDock : public OBSAdvDock {
+	Q_OBJECT
 
 	QScopedPointer<QCefWidget> cefWidget;
 
-	inline void SetWidget(QCefWidget *widget_)
+public:
+	inline BrowserAdvDock(const QString &window_title, const QString &title)
+		: OBSAdvDock(window_title, title)
 	{
-		setWidget(widget_);
-		cefWidget.reset(widget_);
+		setAttribute(Qt::WA_NativeWindow);
 	}
 
-	void closeEvent(QCloseEvent *event) override;
+	void SetCefWidget(QCefWidget *widget);
+	inline QCefWidget *CefWidget() const { return cefWidget.data(); }
+
+private slots:
+	void CloseBrowser();
 };

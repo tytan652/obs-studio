@@ -78,7 +78,10 @@ find_qt(
   COMPONENTS_WIN WinExtras
   COMPONENTS_LINUX Gui)
 
-target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
+find_package(qtadvanceddocking CONFIG REQUIRED)
+
+target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network
+                                  ads::qtadvanceddocking)
 
 set_target_properties(
   obs
