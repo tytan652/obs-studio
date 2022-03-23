@@ -385,6 +385,25 @@
       ]
     },
     {
+      "name": "ads",
+      "buildsystem": "cmake-ninja",
+      "builddir": true,
+      "config-opts":[
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DADS_VERSION=3.8.2"
+      ],
+      "cleanup":[
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/githubuser0xFFFF/Qt-Advanced-Docking-System.git",
+          "commit": "ad06241c9d1e61574191cb7f29c650a90a620f48"
+        }
+      ]
+    },
+    {
       "name": "cef",
       "buildsystem": "cmake-ninja",
       "no-make-install": true,
