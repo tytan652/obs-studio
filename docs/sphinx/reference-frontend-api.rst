@@ -425,8 +425,78 @@ Functions
 
    Adds a QDockWidget to the UI's Legacy Docks menu.
 
+.. deprecated:: 28
+   Prefer :c:func:`obs_frontend_add_adv_dock()` instead.
+
    :param dock: QDockWidget to add/create
    :return: A pointer to the added QAction
+
+---------------------------------------
+
+.. function:: void obs_frontend_add_adv_dock(const char *title, const char *unique_name, void *widget)
+
+   Adds a dock with the widget to the UI with a toggle in the Docks
+   menu.
+
+   Default size is based on widget size or on "defaultWidth" and
+   "defaultHeight" QWidget properties set with :c:func:`setProperty`.
+
+   :param title: Window title of the dock
+   :param unique_name: Object name of the dock, will be prefixed with
+                       module name (:c:func:`obs_get_module_name`) internally.
+   :param widget: QWidget to insert in the dock
+
+   Equivalent to:
+
+.. code:: cpp
+
+      obs_frontend_add_module_adv_dock(obs_current_module(), title, unique_name, widget);
+
+---------------------------------------
+
+.. function:: void obs_frontend_remove_adv_dock(const char *unique_name)
+
+   Removes the dock with this name from the UI.
+
+   :param unique_name: Object name of the dock to remove, will be prefixed with
+                       module name (:c:func:`obs_get_module_name`) internally.
+
+   Equivalent to:
+
+.. code:: cpp
+
+      obs_frontend_add_module_adv_dock(obs_current_module(), unique_name);
+
+---------------------------------------
+
+.. function:: void obs_frontend_add_module_adv_dock(obs_module_t *module, const char *title, const char *unique_name, void *widget)
+
+   Adds a dock with the widget to the UI with a toggle in the Docks
+   menu.
+
+   Note: Modules should use obs_frontend_add_adv_dock function as a
+   more elegant means of getting their files without having to
+   specify the module parameter.
+
+   :param module: The module associated with the dock to add
+   :param title: Window title of the dock
+   :param unique_name: Object name of the dock, will be prefixed with
+                       module name (:c:func:`obs_get_module_name`) internally.
+   :param widget: QWidget to insert in the dock
+
+---------------------------------------
+
+.. function:: void obs_frontend_remove_module_adv_dock(obs_module_t *module, const char *unique_name)
+
+   Removes the dock with this name from the UI.
+
+   Note: Modules should use obs_frontend_remove_adv_dock function as
+   a more elegant means of getting their files without having to
+   specify the module parameter.
+
+   :param module: The module associated with the dock to remove
+   :param unique_name: Object name of the dock to remove, will be prefixed with
+                       module name (:c:func:`obs_get_module_name`) internally.
 
 ---------------------------------------
 

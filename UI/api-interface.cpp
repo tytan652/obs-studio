@@ -3,6 +3,7 @@
 #include "qt-wrappers.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "window-dock.hpp"
 
 #include <functional>
 
@@ -364,6 +365,33 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void *obs_frontend_add_dock(void *dock) override
 	{
 		return (void *)main->AddDockWidget((QDockWidget *)dock);
+	}
+
+	void obs_frontend_add_adv_dock(const char *title,
+				       const std::string &name,
+				       void *widget) override
+	{
+		QWidget *w = reinterpret_cast<QWidget *>(widget);
+		int defaultWidth = w->property("defaultWidth").toInt();
+		int defaultHeight = w->property("defaultHeight").toInt();
+
+		if (!defaultWidth || !defaultHeight) {
+			defaultWidth = w->width();
+			defaultHeight = w->height();
+		}
+
+		OBSAdvDock *dock = new OBSAdvDock(QString(title),
+						  QString::fromStdString(name),
+						  (QWidget *)widget);
+
+		dock->SetDefaultSize(defaultWidth, defaultHeight);
+
+		main->AddAdvDockWidget(dock);
+	}
+
+	void obs_frontend_remove_adv_dock(const std::string &name) override
+	{
+		main->RemoveAdvDockWidget(QString::fromStdString(name));
 	}
 
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,

@@ -5,6 +5,9 @@
 #include <vector>
 #include <string>
 
+#undef obs_frontend_add_adv_dock
+#undef obs_frontend_remove_adv_dock
+
 struct obs_frontend_callbacks {
 	virtual ~obs_frontend_callbacks() {}
 	virtual void *obs_frontend_get_main_window(void) = 0;
@@ -64,6 +67,11 @@ struct obs_frontend_callbacks {
 						      void *private_data) = 0;
 
 	virtual void *obs_frontend_add_dock(void *dock) = 0;
+
+	virtual void obs_frontend_add_adv_dock(const char *title,
+					       const std::string &name,
+					       void *widget) = 0;
+	virtual void obs_frontend_remove_adv_dock(const std::string &name) = 0;
 
 	virtual void
 	obs_frontend_add_event_callback(obs_frontend_event_cb callback,

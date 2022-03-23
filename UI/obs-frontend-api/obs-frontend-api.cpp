@@ -324,6 +324,32 @@ void *obs_frontend_add_dock(void *dock)
 	return !!callbacks_valid() ? c->obs_frontend_add_dock(dock) : nullptr;
 }
 
+void obs_frontend_add_module_adv_dock(obs_module_t *module, const char *title,
+				      const char *unique_name, void *widget)
+{
+	if (!callbacks_valid())
+		return;
+
+	string dock_name(obs_get_module_mod_name(module));
+	dock_name.append("_");
+	dock_name.append(unique_name);
+
+	return c->obs_frontend_add_adv_dock(title, dock_name, widget);
+}
+
+void obs_frontend_remove_module_adv_dock(obs_module_t *module,
+					 const char *unique_name)
+{
+	if (!callbacks_valid())
+		return;
+
+	string dock_name(obs_get_module_mod_name(module));
+	dock_name.append("_");
+	dock_name.append(unique_name);
+
+	c->obs_frontend_remove_adv_dock(dock_name);
+}
+
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 				     void *private_data)
 {

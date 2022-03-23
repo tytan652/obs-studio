@@ -139,6 +139,19 @@ EXPORT void obs_frontend_add_tools_menu_item(const char *name,
 OBS_DEPRECATED
 EXPORT void *obs_frontend_add_dock(void *dock);
 
+/* takes QWidget */
+#define obs_frontend_add_adv_dock(title, unique_name, widget)         \
+	obs_frontend_add_module_adv_dock(obs_current_module(), title, \
+					 unique_name, widget)
+EXPORT void obs_frontend_add_module_adv_dock(obs_module_t *module,
+					     const char *title,
+					     const char *unique_name,
+					     void *widget);
+#define obs_frontend_remove_adv_dock(unique_name) \
+	obs_frontend_remove_module_adv_dock(obs_current_module(), unique_name)
+EXPORT void obs_frontend_remove_module_adv_dock(obs_module_t *module,
+						const char *unique_name);
+
 typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event,
 				      void *private_data);
 
