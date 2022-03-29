@@ -226,6 +226,9 @@ file(
 
 file(GLOB QT_ICU_BIN_FILES "${Qt5Core_DIR}/../../../bin/icu*.dll")
 
+file(GLOB ADS_BIN_FILES
+     "${qtadvanceddocking_DIR}/../../../bin/qtadvanceddocking.dll")
+
 set(ALL_BASE_BIN_FILES
     ${FFMPEG_BIN_FILES}
     ${X264_BIN_FILES}
@@ -236,7 +239,8 @@ set(ALL_BASE_BIN_FILES
     ${LIBFDK_BIN_FILES}
     ${FREETYPE_BIN_FILES}
     ${RNNOISE_BIN_FILES}
-    ${QT_ICU_BIN_FILES})
+    ${QT_ICU_BIN_FILES}
+    ${ADS_BIN_FILES})
 
 set(ALL_REL_BIN_FILES ${QT_BIN_FILES})
 
@@ -301,6 +305,7 @@ obs_status(STATUS "QT Release Styles files: ${QT_STYLES_BIN_FILES}")
 obs_status(STATUS "QT Release Iconengine files: ${QT_ICONENGINE_BIN_FILES}")
 obs_status(STATUS "QT Release Imageformat files: ${QT_IMAGEFORMATS_BIN_FILES}")
 obs_status(STATUS "QT ICU files: ${QT_ICU_BIN_FILES}")
+obs_status(STATUS "Qt Advanced Docking System files: ${ADS_BIN_FILES}")
 
 foreach(BinFile ${ALL_BASE_BIN_FILES})
   obs_status(
