@@ -117,7 +117,79 @@ SourceTree QLineEdit {
     border-radius: none;
 }
 
-/* Dock Widget */
+/* Advanced Docking System */
+ads--CFloatingDockContainer, ads--CFloatingWidgetTitleBar, #floatingTitleLabel, ads--CFloatingWidgetTitleBar QToolButton {
+	background: palette(window);
+} /* Contain a CDockContainerWidget and its X11 only titlebar */
+
+ads--CFloatingWidgetTitleBar {
+	qproperty-maximizeIcon: url(:/ads/images/maximize-button.svg);
+	qproperty-normalIcon: url(:/ads/images/restore-button.svg);
+} /* X11 only title bar icons */
+
+ads--CDockContainerWidget {
+	border: 1px solid palette(light);
+	background-color: aqua;
+} /* Inside MainWindow or CFloatingDockContainer / Constains CDockAreaWidgets */
+
+ads--CDockContainerWidget > QSplitter{
+        padding: 1 0 1 0;
+}
+
+ads--CDockContainerWidget ads--CDockSplitter::handle {
+	background: palette(window);
+} /* Between CDockAreaWidgets in a CDockContainerWidget */
+
+ads--CDockAreaWidget {
+	background: palette(window);
+	border: 1px solid palette(light);
+} /* Inside a CDockContainerWidget */
+
+ads--CDockAreaWidget #tabsMenuButton::menu-indicator {
+	image: none;
+}
+
+ads--CDockAreaWidget #detachGroupButton {
+	qproperty-icon: url('./Dark/popout.svg');
+	qproperty-iconSize: 12px;
+}
+
+ads--CDockAreaWidget #dockAreaCloseButton {
+	qproperty-icon: url('./Dark/close.svg');
+	qproperty-iconSize: 12px;
+}
+
+ads--CDockAreaTitleBar, ads--CDockAreaWidget #tabsMenuButton, ads--CDockAreaWidget #detachGroupButton, ads--CDockAreaWidget #dockAreaCloseButton {
+	background-color: rgb(70,69,70);
+}
+
+ads--CDockWidgetTab {
+	background-color: rgb(70,69,70);
+	border-color: palette(light);
+	border-style: solid;
+	border-width: 0 1px 0 0;
+	padding: 0 0px;
+}
+
+ads--CDockWidgetTab QLabel {
+	background-color: rgb(70,69,70);
+}
+
+ads--CDockWidgetTab #tabCloseButton {
+	margin-top: 2px;
+	background: none;
+	border: none;
+	padding: 0px -2px;
+	qproperty-icon: url('./Dark/close.svg');
+	qproperty-iconSize: 8px;
+}
+
+ads--CDockWidgetTab[activeTab="true"], ads--CDockWidgetTab[activeTab="true"] QLabel {
+	background-color: palette(window);
+}
+
+
+/* Legacy Dock Widget */
 
 QDockWidget {
 	titlebar-close-icon: url('./Dark/close.svg');
