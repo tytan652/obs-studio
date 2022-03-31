@@ -50,7 +50,6 @@
 #include "window-basic-auto-config.hpp"
 #include "window-basic-source-select.hpp"
 #include "window-basic-main.hpp"
-#include "window-basic-central.hpp"
 #include "window-basic-controls.hpp"
 #include "window-basic-sources.hpp"
 #include "window-basic-mixer.hpp"
@@ -66,12 +65,10 @@
 #include "youtube-api-wrappers.hpp"
 #endif
 #include "qt-wrappers.hpp"
-#include "context-bar-controls.hpp"
 #include "display-helpers.hpp"
 #include "volume-control.hpp"
 #include "remote-text.hpp"
 #include "ui-validation.hpp"
-#include "media-controls.hpp"
 #include "undo-stack-obs.hpp"
 #include <fstream>
 #include <sstream>
@@ -264,6 +261,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 	/* Add central widget */
 	centralWidget = new OBSBasicCentral(this);
 	setCentralWidget(centralWidget);
+	connect(ui->toggleContextBar, &QAction::toggled, centralWidget,
+		&OBSBasicCentral::UpdateContextContainerVisibility);
 
 	/* Add scenes dock */
 	scenesWidget = new OBSBasicScenes(this);
@@ -349,7 +348,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 		if (obs_get_video_info(&ovi))
 			ResizePreview(ovi.base_width, ovi.base_height);
 
-		UpdateContextBarVisibility();
+		centralWidget->UpdateContextBarVisibility();
 	};
 
 	connect(windowHandle(), &QWindow::screenChanged, displayResize);
@@ -1816,9 +1815,7 @@ void OBSBasic::OBSInit()
 	bool contextVisible = config_get_bool(
 		App()->GlobalConfig(), "BasicWindow", "ShowContextToolbars");
 	ui->toggleContextBar->setChecked(contextVisible);
-	centralWidget->ui->contextContainer->setVisible(contextVisible);
-	if (contextVisible)
-		UpdateContextBar(true);
+	centralWidget->InitContextContainerVisibility(contextVisible);
 	UpdateEditMenu();
 
 	{
@@ -2443,14 +2440,7 @@ void OBSBasic::CreateHotkeys()
 	LoadHotkeyPair(togglePreviewHotkeys, "OBSBasic.EnablePreview",
 		       "OBSBasic.DisablePreview");
 
-	contextBarHotkeys = obs_hotkey_pair_register_frontend(
-		"OBSBasic.ShowContextBar", Str("Basic.Main.ShowContextBar"),
-		"OBSBasic.HideContextBar", Str("Basic.Main.HideContextBar"),
-		MAKE_CALLBACK(!basic.centralWidget->IsContextContainerVisible(),
-			      basic.ShowContextBar, "Showing Context Bar"),
-		MAKE_CALLBACK(basic.centralWidget->IsContextContainerVisible(),
-			      basic.HideContextBar, "Hiding Context Bar"),
-		this, this);
+	contextBarHotkeys = centralWidget->CreateContextBarHotkeyPair();
 	LoadHotkeyPair(contextBarHotkeys, "OBSBasic.ShowContextBar",
 		       "OBSBasic.HideContextBar");
 #undef MAKE_CALLBACK
@@ -2984,215 +2974,13 @@ void OBSBasic::RenameSources(OBSSource source, QString newName,
 	if (scene)
 		OBSProjector::UpdateMultiviewProjectors();
 
-	UpdateContextBar();
-}
-
-void OBSBasic::UpdateContextBarVisibility()
-{
-	int width = centralWidget->size().width();
-
-	ContextBarSize contextBarSizeNew;
-	if (width >= 740) {
-		contextBarSizeNew = ContextBarSize_Normal;
-	} else if (width >= 600) {
-		contextBarSizeNew = ContextBarSize_Reduced;
-	} else {
-		contextBarSizeNew = ContextBarSize_Minimized;
-	}
-
-	if (contextBarSize == contextBarSizeNew)
-		return;
-
-	contextBarSize = contextBarSizeNew;
-	UpdateContextBarDeferred();
-}
-
-static bool is_network_media_source(obs_source_t *source, const char *id)
-{
-	if (strcmp(id, "ffmpeg_source") != 0)
-		return false;
-
-	OBSDataAutoRelease s = obs_source_get_settings(source);
-	bool is_local_file = obs_data_get_bool(s, "is_local_file");
-
-	return !is_local_file;
+	centralWidget->UpdateContextBar();
 }
 
 void OBSBasic::UpdateContextBarDeferred(bool force)
 {
-	QMetaObject::invokeMethod(this, "UpdateContextBar",
+	QMetaObject::invokeMethod(centralWidget, "UpdateContextBar",
 				  Qt::QueuedConnection, Q_ARG(bool, force));
-}
-
-void OBSBasic::UpdateContextBar(bool force)
-{
-	if (!centralWidget->IsContextContainerVisible() && !force)
-		return;
-
-	OBSSceneItem item = GetCurrentSceneItem();
-
-	if (item) {
-		obs_source_t *source = obs_sceneitem_get_source(item);
-
-		bool updateNeeded = true;
-		QLayoutItem *la =
-			centralWidget->ui->emptySpace->layout()->itemAt(0);
-		if (la) {
-			if (SourceToolbar *toolbar =
-				    dynamic_cast<SourceToolbar *>(
-					    la->widget())) {
-				if (toolbar->GetSource() == source)
-					updateNeeded = false;
-			} else if (MediaControls *toolbar =
-					   dynamic_cast<MediaControls *>(
-						   la->widget())) {
-				if (toolbar->GetSource() == source)
-					updateNeeded = false;
-			}
-		}
-
-		const char *id = obs_source_get_unversioned_id(source);
-		uint32_t flags = obs_source_get_output_flags(source);
-
-		centralWidget->ui->sourceInteractButton->setVisible(
-			flags & OBS_SOURCE_INTERACTION);
-
-		if (contextBarSize >= ContextBarSize_Reduced &&
-		    (updateNeeded || force)) {
-			centralWidget->ClearContextBar();
-			if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
-				if (!is_network_media_source(source, id)) {
-					MediaControls *mediaControls =
-						new MediaControls(
-							centralWidget->ui
-								->emptySpace);
-					mediaControls->SetSource(source);
-
-					centralWidget->ui->emptySpace->layout()
-						->addWidget(mediaControls);
-				}
-			} else if (strcmp(id, "browser_source") == 0) {
-				BrowserToolbar *c = new BrowserToolbar(
-					centralWidget->ui->emptySpace, source);
-				centralWidget->ui->emptySpace->layout()
-					->addWidget(c);
-
-			} else if (strcmp(id, "wasapi_input_capture") == 0 ||
-				   strcmp(id, "wasapi_output_capture") == 0 ||
-				   strcmp(id, "coreaudio_input_capture") == 0 ||
-				   strcmp(id, "coreaudio_output_capture") ==
-					   0 ||
-				   strcmp(id, "pulse_input_capture") == 0 ||
-				   strcmp(id, "pulse_output_capture") == 0 ||
-				   strcmp(id, "alsa_input_capture") == 0) {
-				AudioCaptureToolbar *c = new AudioCaptureToolbar(
-					centralWidget->ui->emptySpace, source);
-				c->Init();
-				centralWidget->ui->emptySpace->layout()
-					->addWidget(c);
-
-			} else if (strcmp(id, "window_capture") == 0 ||
-				   strcmp(id, "xcomposite_input") == 0) {
-				WindowCaptureToolbar *c =
-					new WindowCaptureToolbar(
-						centralWidget->ui->emptySpace,
-						source);
-				c->Init();
-				centralWidget->ui->emptySpace->layout()
-					->addWidget(c);
-
-			} else if (strcmp(id, "monitor_capture") == 0 ||
-				   strcmp(id, "display_capture") == 0 ||
-				   strcmp(id, "xshm_input") == 0) {
-				DisplayCaptureToolbar *c =
-					new DisplayCaptureToolbar(
-						centralWidget->ui->emptySpace,
-						source);
-				c->Init();
-				centralWidget->ui->emptySpace->layout()
-					->addWidget(c);
-
-			} else if (strcmp(id, "dshow_input") == 0) {
-				DeviceCaptureToolbar *c =
-					new DeviceCaptureToolbar(
-						centralWidget->ui->emptySpace,
-						source);
-				centralWidget->ui->emptySpace->layout()
-					->addWidget(c);
-
-			} else if (strcmp(id, "game_capture") == 0) {
-				GameCaptureToolbar *c = new GameCaptureToolbar(
-					centralWidget->ui->emptySpace, source);
-				centralWidget->ui->emptySpace->layout()
-					->addWidget(c);
-
-			} else if (strcmp(id, "image_source") == 0) {
-				ImageSourceToolbar *c = new ImageSourceToolbar(
-					centralWidget->ui->emptySpace, source);
-				centralWidget->ui->emptySpace->layout()
-					->addWidget(c);
-
-			} else if (strcmp(id, "color_source") == 0) {
-				ColorSourceToolbar *c = new ColorSourceToolbar(
-					centralWidget->ui->emptySpace, source);
-				centralWidget->ui->emptySpace->layout()
-					->addWidget(c);
-
-			} else if (strcmp(id, "text_ft2_source") == 0 ||
-				   strcmp(id, "text_gdiplus") == 0) {
-				TextSourceToolbar *c = new TextSourceToolbar(
-					centralWidget->ui->emptySpace, source);
-				centralWidget->ui->emptySpace->layout()
-					->addWidget(c);
-			}
-		} else if (contextBarSize == ContextBarSize_Minimized) {
-			centralWidget->ClearContextBar();
-		}
-
-		QIcon icon;
-
-		if (strcmp(id, "scene") == 0)
-			icon = GetSceneIcon();
-		else if (strcmp(id, "group") == 0)
-			icon = GetGroupIcon();
-		else
-			icon = GetSourceIcon(id);
-
-		QPixmap pixmap = icon.pixmap(QSize(16, 16));
-		centralWidget->ui->contextSourceIcon->setPixmap(pixmap);
-		centralWidget->ui->contextSourceIconSpacer->hide();
-		centralWidget->ui->contextSourceIcon->show();
-
-		const char *name = obs_source_get_name(source);
-		centralWidget->ui->contextSourceLabel->setText(name);
-
-		centralWidget->ui->sourceFiltersButton->setEnabled(true);
-		centralWidget->ui->sourcePropertiesButton->setEnabled(
-			obs_source_configurable(source));
-	} else {
-		centralWidget->ClearContextBar();
-		centralWidget->ui->contextSourceIcon->hide();
-		centralWidget->ui->contextSourceIconSpacer->show();
-		centralWidget->ui->contextSourceLabel->setText(
-			QTStr("ContextBar.NoSelectedSource"));
-
-		centralWidget->ui->sourceFiltersButton->setEnabled(false);
-		centralWidget->ui->sourcePropertiesButton->setEnabled(false);
-		centralWidget->ui->sourceInteractButton->setVisible(false);
-	}
-
-	if (contextBarSize == ContextBarSize_Normal) {
-		centralWidget->ui->sourcePropertiesButton->setText(
-			QTStr("Properties"));
-		centralWidget->ui->sourceFiltersButton->setText(
-			QTStr("Filters"));
-		centralWidget->ui->sourceInteractButton->setText(
-			QTStr("Interact"));
-	} else {
-		centralWidget->ui->sourcePropertiesButton->setText("");
-		centralWidget->ui->sourceFiltersButton->setText("");
-		centralWidget->ui->sourceInteractButton->setText("");
-	}
 }
 
 static inline bool SourceMixerHidden(obs_source_t *source)
@@ -4902,7 +4690,7 @@ void OBSBasic::ScenesCurrentItemChanged(QListWidgetItem *current,
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
 
-	UpdateContextBar();
+	centralWidget->UpdateContextBar();
 
 	UNUSED_PARAMETER(prev);
 }
@@ -8776,24 +8564,6 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
 			"ShowListboxToolbars", visible);
-}
-
-void OBSBasic::ShowContextBar()
-{
-	on_toggleContextBar_toggled(true);
-}
-
-void OBSBasic::HideContextBar()
-{
-	on_toggleContextBar_toggled(false);
-}
-
-void OBSBasic::on_toggleContextBar_toggled(bool visible)
-{
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
-			"ShowContextToolbars", visible);
-	centralWidget->ui->contextContainer->setVisible(visible);
-	UpdateContextBar(true);
 }
 
 void OBSBasic::on_toggleStatusBar_toggled(bool visible)

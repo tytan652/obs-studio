@@ -30,6 +30,7 @@
 #include <vector>
 #include <memory>
 #include "window-main.hpp"
+#include "window-basic-central.hpp"
 #include "window-basic-interaction.hpp"
 #include "window-basic-properties.hpp"
 #include "window-basic-transform.hpp"
@@ -56,7 +57,6 @@ class QMessageBox;
 class QListWidgetItem;
 class SourceTreeItem;
 class VolControl;
-class OBSBasicCentral;
 class OBSBasicControls;
 class OBSBasicMixer;
 class OBSBasicSources;
@@ -210,12 +210,6 @@ class OBSBasic : public OBSMainWindow {
 		DropType_Url,
 	};
 
-	enum ContextBarSize {
-		ContextBarSize_Minimized,
-		ContextBarSize_Reduced,
-		ContextBarSize_Normal
-	};
-
 private:
 	obs_frontend_callbacks *api = nullptr;
 
@@ -231,7 +225,6 @@ private:
 	long disableSaving = 1;
 	bool projectChanged = false;
 	bool previewEnabled = true;
-	ContextBarSize contextBarSize = ContextBarSize_Normal;
 
 	std::deque<SourceCopyInfo> clipboard;
 	OBSWeakSourceAutoRelease copyFiltersSource;
@@ -714,8 +707,6 @@ public slots:
 
 	void UpdatePatronJson(const QString &text, const QString &error);
 
-	void ShowContextBar();
-	void HideContextBar();
 	void PauseRecording();
 	void UnpauseRecording();
 
@@ -1090,7 +1081,6 @@ private slots:
 	void on_actionAlwaysOnTop_triggered();
 
 	void on_toggleListboxToolbars_toggled(bool visible);
-	void on_toggleContextBar_toggled(bool visible);
 	void on_toggleStatusBar_toggled(bool visible);
 	void on_toggleSourceIcons_toggled(bool visible);
 
@@ -1175,9 +1165,8 @@ public slots:
 	bool ReplayBufferActive();
 	bool VirtualCamActive();
 
-	void UpdateContextBar(bool force = false);
+	inline void UpdateContextBar() { centralWidget->UpdateContextBar(); }
 	void UpdateContextBarDeferred(bool force = false);
-	void UpdateContextBarVisibility();
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);
