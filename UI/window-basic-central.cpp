@@ -1,7 +1,11 @@
 #include "window-basic-central.hpp"
 
+#include <QScreen>
+
 #include "window-basic-main.hpp"
 #include "obs-proxy-style.hpp"
+
+#include "display-helpers.hpp"
 
 #include "context-bar-controls.hpp"
 #include "media-controls.hpp"
@@ -39,6 +43,279 @@ OBSBasicCentral::OBSBasicCentral(OBSBasic *main_)
 		[this](bool enabled) {
 			this->ui->previewLabel->setHidden(!enabled);
 		});
+
+	auto displayResize = [this]() {
+		struct obs_video_info ovi;
+
+		if (obs_get_video_info(&ovi))
+			ResizePreview(ovi.base_width, ovi.base_height);
+
+		UpdateContextBarVisibility();
+	};
+
+	connect(main->windowHandle(), &QWindow::screenChanged, displayResize);
+	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
+}
+
+void OBSBasicCentral::ResizePreview(uint32_t cx, uint32_t cy)
+{
+	QSize targetSize;
+	bool isFixedScaling;
+	obs_video_info ovi;
+
+	/* resize preview panel to fix to the top section of the window */
+	targetSize = GetPixelSize(ui->preview);
+
+	isFixedScaling = ui->preview->IsFixedScaling();
+	obs_get_video_info(&ovi);
+
+	if (isFixedScaling) {
+		previewScale = ui->preview->GetScalingAmount();
+		GetCenterPosFromFixedScale(
+			int(cx), int(cy),
+			targetSize.width() - PREVIEW_EDGE_SIZE * 2,
+			targetSize.height() - PREVIEW_EDGE_SIZE * 2, previewX,
+			previewY, previewScale);
+		previewX += ui->preview->GetScrollX();
+		previewY += ui->preview->GetScrollY();
+
+	} else {
+		GetScaleAndCenterPos(int(cx), int(cy),
+				     targetSize.width() - PREVIEW_EDGE_SIZE * 2,
+				     targetSize.height() -
+					     PREVIEW_EDGE_SIZE * 2,
+				     previewX, previewY, previewScale);
+	}
+
+	previewX += float(PREVIEW_EDGE_SIZE);
+	previewY += float(PREVIEW_EDGE_SIZE);
+}
+
+void OBSBasicCentral::ResizeProgram(uint32_t cx, uint32_t cy)
+{
+	QSize targetSize;
+
+	/* resize program panel to fix to the top section of the window */
+	targetSize = GetPixelSize(program);
+	GetScaleAndCenterPos(int(cx), int(cy),
+			     targetSize.width() - PREVIEW_EDGE_SIZE * 2,
+			     targetSize.height() - PREVIEW_EDGE_SIZE * 2,
+			     programX, programY, programScale);
+
+	programX += float(PREVIEW_EDGE_SIZE);
+	programY += float(PREVIEW_EDGE_SIZE);
+}
+
+void OBSBasicCentral::RenderMain(void *data, uint32_t cx, uint32_t cy)
+{
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "RenderMain");
+
+	OBSBasicCentral *widget = static_cast<OBSBasicCentral *>(data);
+	obs_video_info ovi;
+
+	obs_get_video_info(&ovi);
+
+	widget->previewCX = int(widget->previewScale * float(ovi.base_width));
+	widget->previewCY = int(widget->previewScale * float(ovi.base_height));
+
+	gs_viewport_push();
+	gs_projection_push();
+
+	obs_display_t *display = widget->ui->preview->GetDisplay();
+	uint32_t width, height;
+	obs_display_size(display, &width, &height);
+	float right = float(width) - widget->previewX;
+	float bottom = float(height) - widget->previewY;
+
+	gs_ortho(-widget->previewX, right, -widget->previewY, bottom, -100.0f,
+		 100.0f);
+
+	widget->ui->preview->DrawOverflow();
+
+	/* --------------------------------------- */
+
+	gs_ortho(0.0f, float(ovi.base_width), 0.0f, float(ovi.base_height),
+		 -100.0f, 100.0f);
+	gs_set_viewport(widget->previewX, widget->previewY, widget->previewCX,
+			widget->previewCY);
+
+	if (widget->main->IsPreviewProgramMode()) {
+		widget->main->DrawBackdrop(float(ovi.base_width),
+					   float(ovi.base_height));
+
+		OBSScene scene = widget->main->GetCurrentScene();
+		obs_source_t *source = obs_scene_get_source(scene);
+		if (source)
+			obs_source_video_render(source);
+	} else {
+		obs_render_main_texture_src_color_only();
+	}
+	gs_load_vertexbuffer(nullptr);
+
+	/* --------------------------------------- */
+
+	gs_ortho(-widget->previewX, right, -widget->previewY, bottom, -100.0f,
+		 100.0f);
+	gs_reset_viewport();
+
+	widget->ui->preview->DrawSceneEditing();
+
+	uint32_t targetCX = widget->previewCX;
+	uint32_t targetCY = widget->previewCY;
+
+	if (widget->main->drawSafeAreas) {
+		RenderSafeAreas(widget->main->actionSafeMargin, targetCX,
+				targetCY);
+		RenderSafeAreas(widget->main->graphicsSafeMargin, targetCX,
+				targetCY);
+		RenderSafeAreas(widget->main->fourByThreeSafeMargin, targetCX,
+				targetCY);
+		RenderSafeAreas(widget->main->leftLine, targetCX, targetCY);
+		RenderSafeAreas(widget->main->topLine, targetCX, targetCY);
+		RenderSafeAreas(widget->main->rightLine, targetCX, targetCY);
+	}
+
+	/* --------------------------------------- */
+
+	gs_projection_pop();
+	gs_viewport_pop();
+
+	GS_DEBUG_MARKER_END();
+
+	UNUSED_PARAMETER(cx);
+	UNUSED_PARAMETER(cy);
+}
+
+void OBSBasicCentral::RenderProgram(void *data, uint32_t cx, uint32_t cy)
+{
+	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "RenderProgram");
+
+	OBSBasicCentral *widget = static_cast<OBSBasicCentral *>(data);
+	obs_video_info ovi;
+
+	obs_get_video_info(&ovi);
+
+	widget->programCX = int(widget->programScale * float(ovi.base_width));
+	widget->programCY = int(widget->programScale * float(ovi.base_height));
+
+	gs_viewport_push();
+	gs_projection_push();
+
+	/* --------------------------------------- */
+
+	gs_ortho(0.0f, float(ovi.base_width), 0.0f, float(ovi.base_height),
+		 -100.0f, 100.0f);
+	gs_set_viewport(widget->programX, widget->programY, widget->programCX,
+			widget->programCY);
+
+	obs_render_main_texture_src_color_only();
+	gs_load_vertexbuffer(nullptr);
+
+	/* --------------------------------------- */
+
+	gs_projection_pop();
+	gs_viewport_pop();
+
+	GS_DEBUG_MARKER_END();
+
+	UNUSED_PARAMETER(cx);
+	UNUSED_PARAMETER(cy);
+}
+
+void OBSBasicCentral::OBSInit()
+{
+	auto addDisplay = [this](OBSQTDisplay *window) {
+		obs_display_add_draw_callback(window->GetDisplay(),
+					      OBSBasicCentral::RenderMain,
+					      this);
+
+		struct obs_video_info ovi;
+		if (obs_get_video_info(&ovi))
+			ResizePreview(ovi.base_width, ovi.base_height);
+	};
+
+	connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addDisplay);
+}
+
+void OBSBasicCentral::RemovePreviewDrawCallback()
+{
+	obs_display_remove_draw_callback(ui->preview->GetDisplay(),
+					 OBSBasicCentral::RenderMain, this);
+}
+
+void OBSBasicCentral::CreateProgramDisplay()
+{
+	program = new OBSQTDisplay();
+
+	program->setContextMenuPolicy(Qt::CustomContextMenu);
+	connect(program.data(), &QWidget::customContextMenuRequested, main,
+		&OBSBasic::ProgramViewContextMenuRequested);
+
+	auto displayResize = [this]() {
+		struct obs_video_info ovi;
+
+		if (obs_get_video_info(&ovi))
+			ResizeProgram(ovi.base_width, ovi.base_height);
+	};
+
+	connect(program.data(), &OBSQTDisplay::DisplayResized, displayResize);
+
+	auto addDisplay = [this](OBSQTDisplay *window) {
+		obs_display_add_draw_callback(window->GetDisplay(),
+					      OBSBasicCentral::RenderProgram,
+					      this);
+
+		struct obs_video_info ovi;
+		if (obs_get_video_info(&ovi))
+			ResizeProgram(ovi.base_width, ovi.base_height);
+	};
+
+	connect(program.data(), &OBSQTDisplay::DisplayCreated, addDisplay);
+
+	program->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+}
+
+void OBSBasicCentral::AddProgramDisplay(QWidget *programOptions)
+{
+	programLabel = new QLabel(QTStr("StudioMode.Program"), this);
+	programLabel->setSizePolicy(QSizePolicy::Preferred,
+				    QSizePolicy::Preferred);
+	programLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
+	programLabel->setProperty("themeID", "previewProgramLabels");
+
+	programWidget = new QWidget();
+	programLayout = new QVBoxLayout();
+
+	programLayout->setContentsMargins(0, 0, 0, 0);
+	programLayout->setSpacing(0);
+
+	programLayout->addWidget(programLabel);
+	programLayout->addWidget(program);
+
+	bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
+				      "StudioModeLabels");
+
+	programLabel->setHidden(!labels);
+
+	programWidget->setLayout(programLayout);
+
+	ui->previewLayout->addWidget(programOptions);
+	ui->previewLayout->addWidget(programWidget);
+	ui->previewLayout->setAlignment(programOptions, Qt::AlignCenter);
+}
+
+void OBSBasicCentral::RemoveProgramDisplay()
+{
+	delete program;
+	delete programLabel;
+	delete programWidget;
+}
+
+void OBSBasicCentral::ResizePreviewProgram(obs_video_info ovi)
+{
+	ResizePreview(ovi.base_width, ovi.base_height);
+	if (program)
+		ResizeProgram(ovi.base_width, ovi.base_height);
 }
 
 void OBSBasicCentral::EnablePreviewDisplay(bool enable)
@@ -131,6 +408,9 @@ void OBSBasicCentral::ResetUI()
 
 	if (main->IsPreviewProgramMode())
 		ui->previewLabel->setHidden(!labels);
+
+	if (programLabel)
+		programLabel->setHidden(!labels);
 }
 
 static bool is_network_media_source(obs_source_t *source, const char *id)

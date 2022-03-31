@@ -191,8 +191,10 @@ class OBSBasic : public OBSMainWindow {
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
 
-	// Allow those classes to connect OBSBasic private slots
+	// Allow this class access to private slots and gs_vertbuffer_t attributes
 	friend class OBSBasicCentral;
+
+	// Allow those classes to connect OBSBasic private slots
 	friend class OBSBasicScenes;
 	friend class OBSBasicSources;
 	friend class OBSBasicMixer;
@@ -279,10 +281,6 @@ private:
 	gs_vertbuffer_t *topLine = nullptr;
 	gs_vertbuffer_t *rightLine = nullptr;
 
-	int previewX = 0, previewY = 0;
-	int previewCX = 0, previewCY = 0;
-	float previewScale = 0.0f;
-
 	ConfigFile basicConfig;
 
 	std::vector<SavedProjectorInfo *> savedProjectorsArray;
@@ -327,10 +325,6 @@ private:
 #if defined(_WIN32) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	QWinTaskbarButton *taskBtn = new QWinTaskbarButton(this);
 #endif
-
-	QPointer<QWidget> programWidget;
-	QPointer<QVBoxLayout> programLayout;
-	QPointer<QLabel> programLabel;
 
 	QScopedPointer<QThread> patronJsonThread;
 	std::string patronJson;
@@ -444,7 +438,6 @@ private:
 	obs_source_t *fadeTransition;
 	obs_source_t *cutTransition;
 
-	void CreateProgramDisplay();
 	void CreateProgramOptions();
 	int TransitionCount();
 	int AddTransitionBeforeSeparator(const QString &name,
@@ -476,13 +469,10 @@ private:
 	void QuickTransitionRemoveClicked();
 
 	void SetPreviewProgramMode(bool enabled);
-	void ResizeProgram(uint32_t cx, uint32_t cy);
 	void SetCurrentScene(obs_scene_t *scene, bool force = false);
-	static void RenderProgram(void *data, uint32_t cx, uint32_t cy);
 
 	std::vector<QuickTransition> quickTransitions;
 	QPointer<QWidget> programOptions;
-	QPointer<OBSQTDisplay> program;
 	OBSWeakSource lastScene;
 	OBSWeakSource swapScene;
 	OBSWeakSource programScene;
@@ -497,10 +487,6 @@ private:
 	obs_hotkey_id sourceScreenshotHotkey = 0;
 	int quickTransitionIdCounter = 1;
 	bool overridingTransition = false;
-
-	int programX = 0, programY = 0;
-	int programCX = 0, programCY = 0;
-	float programScale = 0.0f;
 
 	int disableOutputsRef = 0;
 
@@ -821,9 +807,6 @@ private:
 	static void SourceAudioActivated(void *data, calldata_t *params);
 	static void SourceAudioDeactivated(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
-	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
-
-	void ResizePreview(uint32_t cx, uint32_t cy);
 
 	void AddSource(const char *id);
 	QMenu *CreateAddSourcePopupMenu();
@@ -869,7 +852,6 @@ public:
 
 	bool Active() const;
 
-	void ResetUI();
 	int ResetVideo();
 	bool ResetAudio();
 
@@ -880,14 +862,6 @@ public:
 
 	void NewProject();
 	void LoadProject();
-
-	inline void GetDisplayRect(int &x, int &y, int &cx, int &cy)
-	{
-		x = previewX;
-		y = previewY;
-		cx = previewCX;
-		cy = previewCY;
-	}
 
 	inline bool SavingDisabled() const { return disableSaving; }
 

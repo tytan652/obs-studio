@@ -38,11 +38,15 @@ vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	float pixelRatio = main->devicePixelRatioF();
-	float scale = pixelRatio / main->previewScale;
+	float scale = pixelRatio / main->centralWidget->previewScale;
 	vec2 pos;
 	vec2_set(&pos,
-		 (float(event->x()) - main->previewX / pixelRatio) * scale,
-		 (float(event->y()) - main->previewY / pixelRatio) * scale);
+		 (float(event->x()) -
+		  main->centralWidget->previewX / pixelRatio) *
+			 scale,
+		 (float(event->y()) -
+		  main->centralWidget->previewY / pixelRatio) *
+			 scale);
 
 	return pos;
 }
@@ -177,7 +181,7 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 	const float clampDist = config_get_double(GetGlobalConfig(),
 						  "BasicWindow",
 						  "SnapDistance") /
-				main->previewScale;
+				main->centralWidget->previewScale;
 	const float centerX = br.x - (br.x - tl.x) / 2.0f;
 	const float centerY = br.y - (br.y - tl.y) / 2.0f;
 
@@ -395,7 +399,8 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos, bool ignoreGroup)
 	if (!scene)
 		return;
 
-	float scale = main->previewScale / main->devicePixelRatioF();
+	float scale =
+		main->centralWidget->previewScale / main->devicePixelRatioF();
 	vec2 scaled_pos = pos;
 	vec2_divf(&scaled_pos, &scaled_pos, scale);
 	HandleFindData data(scaled_pos, scale);
@@ -519,8 +524,10 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	float pixelRatio = main->devicePixelRatioF();
-	float x = float(event->x()) - main->previewX / pixelRatio;
-	float y = float(event->y()) - main->previewY / pixelRatio;
+	float x =
+		float(event->x()) - main->centralWidget->previewX / pixelRatio;
+	float y =
+		float(event->y()) - main->centralWidget->previewY / pixelRatio;
 	Qt::KeyboardModifiers modifiers = QGuiApplication::keyboardModifiers();
 	bool altDown = (modifiers & Qt::AltModifier);
 	bool shiftDown = (modifiers & Qt::ShiftModifier);
@@ -557,7 +564,8 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	vec2_set(&startPos, x, y);
 	GetStretchHandleData(startPos, false);
 
-	vec2_divf(&startPos, &startPos, main->previewScale / pixelRatio);
+	vec2_divf(&startPos, &startPos,
+		  main->centralWidget->previewScale / pixelRatio);
 	startPos.x = std::round(startPos.x);
 	startPos.y = std::round(startPos.y);
 
@@ -882,7 +890,7 @@ void OBSBasicPreview::SnapItemMovement(vec2 &offset)
 	const float clampDist = config_get_double(GetGlobalConfig(),
 						  "BasicWindow",
 						  "SnapDistance") /
-				main->previewScale;
+				main->centralWidget->previewScale;
 
 	OffsetData offsetData;
 	offsetData.clampDist = clampDist;
@@ -1537,8 +1545,10 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 			OBSBasic *main = reinterpret_cast<OBSBasic *>(
 				App()->GetMainWindow());
 			float scale = main->devicePixelRatioF();
-			float x = float(event->x()) - main->previewX / scale;
-			float y = float(event->y()) - main->previewY / scale;
+			float x = float(event->x()) -
+				  main->centralWidget->previewX / scale;
+			float y = float(event->y()) -
+				  main->centralWidget->previewY / scale;
 			vec2_set(&startPos, x, y);
 			updateCursor = true;
 		}
@@ -1919,7 +1929,8 @@ void OBSBasicPreview::DrawOverflow()
 
 	if (scene) {
 		gs_matrix_push();
-		gs_matrix_scale3f(main->previewScale, main->previewScale, 1.0f);
+		gs_matrix_scale3f(main->centralWidget->previewScale,
+				  main->centralWidget->previewScale, 1.0f);
 		obs_scene_enum_items(scene, DrawSelectedOverflow, this);
 		gs_matrix_pop();
 	}
@@ -1952,7 +1963,8 @@ void OBSBasicPreview::DrawSceneEditing()
 
 	if (scene) {
 		gs_matrix_push();
-		gs_matrix_scale3f(main->previewScale, main->previewScale, 1.0f);
+		gs_matrix_scale3f(main->centralWidget->previewScale,
+				  main->centralWidget->previewScale, 1.0f);
 		obs_scene_enum_items(scene, DrawSelectedItem, this);
 		gs_matrix_pop();
 	}
@@ -1969,10 +1981,11 @@ void OBSBasicPreview::DrawSceneEditing()
 			rectFill = gs_render_save();
 		}
 
-		DrawSelectionBox(startPos.x * main->previewScale,
-				 startPos.y * main->previewScale,
-				 mousePos.x * main->previewScale,
-				 mousePos.y * main->previewScale, rectFill);
+		DrawSelectionBox(startPos.x * main->centralWidget->previewScale,
+				 startPos.y * main->centralWidget->previewScale,
+				 mousePos.x * main->centralWidget->previewScale,
+				 mousePos.y * main->centralWidget->previewScale,
+				 rectFill);
 	}
 
 	gs_load_vertexbuffer(nullptr);
