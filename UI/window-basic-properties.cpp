@@ -18,7 +18,6 @@
 #include "obs-app.hpp"
 #include "window-basic-properties.hpp"
 #include "window-basic-main.hpp"
-#include "window-basic-central.hpp"
 #include "qt-wrappers.hpp"
 #include "display-helpers.hpp"
 #include "properties-view.hpp"

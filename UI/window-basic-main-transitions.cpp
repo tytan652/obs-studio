@@ -21,7 +21,6 @@
 #include <QMessageBox>
 #include <util/dstr.hpp>
 #include "window-basic-main.hpp"
-#include "window-basic-central.hpp"
 #include "window-basic-sources.hpp"
 #include "display-helpers.hpp"
 #include "window-namedialog.hpp"
@@ -765,7 +764,7 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 		}
 	}
 
-	UpdateContextBar(true);
+	centralWidget->UpdateContextBar(true);
 
 	if (scene) {
 		bool userSwitched = (!force && !disableSaving);
@@ -1652,8 +1651,6 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 {
 	if (IsPreviewProgramMode() == enabled)
 		return;
-
-	centralWidget->ui->previewLabel->setHidden(!enabled);
 
 	emit PreviewProgramModeChanged(enabled);
 	os_atomic_set_bool(&previewProgramMode, enabled);
