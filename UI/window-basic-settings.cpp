@@ -3251,7 +3251,7 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"StudioPortraitLayout",
 				ui->studioPortraitLayout->isChecked());
 
-		main->ResetUI();
+		main->centralWidget->ResetUI();
 	}
 
 	if (WidgetChanged(ui->prevProgLabelToggle)) {
@@ -3259,7 +3259,7 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"StudioModeLabels",
 				ui->prevProgLabelToggle->isChecked());
 
-		main->ResetUI();
+		main->centralWidget->ResetUI();
 	}
 
 	bool multiviewChanged = false;

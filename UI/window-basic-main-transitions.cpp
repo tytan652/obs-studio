@@ -22,7 +22,6 @@
 #include <util/dstr.hpp>
 #include "window-basic-main.hpp"
 #include "window-basic-sources.hpp"
-#include "display-helpers.hpp"
 #include "window-namedialog.hpp"
 #include "menu-button.hpp"
 #include "slider-ignorewheel.hpp"
@@ -772,37 +771,6 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 		     userSwitched ? "User switched" : "Switched",
 		     obs_source_get_name(scene));
 	}
-}
-
-void OBSBasic::CreateProgramDisplay()
-{
-	program = new OBSQTDisplay();
-
-	program->setContextMenuPolicy(Qt::CustomContextMenu);
-	connect(program.data(), &QWidget::customContextMenuRequested, this,
-		&OBSBasic::ProgramViewContextMenuRequested);
-
-	auto displayResize = [this]() {
-		struct obs_video_info ovi;
-
-		if (obs_get_video_info(&ovi))
-			ResizeProgram(ovi.base_width, ovi.base_height);
-	};
-
-	connect(program.data(), &OBSQTDisplay::DisplayResized, displayResize);
-
-	auto addDisplay = [this](OBSQTDisplay *window) {
-		obs_display_add_draw_callback(window->GetDisplay(),
-					      OBSBasic::RenderProgram, this);
-
-		struct obs_video_info ovi;
-		if (obs_get_video_info(&ovi))
-			ResizeProgram(ovi.base_width, ovi.base_height);
-	};
-
-	connect(program.data(), &OBSQTDisplay::DisplayCreated, addDisplay);
-
-	program->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 }
 
 void OBSBasic::TransitionClicked()
@@ -1659,7 +1627,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		if (!previewEnabled)
 			centralWidget->EnablePreviewDisplay(true);
 
-		CreateProgramDisplay();
+		centralWidget->CreateProgramDisplay();
 		CreateProgramOptions();
 
 		OBSScene curScene = GetCurrentScene();
@@ -1690,32 +1658,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		RefreshQuickTransitions();
 
-		programLabel = new QLabel(QTStr("StudioMode.Program"), this);
-		programLabel->setSizePolicy(QSizePolicy::Preferred,
-					    QSizePolicy::Preferred);
-		programLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
-		programLabel->setProperty("themeID", "previewProgramLabels");
-
-		programWidget = new QWidget();
-		programLayout = new QVBoxLayout();
-
-		programLayout->setContentsMargins(0, 0, 0, 0);
-		programLayout->setSpacing(0);
-
-		programLayout->addWidget(programLabel);
-		programLayout->addWidget(program);
-
-		bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					      "StudioModeLabels");
-
-		programLabel->setHidden(!labels);
-
-		programWidget->setLayout(programLayout);
-
-		centralWidget->ui->previewLayout->addWidget(programOptions);
-		centralWidget->ui->previewLayout->addWidget(programWidget);
-		centralWidget->ui->previewLayout->setAlignment(programOptions,
-							       Qt::AlignCenter);
+		centralWidget->AddProgramDisplay(programOptions);
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
@@ -1732,9 +1675,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		TransitionToScene(actualProgramScene, true);
 
 		delete programOptions;
-		delete program;
-		delete programLabel;
-		delete programWidget;
+		centralWidget->RemoveProgramDisplay();
 
 		if (lastScene) {
 			OBSSource actualLastScene = OBSGetStrongRef(lastScene);
@@ -1764,59 +1705,8 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 			       "-------------------");
 	}
 
-	ResetUI();
+	centralWidget->ResetUI();
 	UpdateTitleBar();
-}
-
-void OBSBasic::RenderProgram(void *data, uint32_t cx, uint32_t cy)
-{
-	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "RenderProgram");
-
-	OBSBasic *window = static_cast<OBSBasic *>(data);
-	obs_video_info ovi;
-
-	obs_get_video_info(&ovi);
-
-	window->programCX = int(window->programScale * float(ovi.base_width));
-	window->programCY = int(window->programScale * float(ovi.base_height));
-
-	gs_viewport_push();
-	gs_projection_push();
-
-	/* --------------------------------------- */
-
-	gs_ortho(0.0f, float(ovi.base_width), 0.0f, float(ovi.base_height),
-		 -100.0f, 100.0f);
-	gs_set_viewport(window->programX, window->programY, window->programCX,
-			window->programCY);
-
-	obs_render_main_texture_src_color_only();
-	gs_load_vertexbuffer(nullptr);
-
-	/* --------------------------------------- */
-
-	gs_projection_pop();
-	gs_viewport_pop();
-
-	GS_DEBUG_MARKER_END();
-
-	UNUSED_PARAMETER(cx);
-	UNUSED_PARAMETER(cy);
-}
-
-void OBSBasic::ResizeProgram(uint32_t cx, uint32_t cy)
-{
-	QSize targetSize;
-
-	/* resize program panel to fix to the top section of the window */
-	targetSize = GetPixelSize(program);
-	GetScaleAndCenterPos(int(cx), int(cy),
-			     targetSize.width() - PREVIEW_EDGE_SIZE * 2,
-			     targetSize.height() - PREVIEW_EDGE_SIZE * 2,
-			     programX, programY, programScale);
-
-	programX += float(PREVIEW_EDGE_SIZE);
-	programY += float(PREVIEW_EDGE_SIZE);
 }
 
 obs_data_array_t *OBSBasic::SaveTransitions()

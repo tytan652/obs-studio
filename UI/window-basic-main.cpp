@@ -342,19 +342,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaTypeStreamOperators<OBSScene>("OBSScene");
 #endif
 
-	auto displayResize = [this]() {
-		struct obs_video_info ovi;
-
-		if (obs_get_video_info(&ovi))
-			ResizePreview(ovi.base_width, ovi.base_height);
-
-		centralWidget->UpdateContextBarVisibility();
-	};
-
-	connect(windowHandle(), &QWindow::screenChanged, displayResize);
-	connect(centralWidget->ui->preview, &OBSQTDisplay::DisplayResized,
-		displayResize);
-
 	delete shortcutFilter;
 	shortcutFilter = CreateShortcutFilter();
 	installEventFilter(shortcutFilter);
@@ -1849,17 +1836,7 @@ void OBSBasic::OBSInit()
 	RefreshProfiles();
 	disableSaving--;
 
-	auto addDisplay = [this](OBSQTDisplay *window) {
-		obs_display_add_draw_callback(window->GetDisplay(),
-					      OBSBasic::RenderMain, this);
-
-		struct obs_video_info ovi;
-		if (obs_get_video_info(&ovi))
-			ResizePreview(ovi.base_width, ovi.base_height);
-	};
-
-	connect(centralWidget->ui->preview, &OBSQTDisplay::DisplayCreated,
-		addDisplay);
+	centralWidget->OBSInit();
 
 	/* Show the main window, unless the tray icon isn't available
 	 * or neither the setting nor flag for starting minimized is set. */
@@ -2554,7 +2531,8 @@ OBSBasic::~OBSBasic()
 	delete shortcutFilter;
 	delete trayMenu;
 	delete programOptions;
-	delete program;
+
+	centralWidget->RemoveProgramDisplay();
 
 	/* XXX: any obs data must be released before calling obs_shutdown.
 	 * currently, we can't automate this with C++ RAII because of the
@@ -2589,9 +2567,7 @@ OBSBasic::~OBSBasic()
 	if (about)
 		delete about;
 
-	obs_display_remove_draw_callback(
-		centralWidget->ui->preview->GetDisplay(), OBSBasic::RenderMain,
-		this);
+	centralWidget->RemovePreviewDrawCallback();
 
 	obs_enter_graphics();
 	gs_vertexbuffer_destroy(box);
@@ -3882,85 +3858,6 @@ void OBSBasic::DrawBackdrop(float cx, float cy)
 	GS_DEBUG_MARKER_END();
 }
 
-void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
-{
-	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "RenderMain");
-
-	OBSBasic *window = static_cast<OBSBasic *>(data);
-	obs_video_info ovi;
-
-	obs_get_video_info(&ovi);
-
-	window->previewCX = int(window->previewScale * float(ovi.base_width));
-	window->previewCY = int(window->previewScale * float(ovi.base_height));
-
-	gs_viewport_push();
-	gs_projection_push();
-
-	obs_display_t *display =
-		window->centralWidget->ui->preview->GetDisplay();
-	uint32_t width, height;
-	obs_display_size(display, &width, &height);
-	float right = float(width) - window->previewX;
-	float bottom = float(height) - window->previewY;
-
-	gs_ortho(-window->previewX, right, -window->previewY, bottom, -100.0f,
-		 100.0f);
-
-	window->centralWidget->ui->preview->DrawOverflow();
-
-	/* --------------------------------------- */
-
-	gs_ortho(0.0f, float(ovi.base_width), 0.0f, float(ovi.base_height),
-		 -100.0f, 100.0f);
-	gs_set_viewport(window->previewX, window->previewY, window->previewCX,
-			window->previewCY);
-
-	if (window->IsPreviewProgramMode()) {
-		window->DrawBackdrop(float(ovi.base_width),
-				     float(ovi.base_height));
-
-		OBSScene scene = window->GetCurrentScene();
-		obs_source_t *source = obs_scene_get_source(scene);
-		if (source)
-			obs_source_video_render(source);
-	} else {
-		obs_render_main_texture_src_color_only();
-	}
-	gs_load_vertexbuffer(nullptr);
-
-	/* --------------------------------------- */
-
-	gs_ortho(-window->previewX, right, -window->previewY, bottom, -100.0f,
-		 100.0f);
-	gs_reset_viewport();
-
-	window->centralWidget->ui->preview->DrawSceneEditing();
-
-	uint32_t targetCX = window->previewCX;
-	uint32_t targetCY = window->previewCY;
-
-	if (window->drawSafeAreas) {
-		RenderSafeAreas(window->actionSafeMargin, targetCX, targetCY);
-		RenderSafeAreas(window->graphicsSafeMargin, targetCX, targetCY);
-		RenderSafeAreas(window->fourByThreeSafeMargin, targetCX,
-				targetCY);
-		RenderSafeAreas(window->leftLine, targetCX, targetCY);
-		RenderSafeAreas(window->topLine, targetCX, targetCY);
-		RenderSafeAreas(window->rightLine, targetCX, targetCY);
-	}
-
-	/* --------------------------------------- */
-
-	gs_projection_pop();
-	gs_viewport_pop();
-
-	GS_DEBUG_MARKER_END();
-
-	UNUSED_PARAMETER(cx);
-	UNUSED_PARAMETER(cy);
-}
-
 /* Main class functions */
 
 obs_service_t *OBSBasic::GetService()
@@ -4052,17 +3949,6 @@ static inline enum video_colorspace GetVideoColorSpaceFromName(const char *name)
 	return colorspace;
 }
 
-void OBSBasic::ResetUI()
-{
-	bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
-				      "StudioModeLabels");
-
-	centralWidget->ResetUI();
-
-	if (programLabel)
-		programLabel->setHidden(!labels);
-}
-
 int OBSBasic::ResetVideo()
 {
 	if (outputHandler && outputHandler->Active())
@@ -4135,9 +4021,7 @@ int OBSBasic::ResetVideo()
 			ret = AttemptToResetVideo(&ovi);
 		}
 	} else if (ret == OBS_VIDEO_SUCCESS) {
-		ResizePreview(ovi.base_width, ovi.base_height);
-		if (program)
-			ResizeProgram(ovi.base_width, ovi.base_height);
+		centralWidget->ResizePreviewProgram(ovi);
 	}
 
 	if (ret == OBS_VIDEO_SUCCESS) {
@@ -4215,40 +4099,6 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 
 		obs_set_output_source(channel, source);
 	}
-}
-
-void OBSBasic::ResizePreview(uint32_t cx, uint32_t cy)
-{
-	QSize targetSize;
-	bool isFixedScaling;
-	obs_video_info ovi;
-
-	/* resize preview panel to fix to the top section of the window */
-	targetSize = GetPixelSize(centralWidget->ui->preview);
-
-	isFixedScaling = centralWidget->ui->preview->IsFixedScaling();
-	obs_get_video_info(&ovi);
-
-	if (isFixedScaling) {
-		previewScale = centralWidget->ui->preview->GetScalingAmount();
-		GetCenterPosFromFixedScale(
-			int(cx), int(cy),
-			targetSize.width() - PREVIEW_EDGE_SIZE * 2,
-			targetSize.height() - PREVIEW_EDGE_SIZE * 2, previewX,
-			previewY, previewScale);
-		previewX += centralWidget->ui->preview->GetScrollX();
-		previewY += centralWidget->ui->preview->GetScrollY();
-
-	} else {
-		GetScaleAndCenterPos(int(cx), int(cy),
-				     targetSize.width() - PREVIEW_EDGE_SIZE * 2,
-				     targetSize.height() -
-					     PREVIEW_EDGE_SIZE * 2,
-				     previewX, previewY, previewScale);
-	}
-
-	previewX += float(PREVIEW_EDGE_SIZE);
-	previewY += float(PREVIEW_EDGE_SIZE);
 }
 
 void OBSBasic::CloseDialogs()
