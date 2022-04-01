@@ -256,9 +256,6 @@ private:
 	QPointer<QTimer> cpuUsageTimer;
 	QPointer<QTimer> diskFullTimer;
 
-	QPointer<QTimer> nudge_timer;
-	bool recent_nudge = false;
-
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
 
 	OBSService service;
@@ -391,8 +388,6 @@ private:
 	void CloseDialogs();
 	void ClearSceneData();
 	void ClearProjectors();
-
-	void Nudge(int dist, MoveDir dir);
 
 	OBSProjector *OpenProjector(obs_source_t *source, int monitor,
 				    ProjectorType type);
@@ -1105,15 +1100,6 @@ private slots:
 	void OpenInteraction(OBSSource source = nullptr);
 
 	void TogglePreview();
-
-	void NudgeUp();
-	void NudgeDown();
-	void NudgeLeft();
-	void NudgeRight();
-	void NudgeUpFar();
-	void NudgeDownFar();
-	void NudgeLeftFar();
-	void NudgeRightFar();
 
 	void OpenStudioProgramProjector();
 	void OpenPreviewProjector();
