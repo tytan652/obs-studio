@@ -261,6 +261,12 @@ OBSBasic::OBSBasic(QWidget *parent)
 	/* Add central widget */
 	centralWidget = new OBSBasicCentral(this);
 	setCentralWidget(centralWidget);
+	connect(ui->actionScaleWindow, &QAction::triggered, centralWidget,
+		&OBSBasicCentral::ScaleWindow);
+	connect(ui->actionScaleCanvas, &QAction::triggered, centralWidget,
+		&OBSBasicCentral::ScaleCanvas);
+	connect(ui->actionScaleOutput, &QAction::triggered, centralWidget,
+		&OBSBasicCentral::ScaleOutput);
 	connect(ui->toggleContextBar, &QAction::toggled, centralWidget,
 		&OBSBasicCentral::UpdateContextContainerVisibility);
 
@@ -8313,35 +8319,6 @@ void OBSBasic::on_scalingMenu_aboutToShow()
 			     ovi.output_height == ovi.base_height));
 
 	UpdatePreviewScalingMenu();
-}
-
-void OBSBasic::on_actionScaleWindow_triggered()
-{
-	centralWidget->ui->preview->SetFixedScaling(false);
-	centralWidget->ui->preview->ResetScrollingOffset();
-	emit centralWidget->ui->preview->DisplayResized();
-}
-
-void OBSBasic::on_actionScaleCanvas_triggered()
-{
-	centralWidget->ui->preview->SetFixedScaling(true);
-	centralWidget->ui->preview->SetScalingLevel(0);
-	emit centralWidget->ui->preview->DisplayResized();
-}
-
-void OBSBasic::on_actionScaleOutput_triggered()
-{
-	obs_video_info ovi;
-	obs_get_video_info(&ovi);
-
-	centralWidget->ui->preview->SetFixedScaling(true);
-	float scalingAmount = float(ovi.output_width) / float(ovi.base_width);
-	// log base ZOOM_SENSITIVITY of x = log(x) / log(ZOOM_SENSITIVITY)
-	int32_t approxScalingLevel =
-		int32_t(round(log(scalingAmount) / log(ZOOM_SENSITIVITY)));
-	centralWidget->ui->preview->SetScalingLevel(approxScalingLevel);
-	centralWidget->ui->preview->SetScalingAmount(scalingAmount);
-	emit centralWidget->ui->preview->DisplayResized();
 }
 
 void OBSBasic::SetShowing(bool showing)

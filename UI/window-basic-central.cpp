@@ -529,6 +529,35 @@ void OBSBasicCentral::ResetUI()
 		programLabel->setHidden(!labels);
 }
 
+void OBSBasicCentral::ScaleWindow()
+{
+	ui->preview->SetFixedScaling(false);
+	ui->preview->ResetScrollingOffset();
+	emit ui->preview->DisplayResized();
+}
+
+void OBSBasicCentral::ScaleCanvas()
+{
+	ui->preview->SetFixedScaling(true);
+	ui->preview->SetScalingLevel(0);
+	emit ui->preview->DisplayResized();
+}
+
+void OBSBasicCentral::ScaleOutput()
+{
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	ui->preview->SetFixedScaling(true);
+	float scalingAmount = float(ovi.output_width) / float(ovi.base_width);
+	// log base ZOOM_SENSITIVITY of x = log(x) / log(ZOOM_SENSITIVITY)
+	int32_t approxScalingLevel =
+		int32_t(round(log(scalingAmount) / log(ZOOM_SENSITIVITY)));
+	ui->preview->SetScalingLevel(approxScalingLevel);
+	ui->preview->SetScalingAmount(scalingAmount);
+	emit ui->preview->DisplayResized();
+}
+
 static bool is_network_media_source(obs_source_t *source, const char *id)
 {
 	if (strcmp(id, "ffmpeg_source") != 0)

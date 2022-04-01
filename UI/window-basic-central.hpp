@@ -94,6 +94,10 @@ public:
 	void ResetUI();
 
 public slots:
+	void ScaleWindow();
+	void ScaleCanvas();
+	void ScaleOutput();
+
 	void UpdateContextBar(bool force = false);
 
 	void UpdateContextContainerVisibility(bool visible);
