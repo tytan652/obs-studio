@@ -55,6 +55,122 @@ OBSBasicCentral::OBSBasicCentral(OBSBasic *main_)
 
 	connect(main->windowHandle(), &QWindow::screenChanged, displayResize);
 	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
+
+	auto addNudge = [this](const QKeySequence &seq, const char *s) {
+		QAction *nudge = new QAction(ui->preview);
+		nudge->setShortcut(seq);
+		nudge->setShortcutContext(Qt::WidgetShortcut);
+		ui->preview->addAction(nudge);
+		connect(nudge, SIGNAL(triggered()), this, s);
+	};
+
+	addNudge(Qt::Key_Up, SLOT(NudgeUp()));
+	addNudge(Qt::Key_Down, SLOT(NudgeDown()));
+	addNudge(Qt::Key_Left, SLOT(NudgeLeft()));
+	addNudge(Qt::Key_Right, SLOT(NudgeRight()));
+	addNudge(Qt::SHIFT + Qt::Key_Up, SLOT(NudgeUpFar()));
+	addNudge(Qt::SHIFT + Qt::Key_Down, SLOT(NudgeDownFar()));
+	addNudge(Qt::SHIFT + Qt::Key_Left, SLOT(NudgeLeftFar()));
+	addNudge(Qt::SHIFT + Qt::Key_Right, SLOT(NudgeRightFar()));
+}
+
+static bool nudge_callback(obs_scene_t *, obs_sceneitem_t *item, void *param)
+{
+	if (obs_sceneitem_locked(item))
+		return true;
+
+	struct vec2 &offset = *reinterpret_cast<struct vec2 *>(param);
+	struct vec2 pos;
+
+	if (!obs_sceneitem_selected(item)) {
+		if (obs_sceneitem_is_group(item)) {
+			struct vec3 offset3;
+			vec3_set(&offset3, offset.x, offset.y, 0.0f);
+
+			struct matrix4 matrix;
+			obs_sceneitem_get_draw_transform(item, &matrix);
+			vec4_set(&matrix.t, 0.0f, 0.0f, 0.0f, 1.0f);
+			matrix4_inv(&matrix, &matrix);
+			vec3_transform(&offset3, &offset3, &matrix);
+
+			struct vec2 new_offset;
+			vec2_set(&new_offset, offset3.x, offset3.y);
+			obs_sceneitem_group_enum_items(item, nudge_callback,
+						       &new_offset);
+		}
+
+		return true;
+	}
+
+	obs_sceneitem_get_pos(item, &pos);
+	vec2_add(&pos, &pos, &offset);
+	obs_sceneitem_set_pos(item, &pos);
+	return true;
+}
+
+extern void undo_redo(const std::string &data);
+
+void OBSBasicCentral::Nudge(int dist, MoveDir dir)
+{
+	if (ui->preview->Locked())
+		return;
+
+	struct vec2 offset;
+	vec2_set(&offset, 0.0f, 0.0f);
+
+	switch (dir) {
+	case MoveDir::Up:
+		offset.y = (float)-dist;
+		break;
+	case MoveDir::Down:
+		offset.y = (float)dist;
+		break;
+	case MoveDir::Left:
+		offset.x = (float)-dist;
+		break;
+	case MoveDir::Right:
+		offset.x = (float)dist;
+		break;
+	}
+
+	if (!recent_nudge) {
+		recent_nudge = true;
+		OBSDataAutoRelease wrapper = obs_scene_save_transform_states(
+			main->GetCurrentScene(), true);
+		std::string undo_data(obs_data_get_json(wrapper));
+
+		nudge_timer = new QTimer;
+		QObject::connect(
+			nudge_timer, &QTimer::timeout,
+			[this, &recent_nudge = recent_nudge, undo_data]() {
+				OBSDataAutoRelease rwrapper =
+					obs_scene_save_transform_states(
+						main->GetCurrentScene(), true);
+				std::string redo_data(
+					obs_data_get_json(rwrapper));
+
+				main->undo_s.add_action(
+					QTStr("Undo.Transform")
+						.arg(obs_source_get_name(
+							main->GetCurrentSceneSource())),
+					undo_redo, undo_redo, undo_data,
+					redo_data);
+
+				recent_nudge = false;
+			});
+		connect(nudge_timer, &QTimer::timeout, nudge_timer,
+			&QTimer::deleteLater);
+		nudge_timer->setSingleShot(true);
+	}
+
+	if (nudge_timer) {
+		nudge_timer->stop();
+		nudge_timer->start(1000);
+	} else {
+		blog(LOG_ERROR, "No nudge timer!");
+	}
+
+	obs_scene_enum_items(main->GetCurrentScene(), nudge_callback, &offset);
 }
 
 void OBSBasicCentral::ResizePreview(uint32_t cx, uint32_t cy)

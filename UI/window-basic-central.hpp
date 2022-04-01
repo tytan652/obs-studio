@@ -16,6 +16,8 @@ class OBSBasicCentral : public QWidget {
 	// XXX: OBSBasic is deeply tied to the central widget
 	friend class OBSBasic;
 
+	enum class MoveDir { Up, Down, Left, Right };
+
 	enum ContextBarSize {
 		ContextBarSize_Minimized,
 		ContextBarSize_Reduced,
@@ -25,6 +27,9 @@ class OBSBasicCentral : public QWidget {
 	OBSBasic *main;
 
 	std::unique_ptr<Ui::OBSBasicCentral> ui;
+
+	QPointer<QTimer> nudge_timer;
+	bool recent_nudge = false;
 
 	int previewX = 0, previewY = 0;
 	int previewCX = 0, previewCY = 0;
@@ -46,12 +51,24 @@ public:
 	inline ~OBSBasicCentral() {}
 
 private:
+	void Nudge(int dist, MoveDir dir);
+
 	void ResizePreview(uint32_t cx, uint32_t cy);
 	void ResizeProgram(uint32_t cx, uint32_t cy);
 
 	/* OBS Callbacks */
 	static void RenderProgram(void *data, uint32_t cx, uint32_t cy);
 	static void RenderMain(void *data, uint32_t cx, uint32_t cy);
+
+private slots:
+	inline void NudgeUp() { Nudge(1, MoveDir::Up); }
+	inline void NudgeDown() { Nudge(1, MoveDir::Down); }
+	inline void NudgeLeft() { Nudge(1, MoveDir::Left); }
+	inline void NudgeRight() { Nudge(1, MoveDir::Right); }
+	inline void NudgeUpFar() { Nudge(10, MoveDir::Up); }
+	inline void NudgeDownFar() { Nudge(10, MoveDir::Down); }
+	inline void NudgeLeftFar() { Nudge(10, MoveDir::Left); }
+	inline void NudgeRightFar() { Nudge(10, MoveDir::Right); }
 
 public:
 	void OBSInit();
