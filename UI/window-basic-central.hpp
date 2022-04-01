@@ -13,8 +13,6 @@ class OBSBasicCentral : public QWidget {
 	Q_OBJECT
 
 	friend class OBSBasicPreview;
-	// XXX: OBSBasic is deeply tied to the central widget
-	friend class OBSBasic;
 
 	enum class MoveDir { Up, Down, Left, Right };
 

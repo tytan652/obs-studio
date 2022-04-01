@@ -665,16 +665,13 @@ void OBSBasic::Save(const char *file)
 		sceneOrder, quickTrData, GetTransitionDuration(), transitions,
 		scene, curProgramScene, savedProjectorList);
 
-	obs_data_set_bool(saveData, "preview_locked",
-			  centralWidget->ui->preview->Locked());
+	OBSBasicPreview *preview = OBSBasicPreview::Get();
+	obs_data_set_bool(saveData, "preview_locked", preview->Locked());
 	obs_data_set_bool(saveData, "scaling_enabled",
-			  centralWidget->ui->preview->IsFixedScaling());
-	obs_data_set_int(saveData, "scaling_level",
-			 centralWidget->ui->preview->GetScalingLevel());
-	obs_data_set_double(saveData, "scaling_off_x",
-			    centralWidget->ui->preview->GetScrollX());
-	obs_data_set_double(saveData, "scaling_off_y",
-			    centralWidget->ui->preview->GetScrollY());
+			  preview->IsFixedScaling());
+	obs_data_set_int(saveData, "scaling_level", preview->GetScalingLevel());
+	obs_data_set_double(saveData, "scaling_off_x", preview->GetScrollX());
+	obs_data_set_double(saveData, "scaling_off_y", preview->GetScrollY());
 
 	if (api) {
 		OBSDataAutoRelease moduleObj = obs_data_create();
@@ -1072,8 +1069,9 @@ retryScene:
 
 	RefreshQuickTransitions();
 
+	OBSBasicPreview *preview = OBSBasicPreview::Get();
 	bool previewLocked = obs_data_get_bool(data, "preview_locked");
-	centralWidget->ui->preview->SetLocked(previewLocked);
+	preview->SetLocked(previewLocked);
 	ui->actionLockPreview->setChecked(previewLocked);
 
 	/* ---------------------- */
@@ -1084,12 +1082,11 @@ retryScene:
 	float scrollOffY = (float)obs_data_get_double(data, "scaling_off_y");
 
 	if (fixedScaling) {
-		centralWidget->ui->preview->SetScalingLevel(scalingLevel);
-		centralWidget->ui->preview->SetScrollingOffset(scrollOffX,
-							       scrollOffY);
+		preview->SetScalingLevel(scalingLevel);
+		preview->SetScrollingOffset(scrollOffX, scrollOffY);
 	}
-	centralWidget->ui->preview->SetFixedScaling(fixedScaling);
-	emit centralWidget->ui->preview->DisplayResized();
+	preview->SetFixedScaling(fixedScaling);
+	emit preview->DisplayResized();
 
 	/* ---------------------- */
 
@@ -2702,8 +2699,10 @@ OBSSceneItem OBSBasic::GetCurrentSceneItem()
 
 void OBSBasic::UpdatePreviewScalingMenu()
 {
-	bool fixedScaling = centralWidget->ui->preview->IsFixedScaling();
-	float scalingAmount = centralWidget->ui->preview->GetScalingAmount();
+	OBSBasicPreview *preview = OBSBasicPreview::Get();
+
+	bool fixedScaling = preview->IsFixedScaling();
+	float scalingAmount = preview->GetScalingAmount();
 	if (!fixedScaling) {
 		ui->actionScaleWindow->setChecked(true);
 		ui->actionScaleCanvas->setChecked(false);
@@ -5055,7 +5054,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			SLOT(TogglePreview()));
 		action->setCheckable(true);
 		action->setChecked(obs_display_enabled(
-			centralWidget->ui->preview->GetDisplay()));
+			OBSBasicPreview::Get()->GetDisplay()));
 		if (IsPreviewProgramMode())
 			action->setEnabled(false);
 
@@ -7274,7 +7273,7 @@ void OBSBasic::PreviewDisabledMenu(const QPoint &pos)
 				this, SLOT(TogglePreview()));
 	action->setCheckable(true);
 	action->setChecked(
-		obs_display_enabled(centralWidget->ui->preview->GetDisplay()));
+		obs_display_enabled(OBSBasicPreview::Get()->GetDisplay()));
 
 	previewProjectorMain = new QMenu(QTStr("PreviewProjector"));
 	AddProjectorMenuMonitors(previewProjectorMain, this,
@@ -8293,8 +8292,9 @@ void OBSBasic::on_toggleSourceIcons_toggled(bool visible)
 
 void OBSBasic::on_actionLockPreview_triggered()
 {
-	centralWidget->ui->preview->ToggleLocked();
-	ui->actionLockPreview->setChecked(centralWidget->ui->preview->Locked());
+	OBSBasicPreview *preview = OBSBasicPreview::Get();
+	preview->ToggleLocked();
+	ui->actionLockPreview->setChecked(preview->Locked());
 }
 
 void OBSBasic::on_scalingMenu_aboutToShow()
