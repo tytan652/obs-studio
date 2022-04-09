@@ -1907,6 +1907,7 @@ void OBSBasic::OBSInit()
 					scenesDock->toggleViewAction());
 
 		LoadExtraBrowserDocks();
+		LoadPluginBrowserDock();
 	}
 #endif
 

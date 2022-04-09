@@ -199,6 +199,22 @@ Structures/Enumerations
 
    obs_frontend_source_list_free(&scenes);
 
+.. type:: struct obs_frontend_browser_params
+
+   - const char* **url**
+   - bool **enable_cookie**
+   - struct dstr **startup_script**
+   - DARRAY(char*) **force_popup_urls**
+
+.. type:: struct obs_frontend_browser_dock_params
+
+   - const char* **unique_name**
+   - const char* **title**
+   - int **default_width**
+   - int **default_height**
+   - int **min_width**
+   - int **min_height**
+
 .. type:: typedef void (*obs_frontend_cb)(void *private_data)
 
    Frontend tool menu callback
@@ -224,6 +240,14 @@ Functions
    Releases sources within a source list and frees the list.
 
    :param source_list: Source list to free
+
+---------------------------------------
+
+.. function:: void obs_frontend_browser_params_free(struct obs_frontend_browser_params *params)
+
+   Frees the startup script and force popup URLs if not empty.
+
+   :param params: Browser parameters with dynamic types to free
 
 ---------------------------------------
 
@@ -497,6 +521,57 @@ Functions
    :param module: The module associated with the dock to remove
    :param unique_name: Object name of the dock to remove, will be prefixed with
                        module name (:c:func:`obs_get_module_name`) internally.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_is_browser_available(void)
+
+   Return if OBS Studio has browser feature available.
+
+---------------------------------------
+
+.. function:: void obs_frontend_delete_browser_cookies(const char *url)
+
+   Deletes cookies related to the given URL.
+
+   Note: Using an empty string will do nothing.
+
+   :param url: URL of the cookies to delete
+
+---------------------------------------
+
+.. function:: void obs_frontend_add_adv_browser_dock(struct obs_frontend_browser_params *params, struct obs_frontend_browser_dock_params *dock_params)
+
+   Adds a dock with a browser widget to the UI with a toggle in the Docks
+   menu.
+
+   :param params: Parameters of the browser widget
+   :param dock_params: Parameters of the dock, the name inside will
+                       be prefixed with module name
+                       (:c:func:`obs_get_module_name`) internally.
+
+   Equivalent to:
+
+.. code:: cpp
+
+      obs_frontend_add_module_adv_browser_dock(obs_current_module(), params, dock_params);
+
+---------------------------------------
+
+.. function:: void obs_frontend_add_module_adv_browser_dock(obs_module_t *module, struct obs_frontend_browser_params *params, struct obs_frontend_browser_dock_params *dock_params)
+
+   Adds a dock with a browser widget to the UI with a toggle in the Docks
+   menu.
+
+   Note: Modules should use obs_frontend_add_adv_browser_dock
+   function as a more elegant means of getting their files without
+   having to specify the module parameter.
+
+   :param module: The module associated with the dock to add
+   :param params: Parameters of the browser widget
+   :param dock_params: Parameters of the dock, the name inside will
+                       be prefixed with module name
+                       (:c:func:`obs_get_module_name`) internally.
 
 ---------------------------------------
 

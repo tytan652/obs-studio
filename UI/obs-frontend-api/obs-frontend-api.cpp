@@ -350,6 +350,34 @@ void obs_frontend_remove_module_adv_dock(obs_module_t *module,
 	c->obs_frontend_remove_adv_dock(dock_name);
 }
 
+bool obs_frontend_is_browser_available(void)
+{
+	if (!callbacks_valid())
+		return false;
+
+	return c->obs_frontend_is_browser_available();
+}
+
+void obs_frontend_delete_browser_cookies(const char *url)
+{
+	if (callbacks_valid())
+		c->obs_frontend_delete_browser_cookies(url);
+}
+
+void obs_frontend_add_module_adv_browser_dock(
+	obs_module_t *module, struct obs_frontend_browser_params *params,
+	struct obs_frontend_browser_dock_params *dock_params)
+{
+	if (!callbacks_valid())
+		return;
+
+	string dock_name(obs_get_module_mod_name(module));
+	dock_name.append("_");
+	dock_name.append(dock_params->unique_name);
+
+	c->obs_frontend_add_adv_browser_dock(dock_name, params, dock_params);
+}
+
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 				     void *private_data)
 {

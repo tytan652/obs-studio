@@ -7,6 +7,7 @@
 
 #undef obs_frontend_add_adv_dock
 #undef obs_frontend_remove_adv_dock
+#undef obs_frontend_add_adv_browser_dock
 
 struct obs_frontend_callbacks {
 	virtual ~obs_frontend_callbacks() {}
@@ -72,6 +73,15 @@ struct obs_frontend_callbacks {
 					       const std::string &name,
 					       void *widget) = 0;
 	virtual void obs_frontend_remove_adv_dock(const std::string &name) = 0;
+
+	virtual bool obs_frontend_is_browser_available(void) = 0;
+
+	virtual void obs_frontend_delete_browser_cookies(const char *url) = 0;
+
+	virtual void obs_frontend_add_adv_browser_dock(
+		const std::string &name,
+		struct obs_frontend_browser_params *params,
+		struct obs_frontend_browser_dock_params *dock_params) = 0;
 
 	virtual void
 	obs_frontend_add_event_callback(obs_frontend_event_cb callback,

@@ -142,6 +142,21 @@ private:
 	std::unique_ptr<Ui::ColorSelect> ui;
 };
 
+#ifdef BROWSER_AVAILABLE
+struct PluginBrowserDockParams {
+	QString uniqueName;
+	QString title;
+	int defaultWidth;
+	int defaultHeight;
+	int minWidth;
+	int minHeight;
+	QString url;
+	bool enableCookie;
+	QString startupScript;
+	QStringList forcePopupUrls;
+};
+#endif
+
 class OBSBasic : public OBSMainWindow {
 	Q_OBJECT
 	Q_PROPERTY(QIcon imageIcon READ GetImageIcon WRITE SetImageIcon
@@ -536,6 +551,16 @@ private:
 	void ManageExtraBrowserDocks();
 	void AddExtraBrowserDock(const QString &title, const QString &url,
 				 const QString &uuid, bool firstCreate);
+
+	bool IsBrowserInitialised();
+	QList<PluginBrowserDockParams> beforeInitBrowserDocks;
+	inline void StorePluginBrowserDock(PluginBrowserDockParams params)
+	{
+		beforeInitBrowserDocks.append(params);
+	}
+	void LoadPluginBrowserDock();
+	void AddPluginBrowserDock(PluginBrowserDockParams params);
+	void DeleteBrowserCookies(const QString &url);
 #endif
 
 	QIcon imageIcon;

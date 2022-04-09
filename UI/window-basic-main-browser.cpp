@@ -25,6 +25,7 @@
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
+#include "window-dock-browser.hpp"
 #endif
 
 struct QCef;
@@ -162,3 +163,54 @@ void OBSBasic::InitBrowserPanelSafeBlock()
 	InitPanelCookieManager();
 #endif
 }
+
+#ifdef BROWSER_AVAILABLE
+bool OBSBasic::IsBrowserInitialised()
+{
+	return !!cef;
+}
+
+void OBSBasic::LoadPluginBrowserDock()
+{
+	for (int i = 0; beforeInitBrowserDocks.size() > i; i++)
+		AddPluginBrowserDock(beforeInitBrowserDocks[i]);
+
+	beforeInitBrowserDocks.clear();
+}
+
+void OBSBasic::AddPluginBrowserDock(PluginBrowserDockParams params)
+{
+	static int panel_version = -1;
+	if (panel_version == -1) {
+		panel_version = obs_browser_qcef_version();
+	}
+
+	BrowserAdvDock *dock =
+		new BrowserAdvDock(params.title, params.uniqueName);
+	dock->SetDefaultSize(params.defaultWidth, params.defaultHeight);
+	dock->setMinimumSize(params.minWidth, params.minHeight);
+
+	QCefWidget *browser = cef->create_widget(
+		dock, QT_TO_UTF8(params.url),
+		params.enableCookie ? panel_cookies : nullptr);
+	if (browser && panel_version >= 1)
+		browser->allowAllPopups(true);
+
+	dock->SetCefWidget(browser);
+
+	if (!params.startupScript.isEmpty())
+		browser->setStartupScript(params.startupScript.toStdString());
+
+	for (int i = 0; params.forcePopupUrls.size() > i; i++)
+		cef->add_force_popup_url(params.forcePopupUrls[i].toStdString(),
+					 dock);
+
+	AddAdvDockWidget(dock);
+}
+
+void OBSBasic::DeleteBrowserCookies(const QString &url)
+{
+	if (panel_cookies)
+		panel_cookies->DeleteCookies(url.toStdString(), std::string());
+}
+#endif

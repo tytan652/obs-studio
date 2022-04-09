@@ -2,6 +2,7 @@
 
 #include <obs.h>
 #include <util/darray.h>
+#include <util/dstr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -79,6 +80,32 @@ obs_frontend_source_list_free(struct obs_frontend_source_list *source_list)
 	da_free(source_list->sources);
 }
 
+struct obs_frontend_browser_params {
+	const char *url;
+	bool enable_cookie;
+	struct dstr startup_script;
+	DARRAY(char *) force_popup_urls;
+};
+
+static inline void
+obs_frontend_browser_params_free(struct obs_frontend_browser_params *params)
+{
+	if (params->startup_script.len > 0)
+		dstr_free(&params->startup_script);
+
+	if (params->force_popup_urls.num > 0)
+		da_free(params->force_popup_urls);
+}
+
+struct obs_frontend_browser_dock_params {
+	const char *unique_name;
+	const char *title;
+	int default_width;
+	int default_height;
+	int min_width;
+	int min_height;
+};
+
 #endif //!SWIG
 
 /* ------------------------------------------------------------------------- */
@@ -151,6 +178,17 @@ EXPORT void obs_frontend_add_module_adv_dock(obs_module_t *module,
 	obs_frontend_remove_module_adv_dock(obs_current_module(), unique_name)
 EXPORT void obs_frontend_remove_module_adv_dock(obs_module_t *module,
 						const char *unique_name);
+
+EXPORT bool obs_frontend_is_browser_available(void);
+
+EXPORT void obs_frontend_delete_browser_cookies(const char *url);
+
+#define obs_frontend_add_adv_browser_dock(params, dock_params)                 \
+	obs_frontend_add_module_adv_browser_dock(obs_current_module(), params, \
+						 dock_params)
+EXPORT void obs_frontend_add_module_adv_browser_dock(
+	obs_module_t *module, struct obs_frontend_browser_params *params,
+	struct obs_frontend_browser_dock_params *dock_params);
 
 typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event,
 				      void *private_data);

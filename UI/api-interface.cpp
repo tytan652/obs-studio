@@ -7,6 +7,10 @@
 
 #include <functional>
 
+#ifdef ENABLE_WAYLAND
+#include <obs-nix-platform.h>
+#endif
+
 using namespace std;
 
 Q_DECLARE_METATYPE(OBSScene);
@@ -392,6 +396,73 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_remove_adv_dock(const std::string &name) override
 	{
 		main->RemoveAdvDockWidget(QString::fromStdString(name));
+	}
+
+	bool obs_frontend_is_browser_available(void) override
+	{
+#ifdef BROWSER_AVAILABLE
+#ifndef ENABLE_WAYLAND
+		return true;
+#else
+		return !(obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND);
+#endif
+#else
+		return false;
+#endif
+	}
+
+	void obs_frontend_delete_browser_cookies(const char *url) override
+	{
+#ifdef BROWSER_AVAILABLE
+		QString cookie_url(url);
+		if (!cookie_url.isEmpty())
+			main->DeleteBrowserCookies(url);
+#endif
+	}
+
+	void obs_frontend_add_adv_browser_dock(
+		const std::string &name,
+		struct obs_frontend_browser_params *params,
+		struct obs_frontend_browser_dock_params *dock_params) override
+	{
+#ifdef BROWSER_AVAILABLE
+		if (!obs_frontend_is_browser_available())
+			return;
+
+		PluginBrowserDockParams dock;
+
+		dock.uniqueName = QString::fromStdString(name);
+
+		dock.title = dock_params->title;
+#define BROWSER_SIZE_CHECK(size) size >= 80 ? size : 80
+		dock.defaultWidth =
+			BROWSER_SIZE_CHECK(dock_params->default_width);
+		dock.defaultHeight =
+			BROWSER_SIZE_CHECK(dock_params->default_height);
+		dock.minWidth = BROWSER_SIZE_CHECK(dock_params->min_width);
+		dock.minHeight = BROWSER_SIZE_CHECK(dock_params->min_height);
+#undef BROWSER_SIZE_CHECK
+
+		dock.url = params->url;
+		dock.enableCookie = params->enable_cookie;
+
+		for (size_t i = 0; i < params->force_popup_urls.num; i++)
+			dock.forcePopupUrls.append(
+				params->force_popup_urls.array[i]);
+
+		dock.startupScript =
+			QT_UTF8(strndup(params->startup_script.array,
+					params->startup_script.len));
+
+		if (main->IsBrowserInitialised())
+			main->AddPluginBrowserDock(dock);
+		else
+			main->StorePluginBrowserDock(dock);
+#else
+		UNUSED_PARAMETER(name);
+		UNUSED_PARAMETER(params);
+		UNUSED_PARAMETER(dock_params);
+#endif
 	}
 
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
