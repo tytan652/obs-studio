@@ -1912,8 +1912,8 @@ void OBSBasic::OBSInit()
 
 	const char *windowStateStr = config_get_string(
 		App()->GlobalConfig(), "BasicWindow", "WindowState");
-	const char *advDockStateStr = config_get_string(
-		App()->GlobalConfig(), "BasicWindow", "AdvDockState");
+	const char *advDockStateStr =
+		config_get_string(basicConfig, "BasicWindow", "AdvDockState");
 	bool restoreResult = false;
 
 	if (!windowStateStr) {
@@ -2034,13 +2034,30 @@ void OBSBasic::OBSInit()
 		ui->actionCheckForUpdates->setEnabled(false);
 #endif
 
-	OnFirstLoad();
+	OnFirstLoad(!restoreResult);
 
 	activateWindow();
 }
 
-void OBSBasic::OnFirstLoad()
+void OBSBasic::OnFirstLoad(bool uiReseted)
 {
+	int extraDockNumber = extraDockNames.size();
+	Auth::Load();
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_BEFORE_DOCKSTATE_RESTORE);
+
+	if (extraDockNames.size() != extraDockNumber && !uiReseted) {
+		const char *advDockStateStr = config_get_string(
+			basicConfig, "BasicWindow", "AdvDockState");
+
+		if (advDockStateStr) {
+			QByteArray advDockState = QByteArray::fromBase64(
+				QByteArray(advDockStateStr));
+			dockManager->restoreState(advDockState);
+		}
+	}
+
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_FINISHED_LOADING);
 
@@ -2055,8 +2072,6 @@ void OBSBasic::OnFirstLoad()
 		introCheckThread->start();
 	}
 #endif
-
-	Auth::Load();
 
 	bool showLogViewerOnStartup = config_get_bool(
 		App()->GlobalConfig(), "LogViewer", "ShowLogStartup");
@@ -4307,16 +4322,16 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	signalHandlers.clear();
 
+	config_set_string(App()->GlobalConfig(), "BasicWindow", "WindowState",
+			  saveState().toBase64().constData());
+	config_set_string(basicConfig, "BasicWindow", "AdvDockState",
+			  dockManager->saveState().toBase64().constData());
+
 	Auth::Save();
 	SaveProjectNow();
 	auth.reset();
 
 	delete extraBrowsers;
-
-	config_set_string(App()->GlobalConfig(), "BasicWindow", "WindowState",
-			  saveState().toBase64().constData());
-	config_set_string(App()->GlobalConfig(), "BasicWindow", "AdvDockState",
-			  dockManager->saveState().toBase64().constData());
 
 #ifdef BROWSER_AVAILABLE
 	SaveExtraBrowserDocks();

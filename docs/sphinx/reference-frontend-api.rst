@@ -117,6 +117,13 @@ Structures/Enumerations
 
      Triggered when a profile has been renamed.
 
+   - **OBS_FRONTEND_EVENT_BEFORE_DOCKSTATE_RESTORE**
+
+     Triggered when the program is going to restore a dock state.
+     This event is called before **OBS_FRONTEND_EVENT_FINISHED_LOADING**
+     or **OBS_FRONTEND_EVENT_PROFILE_CHANGED** except when creating
+     profile.
+
    - **OBS_FRONTEND_EVENT_FINISHED_LOADING**
 
      Triggered when the program has finished loading.

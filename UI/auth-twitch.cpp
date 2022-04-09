@@ -165,10 +165,6 @@ void TwitchAuth::SaveInternal()
 	config_set_string(main->Config(), service(), "Name", name.c_str());
 	config_set_string(main->Config(), service(), "UUID", uuid.c_str());
 
-	if (uiLoaded) {
-		config_set_string(main->Config(), service(), "AdvDockState",
-				  main->AdvDockState().toBase64().constData());
-	}
 	OAuthStreamKey::SaveInternal();
 }
 
@@ -289,7 +285,7 @@ void TwitchAuth::LoadUI()
 		chat->toggleView(true);
 	} else {
 		const char *advDockStateStr = config_get_string(
-			main->Config(), service(), "AdvDockState");
+			main->Config(), "BasicWindow", "AdvDockState");
 
 		if (!advDockStateStr) {
 			/* Use deprecated "DockState" value if available */
@@ -301,10 +297,6 @@ void TwitchAuth::LoadUI()
 					QByteArray(dockStateStr));
 				main->restoreState(dockState);
 			}
-		} else {
-			QByteArray state = QByteArray::fromBase64(
-				QByteArray(advDockStateStr));
-			main->RestoreAdvDocksState(state);
 		}
 	}
 
@@ -420,8 +412,8 @@ void TwitchAuth::LoadSecondaryUIPanes()
 		return;
 	}
 
-	const char *advDockStateStr =
-		config_get_string(main->Config(), service(), "AdvDockState");
+	const char *advDockStateStr = config_get_string(
+		main->Config(), "BasicWindow", "AdvDockState");
 
 	if (!advDockStateStr) {
 		/* Use deprecated "DockState" value if available */
@@ -433,10 +425,6 @@ void TwitchAuth::LoadSecondaryUIPanes()
 				QByteArray(dockStateStr));
 			main->restoreState(dockState);
 		}
-	} else {
-		QByteArray state =
-			QByteArray::fromBase64(QByteArray(advDockStateStr));
-		main->RestoreAdvDocksState(state);
 	}
 }
 

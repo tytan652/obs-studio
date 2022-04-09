@@ -93,8 +93,6 @@ bool YoutubeAuth::RetryLogin()
 void YoutubeAuth::SaveInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
-	config_set_string(main->Config(), service(), "AdvDockState",
-			  main->AdvDockState().toBase64().constData());
 
 	const char *section_name = section.c_str();
 	config_set_string(main->Config(), section_name, "RefreshToken",
@@ -177,7 +175,7 @@ void YoutubeAuth::LoadUI()
 		chat->toggleView(true);
 	} else {
 		const char *advDockStateStr = config_get_string(
-			main->Config(), service(), "AdvDockState");
+			main->Config(), "BasicWindow", "AdvDockState");
 
 		if (!advDockStateStr) {
 			/* Use deprecated "DockState" value if available */
@@ -189,10 +187,6 @@ void YoutubeAuth::LoadUI()
 					QByteArray(dockStateStr));
 				main->restoreState(dockState);
 			}
-		} else {
-			QByteArray state = QByteArray::fromBase64(
-				QByteArray(advDockStateStr));
-			main->RestoreAdvDocksState(state);
 		}
 	}
 #endif

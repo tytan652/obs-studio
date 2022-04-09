@@ -9,7 +9,6 @@ class RestreamAuth : public OAuthStreamKey {
 
 	virtual bool RetryLogin() override;
 
-	virtual void SaveInternal() override;
 	virtual bool LoadInternal() override;
 
 	bool GetChannelInfo();

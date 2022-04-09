@@ -363,7 +363,7 @@ private:
 
 	void InitPrimitives();
 
-	void OnFirstLoad();
+	void OnFirstLoad(bool uiReseted);
 
 	OBSSceneItem GetSceneItem(QListWidgetItem *item);
 	OBSSceneItem GetCurrentSceneItem();

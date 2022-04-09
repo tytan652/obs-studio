@@ -25,6 +25,7 @@
 #include "window-basic-auto-config.hpp"
 #include "window-namedialog.hpp"
 #include "qt-wrappers.hpp"
+#include "ui-config.h"
 
 extern void DestroyPanelCookieManager();
 extern void DuplicateCurrentCookieProfile(ConfigFile &config);
@@ -305,6 +306,9 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 		return false;
 	}
 
+	config_set_string(basicConfig, "BasicWindow", "AdvDockState",
+			  dockManager->saveState().toBase64().constData());
+
 	if (api && !rename)
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
 
@@ -340,6 +344,9 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 	UpdateTitleBar();
 
 	Auth::Load();
+
+	if (create_new)
+		ApplyDocksLayout(DEFAULT_DOCK_STATE);
 
 	// Run auto configuration setup wizard when a new profile is made to assist
 	// setting up blank settings
@@ -617,6 +624,18 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 
 	Auth::Load();
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_BEFORE_DOCKSTATE_RESTORE);
+
+	const char *advDockStateStr =
+		config_get_string(basicConfig, "BasicWindow", "AdvDockState");
+	if (advDockStateStr) {
+		QByteArray advDockState =
+			QByteArray::fromBase64(QByteArray(advDockStateStr));
+		dockManager->restoreState(advDockState);
+	} else
+		ApplyDocksLayout(DEFAULT_DOCK_STATE);
+
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
@@ -759,6 +778,9 @@ void OBSBasic::ChangeProfile()
 		return;
 	}
 
+	config_set_string(basicConfig, "BasicWindow", "AdvDockState",
+			  dockManager->saveState().toBase64().constData());
+
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
 
@@ -787,6 +809,18 @@ void OBSBasic::ChangeProfile()
 	UpdateTitleBar();
 
 	Auth::Load();
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_BEFORE_DOCKSTATE_RESTORE);
+
+	const char *advDockStateStr =
+		config_get_string(basicConfig, "BasicWindow", "AdvDockState");
+	if (advDockStateStr) {
+		QByteArray advDockState =
+			QByteArray::fromBase64(QByteArray(advDockStateStr));
+		dockManager->restoreState(advDockState);
+	} else
+		ApplyDocksLayout(DEFAULT_DOCK_STATE);
 
 	CheckForSimpleModeX264Fallback();
 
