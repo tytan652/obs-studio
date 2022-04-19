@@ -481,6 +481,9 @@ EXPORT void obs_log_loaded_modules(void);
 /** Returns the module file name */
 EXPORT const char *obs_get_module_file_name(obs_module_t *module);
 
+/** Returns the module name (file name without the extension) */
+EXPORT const char *obs_get_module_mod_name(obs_module_t *module);
+
 /** Returns the module full name */
 EXPORT const char *obs_get_module_name(obs_module_t *module);
 

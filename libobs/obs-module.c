@@ -184,6 +184,11 @@ const char *obs_get_module_file_name(obs_module_t *module)
 	return module ? module->file : NULL;
 }
 
+const char *obs_get_module_mod_name(obs_module_t *module)
+{
+	return module ? module->mod_name : NULL;
+}
+
 const char *obs_get_module_name(obs_module_t *module)
 {
 	return (module && module->name) ? module->name() : NULL;
