@@ -2711,3 +2711,38 @@ bool obs_output_is_protocol_registered(const char *protocol)
 
 	return false;
 }
+
+const char *obs_output_get_prefix_protocol(const char *prefix)
+{
+	for (size_t i = 0; i < obs->output_types.num; i++) {
+		if (!(obs->output_types.array[i].flags & OBS_OUTPUT_SERVICE))
+			continue;
+
+		if (!obs->output_types.array[i].protocols_prefixes)
+			continue;
+
+		char *prefixes =
+			strdup(obs->output_types.array[i].protocols_prefixes);
+
+		char *pre = strtok(prefixes, ";");
+		size_t count = 0;
+		while (pre != NULL) {
+			if (strcmp(pre, prefix) != 0) {
+				pre = strtok(NULL, ";");
+				count++;
+				continue;
+			}
+
+			char *protocols =
+				strdup(obs->output_types.array[i].protocols);
+
+			char *prtcl = strtok(protocols, ";");
+			for (size_t j = 0; j < count; j++)
+				prtcl = strtok(NULL, ";");
+
+			return strdup(prtcl);
+		}
+	}
+
+	return NULL;
+}

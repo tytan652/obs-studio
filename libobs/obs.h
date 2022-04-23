@@ -2163,6 +2163,8 @@ EXPORT const char *obs_output_get_protocols(const obs_output_t *output);
 
 EXPORT bool obs_output_is_protocol_registered(const char *protocol);
 
+EXPORT const char *obs_output_get_prefix_protocol(const char *prefix);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 

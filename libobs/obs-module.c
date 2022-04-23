@@ -751,8 +751,31 @@ void obs_register_output_s(const struct obs_output_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, start, obs_register_output);
 	CHECK_REQUIRED_VAL_(info, stop, obs_register_output);
 
-	if (info->flags & OBS_OUTPUT_SERVICE)
+	if (info->flags & OBS_OUTPUT_SERVICE) {
 		CHECK_REQUIRED_VAL_(info, protocols, obs_register_output);
+
+		if (info->protocols_prefixes != NULL) {
+			size_t prtcl_num;
+			size_t prefix_num;
+
+			char *protocols = strdup(info->protocols);
+			char *protocol = strtok(protocols, ";");
+			for (prtcl_num = 0; protocol != NULL; prtcl_num++)
+				protocol = strtok(NULL, ";");
+
+			char *prefixes = strdup(info->protocols_prefixes);
+			char *prefix = strtok(prefixes, ";");
+			for (prefix_num = 0; prefix != NULL; prefix_num++)
+				prefix = strtok(NULL, ";");
+
+			if (prefix_num > prtcl_num) {
+				output_warn("Output id '%s' have more prefixes "
+					    "than protocols",
+					    info->id);
+				goto error;
+			}
+		}
+	}
 
 	if (info->flags & OBS_OUTPUT_ENCODED) {
 		CHECK_REQUIRED_VAL_(info, encoded_packet, obs_register_output);

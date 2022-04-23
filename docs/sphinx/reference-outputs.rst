@@ -244,6 +244,15 @@ Output Definition Structure (obs_output_info)
 
    Required only if **OBS_OUTPUT_SERVICE** flag is set.
 
+.. member:: const char *obs_output_info.protocols_prefixes
+
+   This variable specifies which server URL prefixes is used by the
+   related protocols, separated by semicolon.
+
+   Those prefixes should be in the same order as protocols.
+
+   (Optional)
+
 .. _output_signal_handler_reference:
 
 Output Signals
@@ -675,6 +684,12 @@ General Output Functions
 
    :return:                 A boolean showing if an output with the given
                             protocol is registered
+
+---------------------
+
+.. function:: const char *obs_output_get_prefix_protocol(const char *prefix)
+
+   Return the protocol related to the given prefix.
 
 ---------------------
 

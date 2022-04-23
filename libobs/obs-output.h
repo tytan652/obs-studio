@@ -78,6 +78,8 @@ struct obs_output_info {
 
 	/* required if OBS_OUTPUT_SERVICE */
 	const char *protocols;
+
+	const char *protocols_prefixes;
 };
 
 EXPORT void obs_register_output_s(const struct obs_output_info *info,
