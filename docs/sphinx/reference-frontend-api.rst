@@ -178,6 +178,25 @@ Structures/Enumerations
 
      Triggered when the virtual camera is stopped.
 
+.. type:: struct obs_frontend_output_list
+
+   - DARRAY(obs_output_t*) **outputs**
+
+   Example usage:
+
+.. code:: cpp
+
+   struct obs_frontend_output_list output_list = {0};
+
+   obs_frontend_get_streaming_outputs(&output_list);
+
+   for (size_t i = 0; i < output_list.num; i++) {
+           obs_output_t *output = output_list.outputs.array[i];
+
+           [...]
+   }
+
+   obs_frontend_output_list_free(&output_list);
 
 .. type:: struct obs_frontend_source_list
 
@@ -218,6 +237,14 @@ Structures/Enumerations
 
 Functions
 ---------
+
+.. function:: void obs_frontend_output_list_free(struct obs_frontend_output_list *output_list)
+
+   Releases sources within a output list and frees the list.
+
+   :param output_list: Output list to free
+
+---------------------------------------
 
 .. function:: void obs_frontend_source_list_free(struct obs_frontend_source_list *source_list)
 
@@ -595,6 +622,15 @@ Functions
 .. function:: obs_output_t *obs_frontend_get_streaming_output(void)
 
    :return: A new reference to the current streaming output
+
+---------------------------------------
+
+.. function:: void obs_frontend_get_streaming_outputs(struct obs_frontend_output_list *outputs)
+
+   :param sources: Pointer to a :c:type:`obs_frontend_output_list`
+                   structure to receive the list of
+                   reference-incremented streaming outputs (for services with multiple output streams).  Release with
+                   :c:func:`obs_frontend_output_list_free`
 
 ---------------------------------------
 

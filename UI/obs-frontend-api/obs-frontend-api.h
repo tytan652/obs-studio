@@ -70,6 +70,10 @@ struct obs_frontend_source_list {
 	DARRAY(obs_source_t *) sources;
 };
 
+struct obs_frontend_output_list {
+	DARRAY(obs_output_t *) outputs;
+};
+
 static inline void
 obs_frontend_source_list_free(struct obs_frontend_source_list *source_list)
 {
@@ -77,6 +81,15 @@ obs_frontend_source_list_free(struct obs_frontend_source_list *source_list)
 	for (size_t i = 0; i < num; i++)
 		obs_source_release(source_list->sources.array[i]);
 	da_free(source_list->sources);
+}
+
+static inline void
+obs_frontend_output_list_free(struct obs_frontend_output_list *output_list)
+{
+	size_t num = output_list->outputs.num;
+	for (size_t i = 0; i < num; i++)
+		obs_output_release(output_list->outputs.array[i]);
+	da_free(output_list->outputs);
 }
 
 #endif //!SWIG
@@ -190,6 +203,8 @@ EXPORT void obs_frontend_defer_save_begin(void);
 EXPORT void obs_frontend_defer_save_end(void);
 
 EXPORT obs_output_t *obs_frontend_get_streaming_output(void);
+EXPORT void
+obs_frontend_get_streaming_outputs(struct obs_frontend_output_list *outputs);
 EXPORT obs_output_t *obs_frontend_get_recording_output(void);
 EXPORT obs_output_t *obs_frontend_get_replay_buffer_output(void);
 

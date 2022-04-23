@@ -392,6 +392,15 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return obs_output_get_ref(output);
 	}
 
+	void obs_frontend_get_streaming_outputs(
+		struct obs_frontend_output_list *outputs) override
+	{
+		for (auto &stream : main->outputHandler->streamOutputs) {
+			obs_output_t *output = obs_output_get_ref(stream);
+			da_push_back(outputs->outputs, &output);
+		}
+	}
+
 	obs_output_t *obs_frontend_get_recording_output(void) override
 	{
 		OBSOutput out = main->outputHandler->fileOutput.Get();

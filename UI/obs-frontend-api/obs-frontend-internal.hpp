@@ -73,6 +73,8 @@ struct obs_frontend_callbacks {
 					   void *private_data) = 0;
 
 	virtual obs_output_t *obs_frontend_get_streaming_output(void) = 0;
+	virtual void obs_frontend_get_streaming_outputs(
+		struct obs_frontend_output_list *) = 0;
 	virtual obs_output_t *obs_frontend_get_recording_output(void) = 0;
 	virtual obs_output_t *obs_frontend_get_replay_buffer_output(void) = 0;
 

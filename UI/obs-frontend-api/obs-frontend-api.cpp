@@ -344,6 +344,14 @@ obs_output_t *obs_frontend_get_streaming_output(void)
 				   : nullptr;
 }
 
+void obs_frontend_get_streaming_outputs(struct obs_frontend_output_list *outputs)
+{
+	if (outputs)
+		obs_frontend_output_list_free(outputs);
+	if (!!callbacks_valid())
+		c->obs_frontend_get_streaming_outputs(outputs);
+}
+
 obs_output_t *obs_frontend_get_recording_output(void)
 {
 	return !!callbacks_valid() ? c->obs_frontend_get_recording_output()
