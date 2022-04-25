@@ -138,6 +138,30 @@ void StreamSettingsUI::UpdateKeyLink()
 	}
 }
 
+static bool check_service_protocol(const Json &service)
+{
+	if (service["protocol"].is_string())
+		return obs_output_is_protocol_registered(
+			service["protocol"].string_value().c_str());
+
+	auto &servers = service["servers"].array_items();
+	for (const Json &server : servers) {
+		std::string url = server["url"].string_value();
+
+		size_t pos = url.find("://");
+		if (pos == std::string::npos)
+			continue;
+
+		if (!obs_output_get_prefix_protocol(
+			    url.substr(0, pos + 3).c_str()))
+			continue;
+
+		return true;
+	}
+
+	return false;
+}
+
 void StreamSettingsUI::LoadServices(bool showAll)
 {
 	auto &services = GetServicesJson()["services"].array_items();
@@ -150,6 +174,11 @@ void StreamSettingsUI::LoadServices(bool showAll)
 	for (const Json &service : services) {
 		if (!showAll && !service["common"].bool_value())
 			continue;
+
+		//Skip services with non-registered protocol
+		if (!check_service_protocol(service))
+			continue;
+
 		names.push_back(service["name"].string_value().c_str());
 	}
 
@@ -199,6 +228,14 @@ void StreamSettingsUI::UpdateServerList()
 
 	auto &servers = service["servers"].array_items();
 	for (const Json &entry : servers) {
+		std::string url = entry["url"].string_value();
+
+		// Skip RTMPS server if protocol not registered
+		if (!obs_output_is_protocol_registered("RTMPS") &&
+		    service["protocol"].is_null() &&
+		    url.find("rtmps://") != std::string::npos)
+			continue;
+
 		ui_server->addItem(entry["name"].string_value().c_str(),
 				   entry["url"].string_value().c_str());
 	}

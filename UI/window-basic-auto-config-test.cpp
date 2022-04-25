@@ -128,6 +128,12 @@ void AutoConfigTestPage::GetServers(std::vector<ServerInfo> &servers)
 		const std::string &name = server["name"].string_value();
 		const std::string &url = server["url"].string_value();
 
+		// Skip RTMPS server if protocol not registered
+		if (!obs_output_is_protocol_registered("RTMPS") &&
+		    service["protocol"].is_null() &&
+		    url.find("rtmps://") != std::string::npos)
+			continue;
+
 		if (wiz->CanTestServer(name.c_str())) {
 			ServerInfo info(name, url);
 			servers.push_back(info);
