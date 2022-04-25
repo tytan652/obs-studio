@@ -204,6 +204,7 @@
             "common": false,
             "more_info_link": "https://developers.google.com/youtube/v3/live/guides/ingestion-protocol-comparison",
             "stream_key_link": "https://www.youtube.com/live_dashboard",
+            "protocol": "HLS",
             "servers": [
                 {
                     "name": "Primary YouTube ingest server",
@@ -1490,6 +1491,7 @@
         {
             "name": "YouNow",
             "common": false,
+            "protocol": "FTL",
             "servers": [
                 {
                     "name": "younow.com",
@@ -1729,6 +1731,7 @@
         },
         {
             "name": "SHOWROOM",
+            "protocol": "RTMP",
             "servers": [
                 {
                     "name": "Default",
@@ -1863,6 +1866,7 @@
         {
             "name": "Glimesh",
             "stream_key_link": "https://glimesh.tv/users/settings/stream",
+            "protocol": "FTL",
             "servers": [
                 {
                     "name": "North America - Chicago, United States",
@@ -1998,6 +2002,7 @@
         },
         {
             "name": "Dacast",
+            "protocol": "RTMP",
             "servers": [
                 {
                     "name": "Default",

@@ -16,6 +16,16 @@
                         "description": "Name of the streaming service. Will be displayed in the Service dropdown.",
                         "minLength": 1
                     },
+                    "protocol" : {
+                        "type": "string",
+                        "description": "Protocol used by the service. If missing the service is considered using RTMP or RTMPS.",
+                        "enum": [
+                            "RTMP",
+                            "RTMPS",
+                            "HLS",
+                            "FTL"
+                        ]
+                    },
                     "common": {
                         "type": "boolean",
                         "description": "Whether or not the service is shown in the list before it is expanded to all services by the user.",
