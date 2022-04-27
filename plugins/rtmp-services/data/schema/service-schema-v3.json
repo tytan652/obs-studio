@@ -90,7 +90,7 @@
                             },
                             "output": {
                                 "type": "string",
-                                "description": "OBS output module used.",
+                                "description": "OBS output module used. Unused since OBS Studio 28, kept for backward compatibility.",
                                 "enum": [
                                     "rtmp_output",
                                     "ffmpeg_hls_muxer",

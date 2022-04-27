@@ -17,7 +17,6 @@ struct rtmp_common {
 	char *server;
 	char *key;
 
-	char *output;
 	struct obs_service_resolution *supported_resolutions;
 	size_t supported_resolutions_count;
 	int max_fps;
@@ -75,10 +74,6 @@ static void ensure_valid_url(struct rtmp_common *service, json_t *json,
 
 static void update_recommendations(struct rtmp_common *service, json_t *rec)
 {
-	const char *out = get_string_val(rec, "output");
-	if (out)
-		service->output = bstrdup(out);
-
 	json_t *sr = json_object_get(rec, "supported resolutions");
 	if (sr && json_is_array(sr)) {
 		DARRAY(struct obs_service_resolution) res_list;
@@ -117,7 +112,6 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 	bfree(service->service);
 	bfree(service->protocol);
 	bfree(service->server);
-	bfree(service->output);
 	bfree(service->key);
 	bfree(service->supported_resolutions);
 
@@ -126,7 +120,6 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 	service->server = bstrdup(obs_data_get_string(settings, "server"));
 	service->key = bstrdup(obs_data_get_string(settings, "key"));
 	service->supports_additional_audio_track = false;
-	service->output = NULL;
 	service->supported_resolutions = NULL;
 	service->supported_resolutions_count = 0;
 	service->max_fps = 0;
@@ -153,9 +146,6 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 		}
 	}
 	json_decref(root);
-
-	if (!service->output)
-		service->output = bstrdup("rtmp_output");
 }
 
 static void rtmp_common_destroy(void *data)
@@ -166,7 +156,6 @@ static void rtmp_common_destroy(void *data)
 	bfree(service->service);
 	bfree(service->protocol);
 	bfree(service->server);
-	bfree(service->output);
 	bfree(service->key);
 	bfree(service);
 }
@@ -666,12 +655,6 @@ static void rtmp_common_apply_settings(void *data, obs_data_t *video_settings,
 	}
 }
 
-static const char *rtmp_common_get_output_type(void *data)
-{
-	struct rtmp_common *service = data;
-	return service->output;
-}
-
 static const char *rtmp_common_url(void *data)
 {
 	struct rtmp_common *service = data;
@@ -893,7 +876,6 @@ struct obs_service_info rtmp_common_service = {
 	.get_username = rtmp_common_username,
 	.get_password = rtmp_common_password,
 	.apply_encoder_settings = rtmp_common_apply_settings,
-	.get_output_type = rtmp_common_get_output_type,
 	.get_supported_resolutions = rtmp_common_get_supported_resolutions,
 	.get_max_fps = rtmp_common_get_max_fps,
 	.get_max_bitrate = rtmp_common_get_max_bitrate,
