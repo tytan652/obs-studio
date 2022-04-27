@@ -2165,6 +2165,13 @@ EXPORT bool obs_output_is_protocol_registered(const char *protocol);
 
 EXPORT const char *obs_output_get_prefix_protocol(const char *prefix);
 
+EXPORT bool obs_enum_output_protocols(size_t idx, const char **prefix);
+
+EXPORT bool obs_enum_output_protocols_prefixes(size_t idx, const char **prefix);
+
+EXPORT bool obs_enum_output_service_types(const char *protocol, size_t idx,
+					  const char **id);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 

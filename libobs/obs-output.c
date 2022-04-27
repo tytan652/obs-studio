@@ -2746,3 +2746,87 @@ const char *obs_output_get_prefix_protocol(const char *prefix)
 
 	return NULL;
 }
+
+bool obs_enum_output_protocols(size_t idx, const char **protocol)
+{
+	size_t index = 0;
+
+	for (size_t i = 0; i < obs->output_types.num; i++) {
+		if (!(obs->output_types.array[i].flags & OBS_OUTPUT_SERVICE))
+			continue;
+
+		char *protocols = strdup(obs->output_types.array[i].protocols);
+		char *prtcl = strtok(protocols, ";");
+
+		while (prtcl != NULL) {
+			if (idx == index) {
+				*protocol = strdup(prtcl);
+				return true;
+			}
+
+			prtcl = strtok(NULL, ";");
+			index++;
+		}
+	}
+
+	return false;
+}
+
+bool obs_enum_output_protocols_prefixes(size_t idx, const char **prefix)
+{
+	size_t index = 0;
+
+	for (size_t i = 0; i < obs->output_types.num; i++) {
+		if (!(obs->output_types.array[i].flags & OBS_OUTPUT_SERVICE))
+			continue;
+
+		if (!obs->output_types.array[i].protocols_prefixes)
+			continue;
+
+		char *prefixes =
+			strdup(obs->output_types.array[i].protocols_prefixes);
+		char *pre = strtok(prefixes, ";");
+
+		while (pre != NULL) {
+			if (idx == index) {
+				*prefix = strdup(pre);
+				return true;
+			}
+
+			pre = strtok(NULL, ";");
+			index++;
+		}
+	}
+
+	return false;
+}
+
+bool obs_enum_output_service_types(const char *protocol, size_t idx,
+				   const char **id)
+{
+	size_t count = 0;
+
+	for (size_t i = 0; i < obs->output_types.num; i++) {
+		if (!(obs->output_types.array[i].flags & OBS_OUTPUT_SERVICE))
+			continue;
+
+		char *protocols = strdup(obs->output_types.array[i].protocols);
+
+		char *prtcl = strtok(protocols, ";");
+		while (prtcl != NULL) {
+			if (strcmp(prtcl, protocol) == 0) {
+
+				if (count == idx) {
+					*id = strdup(
+						obs->output_types.array[i].id);
+					return true;
+				}
+
+				count++;
+			}
+			prtcl = strtok(NULL, ";");
+		}
+	}
+
+	return false;
+}

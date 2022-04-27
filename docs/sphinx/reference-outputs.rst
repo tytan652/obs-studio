@@ -693,6 +693,24 @@ General Output Functions
 
 ---------------------
 
+.. function:: bool obs_enum_output_protocols(size_t idx, const char **id)
+
+   Enumerates all registered protocol.
+
+---------------------
+
+.. function:: bool obs_enum_output_protocols_prefixes(size_t idx, const char **id)
+
+   Enumerates all registered protocol URL prefixes.
+
+---------------------
+
+.. function:: bool obs_enum_output_service_types(const char *protocol, size_t idx, const char **id)
+
+   Enumerates all available output types for the given protocol.
+
+---------------------
+
 Functions used by outputs
 -------------------------
 
