@@ -133,11 +133,11 @@ Service Definition Structure
 
    (Optional)
 
-.. member:: const char *(*obs_service_info.get_output_type)(void *data)
+.. member:: const char *(*obs_service_info.get_preferred_output_type)(void *data)
 
    (Optional)
 
-   :return: The output type that should be used with this service
+   :return: The output type that should be preferred with this service
 
 .. member:: const char *(*obs_service_info.get_protocol)(void *data)
 
