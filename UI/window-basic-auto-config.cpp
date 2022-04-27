@@ -52,6 +52,18 @@ static OBSData OpenServiceSettings(std::string &type)
 	type = obs_data_get_string(data, "type");
 
 	OBSDataAutoRelease settings = obs_data_get_obj(data, "settings");
+	if (strcmp(type.c_str(), "rtmp_common") == 0) {
+		// Set the protocol if not present
+		QString protocol(obs_data_get_string(settings, "protocol"));
+		if (protocol.isEmpty()) {
+			QString service(
+				obs_data_get_string(settings, "service"));
+
+			obs_data_set_string(
+				settings, "protocol",
+				QT_TO_UTF8(get_protocol_from_service(service)));
+		}
+	}
 
 	return settings.Get();
 }
@@ -335,6 +347,8 @@ bool AutoConfigStreamPage::validatePage()
 	if (!wiz->customServer) {
 		obs_data_set_string(service_settings, "service",
 				    QT_TO_UTF8(ui->service->currentText()));
+		obs_data_set_string(service_settings, "protocol",
+				    QT_TO_UTF8(streamUi.GetProtocol()));
 	}
 
 	OBSServiceAutoRelease service = obs_service_create(
@@ -368,6 +382,7 @@ bool AutoConfigStreamPage::validatePage()
 		wiz->server = wiz->serverName = QT_TO_UTF8(server);
 	} else {
 		wiz->serverName = QT_TO_UTF8(ui->server->currentText());
+		wiz->protocol = QT_TO_UTF8(streamUi.GetProtocol());
 		wiz->server = QT_TO_UTF8(ui->server->currentData().toString());
 	}
 
@@ -897,8 +912,10 @@ void AutoConfig::SaveStreamSettings()
 
 	OBSDataAutoRelease settings = obs_data_create();
 
-	if (!customServer)
+	if (!customServer) {
 		obs_data_set_string(settings, "service", serviceName.c_str());
+		obs_data_set_string(settings, "protocol", protocol.c_str());
+	}
 	obs_data_set_string(settings, "server", server.c_str());
 #if YOUTUBE_ENABLED
 	if (!IsYouTubeService(serviceName))

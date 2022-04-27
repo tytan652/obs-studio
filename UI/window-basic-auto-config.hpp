@@ -85,6 +85,7 @@ class AutoConfig : public QWizard {
 	int idealFPSNum = 60;
 	int idealFPSDen = 1;
 	std::string serviceName;
+	std::string protocol;
 	std::string serverName;
 	std::string server;
 	std::string key;

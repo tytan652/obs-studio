@@ -68,6 +68,16 @@ Json get_service_from_json(const Json &root, const char *name)
 	return Json();
 }
 
+QString get_protocol_from_service(const QString &service_name)
+{
+	Json service = get_service_from_json(get_services_json(),
+					     QT_TO_UTF8(service_name));
+	if (!service["protocol"].is_string())
+		return "RTMP";
+
+	return QString::fromStdString(service["protocol"].string_value());
+}
+
 bool StreamSettingsUI::IsServiceOutputHasNetworkFeatures()
 {
 	if (IsCustomService())
@@ -239,4 +249,14 @@ void StreamSettingsUI::UpdateServerList()
 		ui_server->addItem(entry["name"].string_value().c_str(),
 				   entry["url"].string_value().c_str());
 	}
+}
+
+QString StreamSettingsUI::GetProtocol()
+{
+	Json service = get_service_from_json(
+		GetServicesJson(), QT_TO_UTF8(ui_service->currentText()));
+	if (!service["protocol"].is_string())
+		return "RTMP";
+
+	return QString::fromStdString(service["protocol"].string_value());
 }

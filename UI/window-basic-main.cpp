@@ -1237,6 +1237,19 @@ bool OBSBasic::LoadService()
 	type = obs_data_get_string(data, "type");
 
 	OBSDataAutoRelease settings = obs_data_get_obj(data, "settings");
+	if (strcmp(type, "rtmp_common") == 0) {
+		// Set the protocol if not present
+		QString protocol(obs_data_get_string(settings, "protocol"));
+		if (protocol.isEmpty()) {
+			QString service(
+				obs_data_get_string(settings, "service"));
+
+			obs_data_set_string(
+				settings, "protocol",
+				QT_TO_UTF8(get_protocol_from_service(service)));
+		}
+	}
+
 	OBSDataAutoRelease hotkey_data = obs_data_get_obj(data, "hotkeys");
 
 	service = obs_service_create(type, "default_service", settings,

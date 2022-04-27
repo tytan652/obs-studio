@@ -11,6 +11,8 @@ extern json11::Json get_services_json();
 extern json11::Json get_service_from_json(const json11::Json &root,
 					  const char *name);
 
+QString get_protocol_from_service(const QString &service_name);
+
 enum class ListOpt : int {
 	ShowAll = 1,
 	Custom,
@@ -64,6 +66,8 @@ public:
 	inline const QString &LastService() const { return lastService; }
 
 	bool IsServiceOutputHasNetworkFeatures();
+
+	QString GetProtocol();
 
 public slots:
 	void UpdateMoreInfoLink();
