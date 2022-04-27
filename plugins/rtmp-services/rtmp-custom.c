@@ -110,6 +110,22 @@ static const char *rtmp_custom_password(void *data)
 	return service->password;
 }
 
+static const char *rtmp_custom_get_protocol(void *data)
+{
+	struct rtmp_custom *service = data;
+	size_t idx = 0;
+	const char *prefix;
+
+	while (obs_enum_output_protocols_prefixes(idx++, &prefix)) {
+		char *server_prefix;
+		server_prefix = strstr(service->server, prefix);
+		if (server_prefix != NULL)
+			return obs_output_get_prefix_protocol(prefix);
+	}
+
+	return NULL;
+}
+
 #define RTMP_PROTOCOL "rtmp"
 
 static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings,
@@ -133,6 +149,7 @@ struct obs_service_info rtmp_custom_service = {
 	.destroy = rtmp_custom_destroy,
 	.update = rtmp_custom_update,
 	.get_properties = rtmp_custom_properties,
+	.get_protocol = rtmp_custom_get_protocol,
 	.get_url = rtmp_custom_url,
 	.get_key = rtmp_custom_key,
 	.get_username = rtmp_custom_username,

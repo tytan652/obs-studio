@@ -13,6 +13,7 @@
 
 struct rtmp_common {
 	char *service;
+	char *protocol;
 	char *server;
 	char *key;
 
@@ -114,12 +115,14 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 	struct rtmp_common *service = data;
 
 	bfree(service->service);
+	bfree(service->protocol);
 	bfree(service->server);
 	bfree(service->output);
 	bfree(service->key);
 	bfree(service->supported_resolutions);
 
 	service->service = bstrdup(obs_data_get_string(settings, "service"));
+	service->protocol = bstrdup(obs_data_get_string(settings, "protocol"));
 	service->server = bstrdup(obs_data_get_string(settings, "server"));
 	service->key = bstrdup(obs_data_get_string(settings, "key"));
 	service->supports_additional_audio_track = false;
@@ -161,6 +164,7 @@ static void rtmp_common_destroy(void *data)
 
 	bfree(service->supported_resolutions);
 	bfree(service->service);
+	bfree(service->protocol);
 	bfree(service->server);
 	bfree(service->output);
 	bfree(service->key);
@@ -869,6 +873,13 @@ static const char *rtmp_common_password(void *data)
 	return NULL;
 }
 
+static const char *rtmp_common_get_protocol(void *data)
+{
+	struct rtmp_common *service = data;
+
+	return service->protocol ? service->protocol : "RTMP";
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -876,6 +887,7 @@ struct obs_service_info rtmp_common_service = {
 	.destroy = rtmp_common_destroy,
 	.update = rtmp_common_update,
 	.get_properties = rtmp_common_properties,
+	.get_protocol = rtmp_common_get_protocol,
 	.get_url = rtmp_common_url,
 	.get_key = rtmp_common_key,
 	.get_username = rtmp_common_username,
