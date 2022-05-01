@@ -6,7 +6,6 @@
 
 #include <util/platform.h>
 #include <util/util.hpp>
-#include <obs.h>
 
 using namespace json11;
 
@@ -76,6 +75,45 @@ QString get_protocol_from_service(const QString &service_name)
 		return "RTMP";
 
 	return QString::fromStdString(service["protocol"].string_value());
+}
+
+QString get_stream_output_type(const obs_service_t *service)
+{
+	QString protocol(obs_service_get_protocol(service));
+
+	if (protocol.isEmpty()) {
+		blog(LOG_WARNING, "The service '%s' has no protocol set",
+		     obs_service_get_id(service));
+		return QString();
+	}
+
+	if (!obs_output_is_protocol_registered(QT_TO_UTF8(protocol))) {
+		blog(LOG_WARNING, "The protocol '%s' is not registered",
+		     QT_TO_UTF8(protocol));
+		return QString();
+	}
+
+	// Check if the service has a preferred output type
+	QString type(obs_service_get_preferred_output_type(service));
+	if (!type.isEmpty())
+		return type;
+
+	// Otherwise, prefer first-party output types
+	if (protocol.startsWith("RTMP"))
+		return "rtmp_output";
+	else if (protocol.compare("HLS") == 0)
+		return "ffmpeg_hls_muxer";
+	else if (protocol.compare("SRT") == 0 || protocol.compare("RIST") == 0)
+		return "ffmpeg_mpegts_muxer";
+
+	// If third-party protocol, use the first enumarated type
+	const char *first_type;
+	if (obs_enum_output_service_types(QT_TO_UTF8(protocol), 0, &first_type))
+		return QT_UTF8(first_type);
+
+	blog(LOG_WARNING, "No output registered for the protocol '%s'",
+	     QT_TO_UTF8(protocol));
+	return QString();
 }
 
 bool StreamSettingsUI::IsServiceOutputHasNetworkFeatures()

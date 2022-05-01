@@ -6,12 +6,15 @@
 #include <QLabel>
 
 #include <json11.hpp>
+#include <obs.h>
 
 extern json11::Json get_services_json();
 extern json11::Json get_service_from_json(const json11::Json &root,
 					  const char *name);
 
 QString get_protocol_from_service(const QString &service_name);
+
+QString get_stream_output_type(const obs_service_t *service);
 
 enum class ListOpt : int {
 	ShowAll = 1,

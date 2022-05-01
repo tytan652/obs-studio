@@ -89,6 +89,7 @@ public:
 #define SUBTITLE_TESTING TEST_STR("Subtitle.Testing")
 #define SUBTITLE_COMPLETE TEST_STR("Subtitle.Complete")
 #define TEST_BW TEST_STR("TestingBandwidth")
+#define TEST_BW_NO_OUTPUT TEST_STR("TestingBandwidth.NoOutput")
 #define TEST_BW_CONNECTING TEST_STR("TestingBandwidth.Connecting")
 #define TEST_BW_CONNECT_FAIL TEST_STR("TestingBandwidth.ConnectFailed")
 #define TEST_BW_SERVER TEST_STR("TestingBandwidth.Server")
@@ -267,12 +268,16 @@ void AutoConfigTestPage::TestBandwidthThread()
 	/* -----------------------------------*/
 	/* create output                      */
 
-	const char *output_type = obs_service_get_output_type(service);
-	if (!output_type)
-		output_type = "rtmp_output";
+	QString output_type(get_stream_output_type(service));
+	if (output_type.isEmpty()) {
+		QMetaObject::invokeMethod(this, "Failure",
+					  Q_ARG(QString,
+						QTStr(TEST_BW_NO_OUTPUT)));
+		return;
+	}
 
-	OBSOutputAutoRelease output =
-		obs_output_create(output_type, "test_stream", nullptr, nullptr);
+	OBSOutputAutoRelease output = obs_output_create(
+		QT_TO_UTF8(output_type), "test_stream", nullptr, nullptr);
 	obs_output_update(output, output_settings);
 
 	const char *audio_codec = obs_output_get_supported_audio_codecs(output);

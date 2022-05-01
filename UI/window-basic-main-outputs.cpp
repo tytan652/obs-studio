@@ -3,6 +3,7 @@
 #include <QMessageBox>
 #include "qt-wrappers.hpp"
 #include "audio-encoders.hpp"
+#include "streaming-helpers.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
 
@@ -823,33 +824,24 @@ bool SimpleOutput::SetupStreaming(obs_service_t *service)
 
 	/* --------------------- */
 
-	const char *type = obs_service_get_output_type(service);
-	if (!type) {
-		type = "rtmp_output";
-		const char *url = obs_service_get_url(service);
-		if (url != NULL &&
-		    strncmp(url, FTL_PROTOCOL, strlen(FTL_PROTOCOL)) == 0) {
-			type = "ftl_output";
-		} else if (url != NULL && strncmp(url, RTMP_PROTOCOL,
-						  strlen(RTMP_PROTOCOL)) != 0) {
-			type = "ffmpeg_mpegts_muxer";
-		}
-	}
+	QString type(get_stream_output_type(service));
+	if (type.isEmpty())
+		return false;
 
 	/* XXX: this is messy and disgusting and should be refactored */
-	if (outputType != type) {
+	if (outputType != type.toStdString()) {
 		streamDelayStarting.Disconnect();
 		streamStopping.Disconnect();
 		startStreaming.Disconnect();
 		stopStreaming.Disconnect();
 
-		streamOutput = obs_output_create(type, "simple_stream", nullptr,
-						 nullptr);
+		streamOutput = obs_output_create(
+			QT_TO_UTF8(type), "simple_stream", nullptr, nullptr);
 		if (!streamOutput) {
 			blog(LOG_WARNING,
 			     "Creation of stream output type '%s' "
 			     "failed!",
-			     type);
+			     QT_TO_UTF8(type));
 			return false;
 		}
 
@@ -900,7 +892,7 @@ bool SimpleOutput::SetupStreaming(obs_service_t *service)
 			}
 		}
 
-		outputType = type;
+		outputType = type.toStdString();
 	}
 
 	obs_output_set_video_encoder(streamOutput, videoStreaming);
@@ -1003,7 +995,7 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	else
 		lastError = string();
 
-	const char *type = obs_service_get_output_type(service);
+	const char *type = obs_output_get_id(streamOutput);
 	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s", type,
 	     hasLastError ? "  Last Error: " : "", hasLastError ? error : "");
 	return false;
@@ -1764,33 +1756,24 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 
 	/* --------------------- */
 
-	const char *type = obs_service_get_output_type(service);
-	if (!type) {
-		type = "rtmp_output";
-		const char *url = obs_service_get_url(service);
-		if (url != NULL &&
-		    strncmp(url, FTL_PROTOCOL, strlen(FTL_PROTOCOL)) == 0) {
-			type = "ftl_output";
-		} else if (url != NULL && strncmp(url, RTMP_PROTOCOL,
-						  strlen(RTMP_PROTOCOL)) != 0) {
-			type = "ffmpeg_mpegts_muxer";
-		}
-	}
+	QString type(get_stream_output_type(service));
+	if (type.isEmpty())
+		return false;
 
 	/* XXX: this is messy and disgusting and should be refactored */
-	if (outputType != type) {
+	if (outputType != type.toStdString()) {
 		streamDelayStarting.Disconnect();
 		streamStopping.Disconnect();
 		startStreaming.Disconnect();
 		stopStreaming.Disconnect();
 
-		streamOutput =
-			obs_output_create(type, "adv_stream", nullptr, nullptr);
+		streamOutput = obs_output_create(QT_TO_UTF8(type), "adv_stream",
+						 nullptr, nullptr);
 		if (!streamOutput) {
 			blog(LOG_WARNING,
 			     "Creation of stream output type '%s' "
 			     "failed!",
-			     type);
+			     QT_TO_UTF8(type));
 			return false;
 		}
 
@@ -1842,7 +1825,7 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 			}
 		}
 
-		outputType = type;
+		outputType = type.toStdString();
 	}
 
 	obs_output_set_video_encoder(streamOutput, videoStreaming);
@@ -1902,7 +1885,7 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	else
 		lastError = string();
 
-	const char *type = obs_service_get_output_type(service);
+	const char *type = obs_output_get_id(streamOutput);
 	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s", type,
 	     hasLastError ? "  Last Error: " : "", hasLastError ? error : "");
 	return false;
