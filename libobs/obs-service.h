@@ -86,6 +86,9 @@ struct obs_service_info {
 
 	void (*get_max_bitrate)(void *data, int *video_bitrate,
 				int *audio_bitrate);
+
+	bool (*get_backup_services)(obs_data_t *settings, size_t idx,
+				    obs_service_t **service);
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,

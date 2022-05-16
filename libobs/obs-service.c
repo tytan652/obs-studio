@@ -467,3 +467,16 @@ void obs_service_get_max_bitrate(const obs_service_t *service,
 		service->info.get_max_bitrate(service->context.data,
 					      video_bitrate, audio_bitrate);
 }
+
+bool obs_service_get_backup_services(const obs_service_t *service, size_t idx,
+				     obs_service_t **backup)
+{
+	if (!obs_service_valid(service, "obs_service_get_backup_services"))
+		return false;
+
+	if (service->info.get_backup_services)
+		return service->info.get_backup_services(
+			service->context.settings, idx, backup);
+
+	return false;
+}

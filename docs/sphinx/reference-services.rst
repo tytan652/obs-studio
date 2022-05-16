@@ -139,6 +139,13 @@ Service Definition Structure
 
    :return: The output type that should be used with this service
 
+.. member:: const char *(*obs_service_info.get_backup_services)(obs_data_t *settings, size_t idx, obs_service_t **service)
+
+   (Optional)
+
+   Ask the service to generate copies of the service with backup servers,
+   this is meant to enable redundant streams on the service.
+
 
 General Service Functions
 -------------------------
@@ -285,6 +292,12 @@ General Service Functions
   
    :param  video_encoder_settings: Video encoder settings.  Can be *NULL*
    :param  audio_encoder_settings: Audio encoder settings.  Can be *NULL*
+
+.. function:: void bool obs_service_get_backup_services(const obs_service_t *service, size_t idx, obs_service_t **backup);
+
+   Enumerates copies of the service with backup servers.
+
+   Used for redundant streaming.
 
 .. ---------------------------------------------------------------------------
 

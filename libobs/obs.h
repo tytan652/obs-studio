@@ -2473,6 +2473,9 @@ EXPORT void obs_service_get_max_fps(const obs_service_t *service, int *fps);
 EXPORT void obs_service_get_max_bitrate(const obs_service_t *service,
 					int *video_bitrate, int *audio_bitrate);
 
+EXPORT bool obs_service_get_backup_services(const obs_service_t *service,
+					    size_t idx, obs_service_t **backup);
+
 /* NOTE: This function is temporary and should be removed/replaced at a later
  * date. */
 EXPORT const char *obs_service_get_output_type(const obs_service_t *service);
