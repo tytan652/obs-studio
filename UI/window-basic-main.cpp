@@ -1370,6 +1370,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_string(basicConfig, "Output", "Mode", "Simple");
 
+	config_set_default_bool(basicConfig, "Stream1", "RedundantStreams",
+				false);
 	config_set_default_bool(basicConfig, "Stream1", "IgnoreRecommended",
 				false);
 

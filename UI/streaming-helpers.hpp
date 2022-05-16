@@ -64,6 +64,7 @@ public:
 
 	inline const QString &LastService() const { return lastService; }
 
+	bool HasBackupUrls();
 	void AddServiceBackupUrls(obs_data_t *settings);
 
 public slots:

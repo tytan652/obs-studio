@@ -185,6 +185,24 @@ void StreamSettingsUI::UpdateServerList()
 	}
 }
 
+bool StreamSettingsUI::HasBackupUrls()
+{
+	if (IsCustomService())
+		return false;
+
+	Json service = get_service_from_json(
+		GetServicesJson(), QT_TO_UTF8(ui_service->currentText()));
+	auto &servers = service["servers"].array_items();
+
+	for (const Json &entry : servers) {
+		if (ui_server->currentData().toString() ==
+		    QString::fromStdString(entry["url"].string_value()))
+			return entry["backup_urls"].is_array();
+	}
+
+	return false;
+}
+
 void StreamSettingsUI::AddServiceBackupUrls(obs_data_t *settings)
 {
 	Json service = get_service_from_json(

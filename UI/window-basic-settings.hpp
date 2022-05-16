@@ -350,6 +350,7 @@ private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
 
 	void on_service_currentIndexChanged(int idx);
+	void on_server_currentIndexChanged(int idx);
 	void on_simpleOutputBrowse_clicked();
 	void on_advOutRecPathBrowse_clicked();
 	void on_advOutFFPathBrowse_clicked();

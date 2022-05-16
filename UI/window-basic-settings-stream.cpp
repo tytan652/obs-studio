@@ -96,6 +96,8 @@ void OBSBasicSettings::InitStreamPage()
 
 void OBSBasicSettings::LoadStream1Settings()
 {
+	bool redundantStreams =
+		config_get_bool(main->Config(), "Stream1", "RedundantStreams");
 	bool ignoreRecommended =
 		config_get_bool(main->Config(), "Stream1", "IgnoreRecommended");
 
@@ -163,6 +165,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	bool streamActive = obs_frontend_streaming_active();
 	ui->streamPage->setEnabled(!streamActive);
 
+	ui->redundantStreams->setChecked(redundantStreams);
 	ui->ignoreRecommended->setChecked(ignoreRecommended);
 
 	loading = false;
@@ -240,6 +243,7 @@ void OBSBasicSettings::SaveStream1Settings()
 		main->SetBroadcastFlowEnabled(false);
 	}
 
+	SaveCheckBox(ui->redundantStreams, "Stream1", "RedundantStreams");
 	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
 }
 
@@ -362,6 +366,13 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 		auth = main->auth;
 		OnAuthConnected();
 	}
+}
+
+void OBSBasicSettings::on_server_currentIndexChanged(int idx)
+{
+	UNUSED_PARAMETER(idx);
+
+	ui->redundantStreams->setVisible(streamUi.HasBackupUrls());
 }
 
 void OBSBasicSettings::on_show_clicked()
