@@ -187,6 +187,7 @@ void OBSBasicSettings::SaveStream1Settings()
 		obs_data_set_string(
 			settings, "server",
 			QT_TO_UTF8(ui->server->currentData().toString()));
+		streamUi.AddServiceBackupUrls(settings);
 	} else {
 		obs_data_set_string(
 			settings, "server",

@@ -6,7 +6,6 @@
 
 #include <util/platform.h>
 #include <util/util.hpp>
-#include <obs.h>
 
 using namespace json11;
 
@@ -183,5 +182,37 @@ void StreamSettingsUI::UpdateServerList()
 	for (const Json &entry : servers) {
 		ui_server->addItem(entry["name"].string_value().c_str(),
 				   entry["url"].string_value().c_str());
+	}
+}
+
+void StreamSettingsUI::AddServiceBackupUrls(obs_data_t *settings)
+{
+	Json service = get_service_from_json(
+		GetServicesJson(), QT_TO_UTF8(ui_service->currentText()));
+
+	auto &servers = service["servers"].array_items();
+	Json server;
+	for (const Json &entry : servers) {
+		if (ui_server->currentData().toString() !=
+		    QString::fromStdString(entry["url"].string_value()))
+			continue;
+
+		server = entry;
+		break;
+	}
+
+	if (!server["backup_urls"].is_array())
+		return;
+
+	auto &urls = server["backup_urls"].array_items();
+	size_t idx = 0;
+	for (const Json &url : urls) {
+		blog(LOG_DEBUG, "Backup url: %s", url.string_value().c_str());
+
+		obs_data_set_string(
+			settings,
+			QT_TO_UTF8(QString("backup_server_%1").arg(idx)),
+			url.string_value().c_str());
+		idx++;
 	}
 }

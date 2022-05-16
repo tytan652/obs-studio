@@ -6,6 +6,7 @@
 #include <QLabel>
 
 #include <json11.hpp>
+#include <obs.h>
 
 extern json11::Json get_services_json();
 extern json11::Json get_service_from_json(const json11::Json &root,
@@ -62,6 +63,8 @@ public:
 	}
 
 	inline const QString &LastService() const { return lastService; }
+
+	void AddServiceBackupUrls(obs_data_t *settings);
 
 public slots:
 	void UpdateMoreInfoLink();
