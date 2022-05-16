@@ -278,6 +278,38 @@ void OBSBasicStats::InitializeValues()
 	first_lagged = obs_get_lagged_frames();
 }
 
+void OBSBasicStats::UpdateOutputLabels(int outputs_count)
+{
+	OutputLabels recLabel = outputLabels.takeLast();
+	// Temporarily remove the last row from the layout
+	outputLayout->removeWidget(recLabel.name);
+	outputLayout->removeWidget(recLabel.status);
+	outputLayout->removeWidget(recLabel.droppedFrames);
+	outputLayout->removeWidget(recLabel.megabytesSent);
+	outputLayout->removeWidget(recLabel.bitrate);
+
+	// Add/remove unneeded output labels
+	while (outputs_count != outputLabels.size() + 1) {
+		int label_count = outputLabels.size() + 1;
+
+		if (outputs_count > label_count)
+			AddOutputLabels(QTStr("Basic.Stats.Output.Stream"));
+
+		if (outputs_count < label_count)
+			outputLabels.removeLast();
+	}
+
+	// Add it back to the layout
+	int col = 0;
+	int row = outputLabels.size() + 1;
+	outputLayout->addWidget(recLabel.name, row, col++);
+	outputLayout->addWidget(recLabel.status, row, col++);
+	outputLayout->addWidget(recLabel.droppedFrames, row, col++);
+	outputLayout->addWidget(recLabel.megabytesSent, row, col++);
+	outputLayout->addWidget(recLabel.bitrate, row, col++);
+	outputLabels.push_back(recLabel);
+}
+
 void OBSBasicStats::Update()
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
@@ -287,11 +319,15 @@ void OBSBasicStats::Update()
 	struct obs_video_info ovi = {};
 	obs_get_video_info(&ovi);
 
-	OBSOutputAutoRelease strOutput = obs_frontend_get_streaming_output();
+	struct obs_frontend_output_list strOutputs = {};
+	obs_frontend_get_streaming_outputs(&strOutputs);
+
 	OBSOutputAutoRelease recOutput = obs_frontend_get_recording_output();
 
-	if (!strOutput && !recOutput)
+	if (strOutputs.outputs.num == 0 && !recOutput) {
+		obs_frontend_output_list_free(&strOutputs);
 		return;
+	}
 
 	/* ------------------------------------------- */
 	/* general usage                               */
@@ -429,12 +465,19 @@ void OBSBasicStats::Update()
 
 	/* ------------------------------------------- */
 	/* recording/streaming stats                   */
+	int outputs_count = strOutputs.outputs.num + 1;
+	if (outputLabels.size() != outputs_count)
+		UpdateOutputLabels(outputs_count);
 
-	outputLabels[0].Update(strOutput, false);
-	outputLabels[1].Update(recOutput, true);
+	for (size_t i = 0; i < strOutputs.outputs.num; i++) {
+		outputLabels[i].Update(strOutputs.outputs.array[i], false);
+	}
+	obs_frontend_output_list_free(&strOutputs);
+
+	outputLabels.last().Update(recOutput, true);
 
 	if (obs_output_active(recOutput)) {
-		long double kbps = outputLabels[1].kbps;
+		long double kbps = outputLabels.last().kbps;
 		bitrates.push_back(kbps);
 	}
 }
@@ -485,11 +528,24 @@ void OBSBasicStats::Reset()
 	first_rendered = 0xFFFFFFFF;
 	first_lagged = 0xFFFFFFFF;
 
-	OBSOutputAutoRelease strOutput = obs_frontend_get_streaming_output();
+	struct obs_frontend_output_list strOutputs = {};
+	obs_frontend_get_streaming_outputs(&strOutputs);
+
+	int outputs_count = strOutputs.outputs.num + 1;
+	if (strOutputs.outputs.num == 0)
+		outputs_count++;
+	if (outputLabels.size() != outputs_count)
+		UpdateOutputLabels(outputs_count);
+
 	OBSOutputAutoRelease recOutput = obs_frontend_get_recording_output();
 
-	outputLabels[0].Reset(strOutput);
-	outputLabels[1].Reset(recOutput);
+	for (size_t i = 0; i < strOutputs.outputs.num; i++) {
+		outputLabels[i].Reset(strOutputs.outputs.array[i]);
+	}
+
+	outputLabels.last().Reset(recOutput);
+	obs_frontend_output_list_free(&strOutputs);
+
 	Update();
 }
 

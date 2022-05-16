@@ -56,6 +56,7 @@ class OBSBasicStats : public QWidget {
 	QList<OutputLabels> outputLabels;
 
 	void AddOutputLabels(QString name);
+	void UpdateOutputLabels(int outputs_count);
 	void Update();
 
 	virtual void closeEvent(QCloseEvent *event) override;
