@@ -6938,7 +6938,9 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->streamButton->setChecked(true);
-	ui->statusbar->StreamStarted(outputHandler->streamOutput);
+	if (!outputHandler->streamOutputs.empty()) {
+		ui->statusbar->StreamStarted(outputHandler->streamOutputs[0]);
+	}
 
 	if (sysTrayStream) {
 		sysTrayStream->setText(ui->streamButton->text());

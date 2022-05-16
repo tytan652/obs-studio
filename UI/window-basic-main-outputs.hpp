@@ -6,7 +6,8 @@ class OBSBasic;
 
 struct BasicOutputHandler {
 	OBSOutputAutoRelease fileOutput;
-	OBSOutputAutoRelease streamOutput;
+	std::vector<OBSServiceAutoRelease> backupServices;
+	std::vector<OBSOutputAutoRelease> streamOutputs;
 	OBSOutputAutoRelease replayBuffer;
 	OBSOutputAutoRelease virtualCam;
 	bool streamingActive = false;
@@ -16,7 +17,6 @@ struct BasicOutputHandler {
 	bool virtualCamActive = false;
 	OBSBasic *main;
 
-	std::string outputType;
 	std::string lastError;
 
 	std::string lastRecordingPath;
