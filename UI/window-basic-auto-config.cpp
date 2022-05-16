@@ -1,8 +1,6 @@
 #include <QMessageBox>
 #include <QScreen>
 
-#include <obs.hpp>
-
 #include "window-basic-auto-config.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
@@ -371,6 +369,9 @@ bool AutoConfigStreamPage::validatePage()
 		wiz->server = QT_TO_UTF8(ui->server->currentData().toString());
 	}
 
+	wiz->redundantStreams = ui->redundantStreams->isVisible()
+					? ui->redundantStreams->isChecked()
+					: false;
 	wiz->bandwidthTest = ui->doBandwidthTest->isChecked();
 	wiz->startingBitrate = (int)obs_data_get_int(settings, "bitrate");
 	wiz->idealBitrate = wiz->startingBitrate;
@@ -805,6 +806,10 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 		streamPage->ui->preferHardware->setChecked(preferHardware);
 	}
 
+	bool redundantStreams =
+		config_get_bool(main->Config(), "Stream1", "RedundantStreams");
+	streamPage->ui->redundantStreams->setChecked(redundantStreams);
+
 	setOptions(QWizard::WizardOptions());
 	setButtonText(QWizard::FinishButton,
 		      QTStr("Basic.AutoConfig.ApplySettings"));
@@ -907,6 +912,8 @@ void AutoConfig::SaveStreamSettings()
 	obs_data_set_string(settings, "key", key.c_str());
 #endif
 
+	streamPage->streamUi.AddServiceBackupUrls(settings);
+
 	OBSServiceAutoRelease newService = obs_service_create(
 		service_id, "default_service", settings, hotkeyData);
 
@@ -925,6 +932,8 @@ void AutoConfig::SaveStreamSettings()
 
 	/* ---------------------------------- */
 	/* save stream settings               */
+	config_set_bool(main->Config(), "Stream1", "RedundantStreams",
+			redundantStreams);
 
 	config_set_int(main->Config(), "SimpleOutput", "VBitrate",
 		       idealBitrate);
@@ -961,4 +970,11 @@ void AutoConfig::SaveSettings()
 	main->ResetVideo();
 	main->ResetOutputs();
 	config_save_safe(main->Config(), "tmp", nullptr);
+}
+
+void AutoConfigStreamPage::on_server_currentIndexChanged(int idx)
+{
+	UNUSED_PARAMETER(idx);
+
+	ui->redundantStreams->setVisible(streamUi.HasBackupUrls());
 }

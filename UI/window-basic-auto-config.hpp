@@ -14,6 +14,7 @@
 #include <mutex>
 
 #include <json11.hpp>
+#include <obs.hpp>
 
 #include "streaming-helpers.hpp"
 
@@ -96,6 +97,7 @@ class AutoConfig : public QWizard {
 
 	int startingBitrate = 2500;
 	bool customServer = false;
+	bool redundantStreams = false;
 	bool bandwidthTest = false;
 	bool testRegions = true;
 	bool twitchAuto = false;
@@ -190,6 +192,9 @@ public:
 	void OnAuthConnected();
 	void OnOAuthStreamKeyConnected();
 
+private slots:
+	void on_server_currentIndexChanged(int idx);
+
 public slots:
 	void on_show_clicked();
 	void on_connectAccount_clicked();
@@ -242,19 +247,46 @@ class AutoConfigTestPage : public QWizardPage {
 	struct ServerInfo {
 		std::string name;
 		std::string address;
+		std::vector<std::string> backup_addresses;
 		int bitrate = 0;
 		int ms = -1;
 
-		inline ServerInfo() {}
+		inline ServerInfo()
+			: backup_addresses(std::vector<std::string>())
+		{
+		}
 
 		inline ServerInfo(const std::string &name_,
 				  const std::string &address_)
-			: name(name_), address(address_)
+			: name(name_),
+			  address(address_),
+			  backup_addresses(std::vector<std::string>())
+		{
+		}
+
+		inline ServerInfo(
+			const std::string &name_, const std::string &address_,
+			const std::vector<std::string> &backup_addresses_)
+			: name(name_),
+			  address(address_),
+			  backup_addresses(std::move(backup_addresses_))
 		{
 		}
 	};
 
 	void GetServers(std::vector<ServerInfo> &servers);
+
+	struct OutputWrapper {
+		OBSOutputAutoRelease output;
+		enum class OutputState {
+			Default,
+			Started,
+			Stopped,
+		};
+		OutputState state = OutputState::Default;
+		std::function<void(OutputWrapper &)> *start_callback;
+		std::function<void(OutputWrapper &)> *stop_callback;
+	};
 
 public:
 	AutoConfigTestPage(QWidget *parent = nullptr);
