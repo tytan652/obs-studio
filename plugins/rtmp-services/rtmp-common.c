@@ -843,6 +843,33 @@ fail:
 	json_decref(root);
 }
 
+static bool rtmp_common_get_backup_services(obs_data_t *settings, size_t idx,
+					    obs_service_t **service)
+{
+	/* NOTE: Having hundreds of backup servers for redundant streaming is
+	         not expected. */
+	char name[16] = {0};
+	int written = snprintf(name, 16, "backup_server_%lu", idx);
+	if (written >= 16)
+		blog(LOG_DEBUG,
+		     "rtmp-common: A format truncation may have occurred."
+		     " This can be ignored since it is quite improbable.");
+
+	const char *url = obs_data_get_string(settings, name);
+	if (strcmp(url, "") == 0)
+		return false;
+
+	const char *json = obs_data_get_json(settings);
+	obs_data_t *data = obs_data_create_from_json(json);
+	obs_data_set_string(data, "server", url);
+
+	*service = obs_service_create("rtmp_common", name, data, NULL);
+
+	obs_data_release(data);
+
+	return true;
+}
+
 static const char *rtmp_common_username(void *data)
 {
 	struct rtmp_common *service = data;
@@ -885,4 +912,5 @@ struct obs_service_info rtmp_common_service = {
 	.get_supported_resolutions = rtmp_common_get_supported_resolutions,
 	.get_max_fps = rtmp_common_get_max_fps,
 	.get_max_bitrate = rtmp_common_get_max_bitrate,
+	.get_backup_services = rtmp_common_get_backup_services,
 };
