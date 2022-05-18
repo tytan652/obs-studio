@@ -152,14 +152,25 @@ struct nv_texture {
 
 static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 {
-	const bool p010 = obs_p010_tex_active();
+	DXGI_FORMAT format = DXGI_FORMAT_NV12;
+	NV_ENC_BUFFER_FORMAT buffer_format = NV_ENC_BUFFER_FORMAT_NV12;
+
+	if (obs_p010_tex_active()) {
+		format = DXGI_FORMAT_P010;
+		buffer_format = NV_ENC_BUFFER_FORMAT_YUV420_10BIT;
+	}
+
+	if (obs_argb_tex_active()) {
+		format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		buffer_format = NV_ENC_BUFFER_FORMAT_ABGR;
+	}
 
 	D3D11_TEXTURE2D_DESC desc = {0};
 	desc.Width = enc->cx;
 	desc.Height = enc->cy;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = p010 ? DXGI_FORMAT_P010 : DXGI_FORMAT_NV12;
+	desc.Format = format;
 	desc.SampleDesc.Count = 1;
 	desc.BindFlags = D3D11_BIND_RENDER_TARGET;
 
@@ -178,8 +189,7 @@ static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	res.resourceToRegister = tex;
 	res.width = enc->cx;
 	res.height = enc->cy;
-	res.bufferFormat = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
-				: NV_ENC_BUFFER_FORMAT_NV12;
+	res.bufferFormat = buffer_format;
 
 	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
 		tex->lpVtbl->Release(tex);
@@ -1055,9 +1065,10 @@ static void *nvenc_create_h264_hevc(bool hevc, obs_data_t *settings,
 		goto reroute;
 	}
 
-	if (!obs_p010_tex_active() && !obs_nv12_tex_active()) {
+	if (!(obs_p010_tex_active() && obs_argb_tex_active() &&
+	      obs_nv12_tex_active())) {
 		blog(LOG_INFO,
-		     "[jim-nvenc] nv12/p010 not active, falling back to ffmpeg");
+		     "[jim-nvenc] nv12/argb/p010 not active, falling back to ffmpeg");
 		goto reroute;
 	}
 
@@ -1330,13 +1341,19 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	/* ------------------------------------ */
 	/* do actual encode call                */
 
+	NV_ENC_BUFFER_FORMAT buffer_format = NV_ENC_BUFFER_FORMAT_NV12;
+
+	if (obs_p010_tex_active())
+		buffer_format = NV_ENC_BUFFER_FORMAT_YUV420_10BIT;
+
+	if (obs_argb_tex_active())
+		buffer_format = NV_ENC_BUFFER_FORMAT_ABGR;
+
 	NV_ENC_PIC_PARAMS params = {0};
 	params.version = NV_ENC_PIC_PARAMS_VER;
 	params.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
 	params.inputBuffer = nvtex->mapped_res;
-	params.bufferFmt = obs_p010_tex_active()
-				   ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
-				   : NV_ENC_BUFFER_FORMAT_NV12;
+	params.bufferFmt = buffer_format;
 	params.inputTimeStamp = (uint64_t)pts;
 	params.inputWidth = enc->cx;
 	params.inputHeight = enc->cy;
