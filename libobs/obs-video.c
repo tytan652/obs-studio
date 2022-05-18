@@ -450,8 +450,12 @@ static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
 	 * reason.  otherwise, it goes to the 'duplicate' case above, which
 	 * will ensure better performance. */
 	if (raw_active || vframe_info->count > 1) {
-		gs_copy_texture(tf.tex, video->convert_textures_encode[0]);
-	} else {
+		//ARGB can use output_texture, not convert_textures[0]
+		gs_copy_texture(tf.tex,
+				video->using_argb_tex
+					? video->output_texture
+					: video->convert_textures_encode[0]);
+	} else if (!video->using_argb_tex) {
 		gs_texture_t *tex = video->convert_textures_encode[0];
 		gs_texture_t *tex_uv = video->convert_textures_encode[1];
 
@@ -460,6 +464,13 @@ static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
 
 		tf.tex = tex;
 		tf.tex_uv = tex_uv;
+	} else {
+		// Added to support direct ARGB encoding
+		gs_texture_t *tex = video->output_texture;
+		video->output_texture = tf.tex;
+
+		tf.tex = tex;
+		tf.tex_uv = NULL;
 	}
 
 	tf.count = 1;
@@ -489,7 +500,7 @@ static void output_gpu_encoders(struct obs_core_video *video, bool raw_active)
 {
 	profile_start(output_gpu_encoders_name);
 
-	if (!video->texture_converted)
+	if (!(video->using_argb_tex || video->texture_converted))
 		goto end;
 	if (!video->vframe_info_buffer_gpu.size)
 		goto end;

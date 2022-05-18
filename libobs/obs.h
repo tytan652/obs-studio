@@ -830,6 +830,7 @@ EXPORT uint32_t obs_get_lagged_frames(void);
 
 EXPORT bool obs_nv12_tex_active(void);
 EXPORT bool obs_p010_tex_active(void);
+EXPORT bool obs_argb_tex_active(void);
 
 EXPORT void obs_apply_private_data(obs_data_t *settings);
 EXPORT void obs_set_private_data(obs_data_t *settings);

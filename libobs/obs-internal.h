@@ -262,6 +262,7 @@ struct obs_core_video {
 	bool texture_converted;
 	bool using_nv12_tex;
 	bool using_p010_tex;
+	bool using_argb_tex;
 	struct circlebuf vframe_info_buffer;
 	struct circlebuf vframe_info_buffer_gpu;
 	gs_effect_t *default_effect;

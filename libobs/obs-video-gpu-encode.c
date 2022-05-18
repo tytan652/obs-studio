@@ -159,19 +159,28 @@ bool init_gpu_encoding(struct obs_core_video *video)
 	circlebuf_reserve(&video->gpu_encoder_avail_queue, NUM_ENCODE_TEXTURES);
 	for (size_t i = 0; i < NUM_ENCODE_TEXTURES; i++) {
 		gs_texture_t *tex;
-		gs_texture_t *tex_uv;
+		gs_texture_t *tex_uv = NULL;
 
-		if (ovi->output_format == VIDEO_FORMAT_P010) {
+		switch ((uint32_t)ovi->output_format) {
+		case VIDEO_FORMAT_P010:
 			gs_texture_create_p010(&tex, &tex_uv, ovi->output_width,
 					       ovi->output_height,
 					       GS_RENDER_TARGET |
 						       GS_SHARED_KM_TEX);
-		} else {
+			break;
+		case VIDEO_FORMAT_RGBA:
+			tex = gs_texture_create(
+				ovi->output_width, ovi->output_height, GS_RGBA,
+				1, NULL, GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+			break;
+		default:
 			gs_texture_create_nv12(&tex, &tex_uv, ovi->output_width,
 					       ovi->output_height,
 					       GS_RENDER_TARGET |
 						       GS_SHARED_KM_TEX);
+			break;
 		}
+
 		if (!tex) {
 			return false;
 		}
@@ -225,13 +234,16 @@ void free_gpu_encoding(struct obs_core_video *video)
 		video->gpu_encode_inactive = NULL;
 	}
 
+// If ARGB texture is used, freeing tex_uv not needed
 #define free_circlebuf(x)                                               \
 	do {                                                            \
 		while (x.size) {                                        \
 			struct obs_tex_frame frame;                     \
 			circlebuf_pop_front(&x, &frame, sizeof(frame)); \
 			gs_texture_destroy(frame.tex);                  \
-			gs_texture_destroy(frame.tex_uv);               \
+			if (frame.tex_uv) {                             \
+				gs_texture_destroy(frame.tex_uv);       \
+			}                                               \
 		}                                                       \
 		circlebuf_free(&x);                                     \
 	} while (false)

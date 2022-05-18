@@ -123,6 +123,8 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 					? gs_p010_available()
 					: false;
 
+	video->using_argb_tex = ovi->output_format == VIDEO_FORMAT_RGBA;
+
 	if (!video->conversion_needed) {
 		blog(LOG_INFO, "GPU conversion not available for format: %u",
 		     (unsigned int)ovi->output_format);
@@ -399,15 +401,17 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 		}
 	}
 
-	video->render_texture = gs_texture_create(ovi->base_width,
-						  ovi->base_height, format, 1,
-						  NULL, GS_RENDER_TARGET);
+	uint32_t flags = GS_RENDER_TARGET;
+	if (ovi->output_format == VIDEO_FORMAT_RGBA)
+		flags |= GS_SHARED_KM_TEX;
+
+	video->render_texture = gs_texture_create(
+		ovi->base_width, ovi->base_height, format, 1, NULL, flags);
 	if (!video->render_texture)
 		success = false;
 
-	video->output_texture = gs_texture_create(ovi->output_width,
-						  ovi->output_height, format, 1,
-						  NULL, GS_RENDER_TARGET);
+	video->output_texture = gs_texture_create(
+		ovi->output_width, ovi->output_height, format, 1, NULL, flags);
 	if (!video->output_texture)
 		success = false;
 
@@ -2827,6 +2831,12 @@ bool obs_p010_tex_active(void)
 {
 	struct obs_core_video *video = &obs->video;
 	return video->using_p010_tex;
+}
+
+bool obs_argb_tex_active(void)
+{
+	struct obs_core_video *video = &obs->video;
+	return video->using_argb_tex;
 }
 
 /* ------------------------------------------------------------------------- */
