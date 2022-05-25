@@ -6,6 +6,8 @@ if(OS_WINDOWS)
 
   add_subdirectory(blake2)
   add_subdirectory(lzma)
+
+  add_subdirectory(qsoundeffect-wrapper)
 endif()
 
 add_subdirectory(glad)
