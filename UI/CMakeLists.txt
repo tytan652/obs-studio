@@ -83,8 +83,13 @@ find_qt(
   COMPONENTS_WIN ${UI_COMPONENTS_WIN}
   COMPONENTS_LINUX Gui)
 
-target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network
-                                  Qt::Multimedia)
+target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
+
+# Check deps/qsouneffect-wrapper for explaination on why OBS is not directly
+# linked to QtMutlimedia on Windows.
+if(NOT OS_WINDOWS)
+  target_link_libraries(obs PRIVATE Qt::Multimedia)
+endif()
 
 set_target_properties(
   obs
@@ -149,6 +154,8 @@ target_sources(
           streaming-helpers.cpp
           streaming-helpers.hpp
           platform.hpp
+          qsoundeffect-wrapper.cpp
+          qsoundeffect-wrapper.hpp
           qt-display.cpp
           qt-display.hpp
           qt-wrappers.cpp
