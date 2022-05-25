@@ -26,7 +26,6 @@
 #include <QWinTaskbarButton>
 #endif
 #include <QStyledItemDelegate>
-#include <QSoundEffect>
 #include <obs.hpp>
 #include <vector>
 #include <memory>
@@ -41,6 +40,7 @@
 #include "window-basic-about.hpp"
 #include "auth-base.hpp"
 #include "log-viewer.hpp"
+#include "qsoundeffect-wrapper.hpp"
 #include "undo-stack-obs.hpp"
 
 #include <obs-frontend-internal.hpp>
@@ -829,11 +829,11 @@ private:
 	void DiskSpaceMessage();
 
 	OBSSource prevFTBSource = nullptr;
-	QSoundEffect acknowledgeSfx;
-	QSoundEffect enableSfx;
-	QSoundEffect disableSfx;
-	QSoundEffect errorSfx;
-	QSoundEffect warningSfx;
+	OBSSoundEffect *acknowledgeSfx = nullptr;
+	OBSSoundEffect *enableSfx = nullptr;
+	OBSSoundEffect *disableSfx = nullptr;
+	OBSSoundEffect *errorSfx = nullptr;
+	OBSSoundEffect *warningSfx = nullptr;
 
 public:
 	undo_stack undo_s;

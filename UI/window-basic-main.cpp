@@ -228,14 +228,7 @@ extern void RegisterYoutubeAuth();
 #endif
 
 OBSBasic::OBSBasic(QWidget *parent)
-	: OBSMainWindow(parent),
-	  undo_s(ui),
-	  ui(new Ui::OBSBasic),
-	  acknowledgeSfx(this),
-	  enableSfx(this),
-	  disableSfx(this),
-	  errorSfx(this),
-	  warningSfx(this)
+	: OBSMainWindow(parent), undo_s(ui), ui(new Ui::OBSBasic)
 {
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	qRegisterMetaTypeStreamOperators<SignalContainer<OBSScene>>(
@@ -243,6 +236,18 @@ OBSBasic::OBSBasic(QWidget *parent)
 #endif
 
 	setAttribute(Qt::WA_NativeWindow);
+
+	if (obs_sound_effect_available()) {
+		acknowledgeSfx = obs_sound_effect_new(this);
+		enableSfx = obs_sound_effect_new(this);
+		disableSfx = obs_sound_effect_new(this);
+		errorSfx = obs_sound_effect_new(this);
+		warningSfx = obs_sound_effect_new(this);
+	} else {
+		blog(LOG_WARNING, "Media Feature Pack seems missing, "
+				  "accessibility sound notifications will "
+				  "not be availlable");
+	}
 
 #if TWITCH_ENABLED
 	RegisterTwitchAuth();
@@ -488,12 +493,17 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	UpdatePreviewSafeAreas();
 
-	acknowledgeSfx.setSource(
+	obs_sound_effect_set_source(
+		acknowledgeSfx,
 		QUrl::fromLocalFile(":a11y/sounds/acknowledge.wav"));
-	enableSfx.setSource(QUrl::fromLocalFile(":a11y/sounds/enable.wav"));
-	disableSfx.setSource(QUrl::fromLocalFile(":a11y/sounds/disable.wav"));
-	errorSfx.setSource(QUrl::fromLocalFile(":a11y/sounds/error.wav"));
-	warningSfx.setSource(QUrl::fromLocalFile(":a11y/sounds/warning.wav"));
+	obs_sound_effect_set_source(
+		enableSfx, QUrl::fromLocalFile(":a11y/sounds/enable.wav"));
+	obs_sound_effect_set_source(
+		disableSfx, QUrl::fromLocalFile(":a11y/sounds/disable.wav"));
+	obs_sound_effect_set_source(
+		errorSfx, QUrl::fromLocalFile(":a11y/sounds/error.wav"));
+	obs_sound_effect_set_source(
+		warningSfx, QUrl::fromLocalFile(":a11y/sounds/warning.wav"));
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -2400,13 +2410,14 @@ void OBSBasic::ProcessHotkey(obs_hotkey_id id, bool pressed)
 		obs_hotkey_id pair = obs_hotkey_get_pair_partner_id(key);
 
 		if (pair != OBS_INVALID_HOTKEY_PAIR_ID) {
-			id < pair ? enableSfx.play() : disableSfx.play();
+			id < pair ? obs_sound_effect_play(enableSfx)
+				  : obs_sound_effect_play(disableSfx);
 
 			return;
 		}
 	}
 
-	acknowledgeSfx.play();
+	obs_sound_effect_play(acknowledgeSfx);
 }
 
 void OBSBasic::HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed)
@@ -2670,6 +2681,12 @@ OBSBasic::~OBSBasic()
 
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
+
+	obs_sound_effect_delete(acknowledgeSfx);
+	obs_sound_effect_delete(enableSfx);
+	obs_sound_effect_delete(disableSfx);
+	obs_sound_effect_delete(errorSfx);
+	obs_sound_effect_delete(warningSfx);
 
 	delete screenshotData;
 	delete multiviewProjectorMenu;
