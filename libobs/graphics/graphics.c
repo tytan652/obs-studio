@@ -2850,6 +2850,18 @@ bool gs_p010_available(void)
 		thread_graphics->device);
 }
 
+bool gs_argb_available(void)
+{
+	if (!gs_valid("gs_argb_available"))
+		return false;
+
+	if (!thread_graphics->exports.device_argb_available)
+		return false;
+
+	return thread_graphics->exports.device_argb_available(
+		thread_graphics->device);
+}
+
 bool gs_is_monitor_hdr(void *monitor)
 {
 	if (!gs_valid("gs_is_monitor_hdr"))

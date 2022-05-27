@@ -123,7 +123,9 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 					? gs_p010_available()
 					: false;
 
-	video->using_argb_tex = ovi->output_format == VIDEO_FORMAT_RGBA;
+	video->using_argb_tex = ovi->output_format == VIDEO_FORMAT_RGBA
+					? gs_argb_available()
+					: false;
 
 	if (!video->conversion_needed) {
 		blog(LOG_INFO, "GPU conversion not available for format: %u",

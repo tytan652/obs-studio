@@ -661,6 +661,7 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 
 	nv12Supported = false;
 	p010Supported = false;
+	argbSupported = false;
 
 	/* WARP NV12 support is suspected to be buggy on older Windows */
 	if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c) {
@@ -683,6 +684,8 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	nv12Supported = CheckFormat(device, DXGI_FORMAT_NV12) &&
 			!HasBadNV12Output();
 	p010Supported = nv12Supported && CheckFormat(device, DXGI_FORMAT_P010);
+
+	argbSupported = CheckFormat(device, DXGI_FORMAT_R8G8B8A8_UNORM);
 }
 
 static inline void ConvertStencilSide(D3D11_DEPTH_STENCILOP_DESC &desc,

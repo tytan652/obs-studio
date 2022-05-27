@@ -856,6 +856,7 @@ EXPORT bool gs_timer_range_get_data(gs_timer_range_t *range, bool *disjoint,
 
 EXPORT bool gs_nv12_available(void);
 EXPORT bool gs_p010_available(void);
+EXPORT bool gs_argb_available(void);
 
 EXPORT bool gs_is_monitor_hdr(void *monitor);
 
