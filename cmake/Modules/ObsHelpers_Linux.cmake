@@ -13,7 +13,58 @@ endfunction()
 # Helper function to export target to build and install tree Allows usage of
 # `find_package(libobs)` by other build trees
 function(export_target target)
-  _export_target(${ARGV})
+  set(CMAKE_EXPORT_PACKAGE_REGISTRY OFF)
+
+  install(
+    TARGETS ${target}
+    EXPORT ${target}Targets
+    RUNTIME DESTINATION ${OBS_EXECUTABLE_DESTINATION} COMPONENT obs_libraries
+    LIBRARY DESTINATION ${OBS_LIBRARY_DESTINATION} COMPONENT obs_libraries
+    ARCHIVE DESTINATION ${OBS_LIBRARY_DESTINATION} COMPONENT obs_libraries
+    INCLUDES
+    DESTINATION ${OBS_INCLUDE_DESTINATION}
+    PUBLIC_HEADER DESTINATION ${OBS_INCLUDE_DESTINATION}
+                  COMPONENT obs_libraries)
+
+  include(GenerateExportHeader)
+  generate_export_header(${target} EXPORT_FILE_NAME
+                         ${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h)
+
+  target_sources(${target}
+                 PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h)
+
+  set(TARGETS_EXPORT_NAME "${target}Targets")
+  include(CMakePackageConfigHelpers)
+  configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${target}Config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake
+    INSTALL_DESTINATION ${OBS_CMAKE_DESTINATION}/${target}
+    PATH_VARS OBS_PLUGIN_DESTINATION OBS_DATA_DESTINATION)
+
+  write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake
+    VERSION ${OBS_VERSION_CANONICAL}
+    COMPATIBILITY SameMajorVersion)
+
+  export(
+    EXPORT ${target}Targets
+    FILE ${CMAKE_CURRENT_BINARY_DIR}/${TARGETS_EXPORT_NAME}.cmake
+    NAMESPACE OBS::)
+
+  export(PACKAGE "${target}")
+
+  install(
+    EXPORT ${TARGETS_EXPORT_NAME}
+    FILE ${TARGETS_EXPORT_NAME}.cmake
+    NAMESPACE OBS::
+    DESTINATION ${OBS_CMAKE_DESTINATION}/${target}
+    COMPONENT obs_libraries)
+
+  install(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake
+          ${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake
+    DESTINATION ${OBS_CMAKE_DESTINATION}/${target}
+    COMPONENT obs_libraries)
 
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/pkgconfig")
     export_target_pkgconf(${target})
