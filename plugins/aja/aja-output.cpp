@@ -759,8 +759,8 @@ void AJAOutput::OutputThread(AJAThread *thread, void *ctx)
 	ajaOutput->mAudioStarted = false;
 
 	blog(LOG_INFO,
-	     "AJAOutput::OutputThread: Thread stopped. Played %lld video frames",
-	     ajaOutput->mVideoQueueFrames);
+	     "AJAOutput::OutputThread: Thread stopped. Played %llu video frames",
+	     (unsigned long long)ajaOutput->mVideoQueueFrames);
 }
 
 void populate_output_device_list(obs_property_t *list)
