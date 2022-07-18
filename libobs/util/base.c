@@ -64,6 +64,9 @@ OBS_NORETURN static void def_crash_handler(const char *format, va_list args,
 }
 
 static log_handler_t log_handler = def_log_handler;
+#if !defined(_MSC_VER) && !defined(SWIG)
+OBS_NORETURN
+#endif
 static void (*crash_handler)(const char *, va_list, void *) = def_crash_handler;
 
 void base_get_log_handler(log_handler_t *handler, void **param)
@@ -83,8 +86,12 @@ void base_set_log_handler(log_handler_t handler, void *param)
 	log_handler = handler;
 }
 
-void base_set_crash_handler(void (*handler)(const char *, va_list, void *),
-			    void *param)
+void base_set_crash_handler(
+#if !defined(_MSC_VER) && !defined(SWIG)
+	OBS_NORETURN
+#endif
+	void (*handler)(const char *, va_list, void *),
+	void *param)
 {
 	crash_param = param;
 	crash_handler = handler;
