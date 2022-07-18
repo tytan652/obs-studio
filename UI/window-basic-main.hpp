@@ -818,7 +818,6 @@ private:
 	OBSSource prevFTBSource = nullptr;
 
 public:
-	undo_stack undo_s;
 	OBSSource GetProgramSource();
 	OBSScene GetCurrentScene();
 
@@ -1150,7 +1149,12 @@ public slots:
 	void UpdateContextBarDeferred(bool force = false);
 	void UpdateContextBarVisibility();
 
+private:
+	std::unique_ptr<Ui::OBSBasic> ui;
+
 public:
+	undo_stack undo_s;
+
 	explicit OBSBasic(QWidget *parent = 0);
 	virtual ~OBSBasic();
 
@@ -1162,9 +1166,6 @@ public:
 				   const char *file) const override;
 
 	static void InitBrowserPanelSafeBlock();
-
-private:
-	std::unique_ptr<Ui::OBSBasic> ui;
 };
 
 class SceneRenameDelegate : public QStyledItemDelegate {
