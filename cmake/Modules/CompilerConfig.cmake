@@ -82,10 +82,14 @@ else()
   endif()
 
   add_compile_options(
+    -Werror
     -Wextra
     -Wvla
+    -Wformat
+    -Wformat-security
     -Wno-unused-function
     -Wno-missing-field-initializers
+    -Wno-error=deprecated-declarations
     -fno-strict-aliasing
     "$<$<COMPILE_LANGUAGE:C>:-Werror-implicit-function-declaration;-Wno-missing-braces>"
     "$<$<BOOL:${USE_LIBCXX}>:-stdlib=libc++>"
