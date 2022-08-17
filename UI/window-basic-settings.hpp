@@ -120,7 +120,6 @@ private:
 	int pageIndex = 0;
 	bool loading = true;
 	bool forceAuthReload = false;
-	std::string savedTheme;
 	int sampleRateIndex = 0;
 	int channelIndex = 0;
 	bool llBufferingEnabled = false;
@@ -264,6 +263,7 @@ private:
 	void OnAuthConnected();
 	QString lastService;
 	int prevLangIndex;
+	int prevThemeIndex;
 	bool prevBrowserAccel;
 private slots:
 	void UpdateServerList();
@@ -378,8 +378,6 @@ private:
 	bool ServiceSupportsCodecCheck();
 
 private slots:
-	void on_theme_activated(int idx);
-
 	void on_listWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
 

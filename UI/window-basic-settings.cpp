@@ -1410,9 +1410,12 @@ void OBSBasicSettings::LoadGeneralSettings()
 			GetGlobalConfig(), "BasicWindow", "MultiviewLayout"))));
 
 	prevLangIndex = ui->language->currentIndex();
+	prevThemeIndex = ui->theme->currentIndex();
 
-	if (obs_video_active())
+	if (obs_video_active()) {
 		ui->language->setEnabled(false);
+		ui->theme->setEnabled(false);
+	}
 
 	loading = false;
 }
@@ -3875,8 +3878,10 @@ void OBSBasicSettings::SaveSettings()
 	bool browserHWAccelChanged =
 		(ui->browserHWAccel &&
 		 ui->browserHWAccel->isChecked() != prevBrowserAccel);
+	bool themeChanged = ui->theme->currentIndex() != prevThemeIndex;
 
-	if (langChanged || audioRestart || browserHWAccelChanged)
+	if (langChanged || audioRestart || browserHWAccelChanged ||
+	    themeChanged)
 		restart = true;
 	else
 		restart = false;
@@ -3896,9 +3901,6 @@ bool OBSBasicSettings::QueryChanges()
 	} else if (button == QMessageBox::Yes) {
 		SaveSettings();
 	} else {
-		if (savedTheme != App()->GetTheme())
-			App()->SetTheme(savedTheme);
-
 		LoadSettings(true);
 #ifdef _WIN32
 		if (toggleAero)
@@ -3921,13 +3923,6 @@ void OBSBasicSettings::reject()
 {
 	if (AskIfCanCloseSettings())
 		close();
-}
-
-void OBSBasicSettings::on_theme_activated(int idx)
-{
-	QString currT = ui->theme->itemData(idx).toString();
-
-	App()->SetTheme(currT.toUtf8().constData());
 }
 
 void OBSBasicSettings::on_listWidget_itemSelectionChanged()
@@ -3953,8 +3948,6 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 	if (val == QDialogButtonBox::AcceptRole ||
 	    val == QDialogButtonBox::RejectRole) {
 		if (val == QDialogButtonBox::RejectRole) {
-			if (savedTheme != App()->GetTheme())
-				App()->SetTheme(savedTheme);
 #ifdef _WIN32
 			if (toggleAero)
 				SetAeroEnabled(!aeroWasDisabled);
