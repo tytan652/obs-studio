@@ -28,6 +28,7 @@
 #include <memory>
 #include "window-main.hpp"
 #include "window-basic-interaction.hpp"
+#include "window-basic-vcam.hpp"
 #include "window-basic-properties.hpp"
 #include "window-basic-transform.hpp"
 #include "window-basic-adv-audio.hpp"
@@ -51,6 +52,7 @@ class QMessageBox;
 class QListWidgetItem;
 class VolControl;
 class OBSBasicStats;
+class OBSBasicVCamConfig;
 
 #include "ui_OBSBasic.h"
 #include "ui_ColorSelect.h"
@@ -305,6 +307,7 @@ private:
 
 	QPointer<ControlsSplitButton> vcamButton;
 	bool vcamEnabled = false;
+	VCamConfig vcamConfig;
 
 	QScopedPointer<QSystemTrayIcon> trayIcon;
 	QPointer<QAction> sysTrayStream;
@@ -807,6 +810,8 @@ private slots:
 
 	void LockVolumeControl(bool lock);
 	void ResetProxyStyleSliders();
+
+	void UpdateVirtualCamConfig(const VCamConfig &config);
 
 private:
 	/* OBS Callbacks */

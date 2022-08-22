@@ -741,8 +741,16 @@ void OBSBasic::Save(const char *file)
 	obs_data_set_double(saveData, "scaling_off_y",
 			    ui->preview->GetScrollY());
 
-	if (vcamEnabled)
-		OBSBasicVCamConfig::SaveData(saveData, true);
+	if (vcamEnabled) {
+		OBSDataAutoRelease obj = obs_data_create();
+
+		obs_data_set_int(obj, "type", (int)vcamConfig.type);
+		obs_data_set_int(obj, "internal", (int)vcamConfig.internal);
+		obs_data_set_string(obj, "scene", vcamConfig.scene.c_str());
+		obs_data_set_string(obj, "source", vcamConfig.source.c_str());
+
+		obs_data_set_obj(saveData, "virtual-camera", obj);
+	}
 
 	if (api) {
 		OBSDataAutoRelease moduleObj = obs_data_create();
@@ -1156,8 +1164,16 @@ retryScene:
 	ui->preview->SetFixedScaling(fixedScaling);
 	emit ui->preview->DisplayResized();
 
-	if (vcamEnabled)
-		OBSBasicVCamConfig::SaveData(data, false);
+	if (vcamEnabled) {
+		OBSDataAutoRelease obj =
+			obs_data_get_obj(data, "virtual-camera");
+
+		vcamConfig.type = (VCamOutputType)obs_data_get_int(obj, "type");
+		vcamConfig.internal =
+			(VCamInternalType)obs_data_get_int(obj, "internal");
+		vcamConfig.scene = obs_data_get_string(obj, "scene");
+		vcamConfig.source = obs_data_get_string(obj, "source");
+	}
 
 	/* ---------------------- */
 
@@ -1202,6 +1218,9 @@ retryScene:
 		ShowMissingFilesDialog(files);
 
 	disableSaving--;
+
+	if (vcamEnabled && vcamConfig.internal == VCamInternalType::Preview)
+		outputHandler->UpdateVirtualCamOutputSource();
 
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
@@ -1670,8 +1689,6 @@ void OBSBasic::ReplayBufferClicked()
 
 void OBSBasic::AddVCamButton()
 {
-	OBSBasicVCamConfig::Init();
-
 	vcamButton = new ControlsSplitButton(
 		QTStr("Basic.Main.StartVirtualCam"), "vcamButton",
 		&OBSBasic::VCamButtonClicked);
@@ -2731,8 +2748,6 @@ OBSBasic::~OBSBasic()
 	delete cef;
 	cef = nullptr;
 #endif
-
-	OBSBasicVCamConfig::DestroyView();
 }
 
 void OBSBasic::SaveProjectNow()
@@ -5024,6 +5039,9 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 	}
 
 	SetCurrentScene(source);
+
+	if (vcamEnabled && vcamConfig.internal == VCamInternalType::Preview)
+		outputHandler->UpdateVirtualCamOutputSource();
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
@@ -7752,8 +7770,19 @@ void OBSBasic::VCamButtonClicked()
 
 void OBSBasic::VCamConfigButtonClicked()
 {
-	OBSBasicVCamConfig config(this);
-	config.exec();
+	OBSBasicVCamConfig dialog(vcamConfig, this);
+
+	connect(&dialog, &OBSBasicVCamConfig::Accepted, this,
+		&OBSBasic::UpdateVirtualCamConfig);
+
+	dialog.exec();
+}
+
+void OBSBasic::UpdateVirtualCamConfig(const VCamConfig &config)
+{
+	vcamConfig = config;
+
+	outputHandler->UpdateVirtualCamOutputSource();
 }
 
 void OBSBasic::on_settingsButton_clicked()
