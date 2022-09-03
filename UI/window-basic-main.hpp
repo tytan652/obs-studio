@@ -51,6 +51,7 @@
 class QMessageBox;
 class QListWidgetItem;
 class VolControl;
+class OBSBasicControls;
 class OBSBasicStats;
 class OBSBasicVCamConfig;
 
@@ -180,8 +181,6 @@ class OBSBasic : public OBSMainWindow {
 	friend class Auth;
 	friend class AutoConfig;
 	friend class AutoConfigStreamPage;
-	friend class RecordButton;
-	friend class ControlsSplitButton;
 	friend class ExtraBrowsersModel;
 	friend class ExtraBrowsersDelegate;
 	friend class DeviceCaptureToolbar;
@@ -191,6 +190,9 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSPermissions;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
+
+	// Allow this class to connect OBSBasic private slots
+	friend class OBSBasicControls;
 
 	enum class MoveDir { Up, Down, Left, Right };
 
@@ -299,13 +301,8 @@ private:
 	QPointer<QWidget> extraBrowsers;
 	QPointer<QWidget> importer;
 
-	QPointer<QMenu> startStreamMenu;
-
 	QPointer<QPushButton> transitionButton;
-	QPointer<ControlsSplitButton> replayBufferButton;
-	QScopedPointer<QPushButton> pause;
 
-	QPointer<ControlsSplitButton> vcamButton;
 	bool vcamEnabled = false;
 	VCamConfig vcamConfig;
 
@@ -638,6 +635,8 @@ private:
 
 	float GetDevicePixelRatio();
 
+	bool IsRecordingPausable();
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
@@ -838,9 +837,6 @@ private:
 
 	void AutoRemux(QString input, bool no_show = false);
 
-	void UpdatePause(bool activate = true);
-	void UpdateReplayBuffer(bool activate = true);
-
 	bool OutputPathValid();
 	void OutputPathInvalidMessage();
 
@@ -882,7 +878,6 @@ public:
 	int ResetVideo();
 	bool ResetAudio();
 
-	void AddVCamButton();
 	void ResetOutputs();
 
 	void RefreshVolumeColors();
@@ -1063,11 +1058,10 @@ private slots:
 	void on_actionScaleCanvas_triggered();
 	void on_actionScaleOutput_triggered();
 
-	void on_streamButton_clicked();
-	void on_recordButton_clicked();
+	void StreamButtonClicked();
+	void RecordButtonClicked();
 	void VCamButtonClicked();
 	void VCamConfigButtonClicked();
-	void on_settingsButton_clicked();
 	void Screenshot(OBSSource source_ = nullptr);
 	void ScreenshotSelectedSource();
 	void ScreenshotProgram();
@@ -1115,7 +1109,7 @@ private slots:
 	void on_actionShowTransitionProperties_triggered();
 	void on_actionHideTransitionProperties_triggered();
 
-	void on_modeSwitch_clicked();
+	void ModeSwitchClicked();
 
 	// Source Context Buttons
 	void on_sourcePropertiesButton_clicked();
@@ -1197,6 +1191,9 @@ public slots:
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;
 
+	QPointer<OBSBasicControls> controls;
+	QPointer<OBSDock> controlsDock;
+
 public:
 	/* `undo_s` needs to be declared after `ui` to prevent an uninitialized
 	 * warning for `ui` while initializing `undo_s`. */
@@ -1213,6 +1210,48 @@ public:
 				   const char *file) const override;
 
 	static void InitBrowserPanelSafeBlock();
+signals:
+	//Streaming signals
+	void StreamingStarting(bool broadcast_auto_start);
+	void StreamingStartAborted();
+	void StreamingStarted(bool with_delay = false);
+	void StreamingStopping();
+	void StreamingStopAborted();
+	void StreamingStopped(bool with_delay = false);
+
+	// Broadcast signals
+	void BroadcastActionEnabled();
+	void BroadcastReady();
+	void BroadcastStreamStarted(bool auto_stop);
+	void BroadcastStartAborted();
+	void BroadcastStopAborted();
+	void BroadcastFlowStateChanged(bool enabled, bool ready);
+
+	//Recording signals
+	void RecordingStartAborted();
+	void RecordingStarted(bool pausable = false);
+	void RecordingPaused();
+	void RecordingUnpaused();
+	void RecordingStopping();
+	void RecordingStopAborted();
+	void RecordingStopped();
+
+	// Replay buffer signals
+	void ReplayBufferEnabled();
+	void ReplayBufferDisabled();
+	void ReplayBufferStartAborted();
+	void ReplayBufferStarted();
+	void ReplayBufferStopping2();
+	void ReplayBufferStopped();
+
+	// Virtual camera signals
+	void VirtualCamEnabled();
+	void VirtualCamStartAborted();
+	void VirtualCamStarted();
+	void VirtualCamStopped();
+
+	// Studio mode signal
+	void PreviewProgramModeChanged(bool enabled);
 };
 
 class SceneRenameDelegate : public QStyledItemDelegate {

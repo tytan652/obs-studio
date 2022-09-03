@@ -98,6 +98,7 @@ target_sources(
           forms/OBSAbout.ui
           forms/OBSAdvAudio.ui
           forms/OBSBasic.ui
+          forms/OBSBasicControls.ui
           forms/OBSBasicFilters.ui
           forms/OBSBasicInteraction.ui
           forms/OBSBasicSettings.ui
@@ -191,8 +192,6 @@ target_sources(
           properties-view.cpp
           properties-view.hpp
           properties-view.moc.hpp
-          record-button.cpp
-          record-button.hpp
           remote-text.cpp
           remote-text.hpp
           scene-tree.cpp
@@ -223,7 +222,10 @@ target_sources(
 
 target_sources(
   obs
-  PRIVATE window-basic-about.cpp
+  PRIVATE basic-controls.cpp
+          basic-controls.hpp
+          basic-controls-button.hpp
+          window-basic-about.cpp
           window-basic-about.hpp
           window-basic-auto-config.cpp
           window-basic-auto-config.hpp
