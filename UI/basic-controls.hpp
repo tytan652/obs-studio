@@ -13,9 +13,6 @@ class OBSBasicControlsButton;
 class OBSBasicControls : public QFrame {
 	Q_OBJECT
 
-	// XXX: OBSBasic still require access to buttons state
-	friend class OBSBasic;
-
 	OBSBasic *main;
 	std::unique_ptr<Ui::OBSBasicControls> ui;
 

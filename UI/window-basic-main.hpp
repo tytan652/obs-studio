@@ -635,6 +635,10 @@ private:
 
 	float GetDevicePixelRatio();
 
+	bool streamActionEnabled = true;
+	bool recordingEnabled = false;
+	bool recordingPaused = false;
+
 	bool IsRecordingPausable();
 
 public slots:

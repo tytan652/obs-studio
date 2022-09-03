@@ -282,6 +282,30 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->previewDisabledWidget->setVisible(false);
 	ui->contextContainer->setStyle(new OBSContextBarProxyStyle);
 
+	// Setup streaming connections
+	connect(this, &OBSBasic::StreamingStarting, this,
+		[this] { this->streamActionEnabled = false; });
+	connect(this, &OBSBasic::StreamingStarted, this,
+		[this] { this->streamActionEnabled = true; });
+	connect(this, &OBSBasic::StreamingStopped, this,
+		[this] { this->streamActionEnabled = true; });
+
+	// Setup recording connections
+	connect(this, &OBSBasic::RecordingStartAborted, this,
+		[this]() { this->recordingEnabled = false; });
+	connect(this, &OBSBasic::RecordingStarted, this, [this]() {
+		this->recordingEnabled = true;
+		this->recordingPaused = false;
+	});
+	connect(this, &OBSBasic::RecordingStopAborted, this,
+		[this]() { this->recordingEnabled = true; });
+	connect(this, &OBSBasic::RecordingStopped, this,
+		[this]() { this->recordingEnabled = false; });
+	connect(this, &OBSBasic::RecordingPaused, this,
+		[this]() { this->recordingPaused = true; });
+	connect(this, &OBSBasic::RecordingUnpaused, this,
+		[this]() { this->recordingPaused = false; });
+
 	/* Add controls dock */
 	controls = new OBSBasicControls(this);
 	controlsDock = new OBSDock(this);
@@ -2413,14 +2437,12 @@ void OBSBasic::CreateHotkeys()
 	streamingHotkeys = obs_hotkey_pair_register_frontend(
 		"OBSBasic.StartStreaming", Str("Basic.Main.StartStreaming"),
 		"OBSBasic.StopStreaming", Str("Basic.Main.StopStreaming"),
-		MAKE_CALLBACK(
-			!basic.outputHandler->StreamingActive() &&
-				basic.controls->ui->streamButton->isEnabled(),
-			basic.StartStreaming, "Starting stream"),
-		MAKE_CALLBACK(
-			basic.outputHandler->StreamingActive() &&
-				basic.controls->ui->streamButton->isEnabled(),
-			basic.StopStreaming, "Stopping stream"),
+		MAKE_CALLBACK(!basic.outputHandler->StreamingActive() &&
+				      basic.streamActionEnabled,
+			      basic.StartStreaming, "Starting stream"),
+		MAKE_CALLBACK(basic.outputHandler->StreamingActive() &&
+				      basic.streamActionEnabled,
+			      basic.StopStreaming, "Stopping stream"),
 		this, this);
 	LoadHotkeyPair(streamingHotkeys, "OBSBasic.StartStreaming",
 		       "OBSBasic.StopStreaming");
@@ -2440,14 +2462,12 @@ void OBSBasic::CreateHotkeys()
 	recordingHotkeys = obs_hotkey_pair_register_frontend(
 		"OBSBasic.StartRecording", Str("Basic.Main.StartRecording"),
 		"OBSBasic.StopRecording", Str("Basic.Main.StopRecording"),
-		MAKE_CALLBACK(
-			!basic.outputHandler->RecordingActive() &&
-				!basic.controls->ui->recordButton->isChecked(),
-			basic.StartRecording, "Starting recording"),
-		MAKE_CALLBACK(
-			basic.outputHandler->RecordingActive() &&
-				basic.controls->ui->recordButton->isChecked(),
-			basic.StopRecording, "Stopping recording"),
+		MAKE_CALLBACK(!basic.outputHandler->RecordingActive() &&
+				      !basic.recordingEnabled,
+			      basic.StartRecording, "Starting recording"),
+		MAKE_CALLBACK(basic.outputHandler->RecordingActive() &&
+				      basic.recordingEnabled,
+			      basic.StopRecording, "Stopping recording"),
 		this, this);
 	LoadHotkeyPair(recordingHotkeys, "OBSBasic.StartRecording",
 		       "OBSBasic.StopRecording");
@@ -2455,11 +2475,11 @@ void OBSBasic::CreateHotkeys()
 	pauseHotkeys = obs_hotkey_pair_register_frontend(
 		"OBSBasic.PauseRecording", Str("Basic.Main.PauseRecording"),
 		"OBSBasic.UnpauseRecording", Str("Basic.Main.UnpauseRecording"),
-		MAKE_CALLBACK(basic.controls->pauseButton &&
-				      !basic.controls->pauseButton->isChecked(),
+		MAKE_CALLBACK(basic.IsRecordingPausable() &&
+				      !basic.recordingPaused,
 			      basic.PauseRecording, "Pausing recording"),
-		MAKE_CALLBACK(basic.controls->pauseButton &&
-				      basic.controls->pauseButton->isChecked(),
+		MAKE_CALLBACK(basic.IsRecordingPausable() &&
+				      basic.recordingPaused,
 			      basic.UnpauseRecording, "Unpausing recording"),
 		this, this);
 	LoadHotkeyPair(pauseHotkeys, "OBSBasic.PauseRecording",
@@ -9852,7 +9872,7 @@ void OBSBasic::UpdatePatronJson(const QString &text, const QString &error)
 
 void OBSBasic::PauseRecording()
 {
-	if (!controls->pauseButton || !outputHandler ||
+	if (!IsRecordingPausable() || !outputHandler ||
 	    !outputHandler->fileOutput ||
 	    os_atomic_load_bool(&recording_paused))
 		return;
@@ -9890,7 +9910,7 @@ void OBSBasic::PauseRecording()
 
 void OBSBasic::UnpauseRecording()
 {
-	if (!controls->pauseButton || !outputHandler ||
+	if (!IsRecordingPausable() || !outputHandler ||
 	    !outputHandler->fileOutput ||
 	    !os_atomic_load_bool(&recording_paused))
 		return;
@@ -9925,7 +9945,7 @@ void OBSBasic::UnpauseRecording()
 
 void OBSBasic::PauseToggled()
 {
-	if (!controls->pauseButton || !outputHandler ||
+	if (!IsRecordingPausable() || !outputHandler ||
 	    !outputHandler->fileOutput)
 		return;
 
