@@ -104,6 +104,7 @@ target_sources(
           forms/OBSBasicSettings.ui
           forms/OBSBasicSourceSelect.ui
           forms/OBSBasicTransform.ui
+          forms/OBSBasicTransitions.ui
           forms/OBSBasicVCamConfig.ui
           forms/OBSExtraBrowsers.ui
           forms/OBSImporter.ui
@@ -225,6 +226,8 @@ target_sources(
   PRIVATE basic-controls.cpp
           basic-controls.hpp
           basic-controls-button.hpp
+          basic-transitions.cpp
+          basic-transitions.hpp
           window-basic-about.cpp
           window-basic-about.hpp
           window-basic-auto-config.cpp

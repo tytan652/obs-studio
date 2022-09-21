@@ -53,7 +53,7 @@ static inline QString MakeQuickTransitionText(QuickTransition *qt)
 
 void OBSBasic::InitDefaultTransitions()
 {
-	std::vector<OBSSource> transitions;
+	std::vector<OBSSource> trs;
 	size_t idx = 0;
 	const char *id;
 
@@ -66,7 +66,7 @@ void OBSBasic::InitDefaultTransitions()
 			OBSSourceAutoRelease tr =
 				obs_source_create_private(id, name, NULL);
 			InitTransition(tr);
-			transitions.emplace_back(tr);
+			trs.emplace_back(tr);
 
 			if (strcmp(id, "fade_transition") == 0)
 				fadeTransition = tr;
@@ -75,9 +75,10 @@ void OBSBasic::InitDefaultTransitions()
 		}
 	}
 
-	for (OBSSource &tr : transitions) {
-		ui->transitions->addItem(QT_UTF8(obs_source_get_name(tr)),
-					 QVariant::fromValue(OBSSource(tr)));
+	for (OBSSource &tr : trs) {
+		transitionNames.append(QT_UTF8(obs_source_get_name(tr)));
+		transitions.append(OBSSource(tr));
+		emit TransitionAdded(transitionNames.last());
 	}
 }
 
@@ -165,11 +166,6 @@ void OBSBasic::InitTransition(obs_source_t *transition)
 			       this);
 }
 
-static inline OBSSource GetTransitionComboItem(QComboBox *combo, int idx)
-{
-	return combo->itemData(idx).value<OBSSource>();
-}
-
 void OBSBasic::CreateDefaultQuickTransitions()
 {
 	/* non-configurable transitions are always available, so add them
@@ -239,15 +235,9 @@ obs_data_array_t *OBSBasic::SaveQuickTransitions()
 
 obs_source_t *OBSBasic::FindTransition(const char *name)
 {
-	for (int i = 0; i < ui->transitions->count(); i++) {
-		OBSSource tr = ui->transitions->itemData(i).value<OBSSource>();
-		if (!tr)
-			continue;
-
-		const char *trName = obs_source_get_name(tr);
-		if (strcmp(trName, name) == 0)
-			return tr;
-	}
+	int idx = transitionNames.indexOf(name);
+	if (idx != -1)
+		return transitions[idx];
 
 	return nullptr;
 }
@@ -355,7 +345,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
 	} else {
-		int duration = ui->transitionDuration->value();
+		int duration = GetTransitionDuration();
 
 		/* check for scene override */
 		OBSSource trOverride = GetOverrideTransition(source);
@@ -408,14 +398,22 @@ static inline void SetComboTransition(QComboBox *combo, obs_source_t *tr)
 	}
 }
 
+void OBSBasic::SetTransition(const QString &transition)
+{
+	int idx = transitionNames.indexOf(transition);
+
+	if (idx == transitionIdx)
+		return;
+
+	SetTransition(transitions[idx]);
+}
+
 void OBSBasic::SetTransition(OBSSource transition)
 {
 	OBSSourceAutoRelease oldTransition = obs_get_output_source(0);
 
 	if (oldTransition && transition) {
 		obs_transition_swap_begin(transition, oldTransition);
-		if (transition != GetCurrentTransition())
-			SetComboTransition(ui->transitions, transition);
 		obs_set_output_source(0, transition);
 		obs_transition_swap_end(transition, oldTransition);
 	} else {
@@ -423,12 +421,14 @@ void OBSBasic::SetTransition(OBSSource transition)
 	}
 
 	bool fixed = transition ? obs_transition_fixed(transition) : false;
-	ui->transitionDurationLabel->setVisible(!fixed);
-	ui->transitionDuration->setVisible(!fixed);
 
-	bool configurable = obs_source_configurable(transition);
-	ui->transitionRemove->setEnabled(configurable);
-	ui->transitionProps->setEnabled(configurable);
+	transitionIdx = transitions.indexOf(transition);
+
+	if (transitions.contains(transition))
+		emit TransitionChanged(transitionNames[transitionIdx], !fixed,
+				       obs_source_configurable(transition));
+	else
+		emit UnknownTransitionSet();
 
 	if (vcamEnabled && vcamConfig.internal == VCamInternalType::Default)
 		outputHandler->UpdateVirtualCamOutputSource();
@@ -439,28 +439,43 @@ void OBSBasic::SetTransition(OBSSource transition)
 
 OBSSource OBSBasic::GetCurrentTransition()
 {
-	return ui->transitions->currentData().value<OBSSource>();
+	return transitions[transitionIdx];
 }
 
-void OBSBasic::on_transitions_currentIndexChanged(int)
+int OBSBasic::GetTransitionDuration()
 {
-	OBSSource transition = GetCurrentTransition();
-	SetTransition(transition);
+	return transitionDuration;
 }
 
-void OBSBasic::AddTransition()
+void OBSBasic::SetTransitionDuration(int value)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	QString idStr = action->property("id").toString();
+	if (transitionDuration == value)
+		return;
 
+	transitionDuration = value;
+	emit TransitionDurationChanged(value);
+
+	if (api) {
+		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED);
+	}
+}
+
+void OBSBasic::AddTransitionAction()
+{
+	QString idStr = sender()->property("id").toString();
+
+	AddTransition(QT_TO_UTF8(idStr));
+}
+
+void OBSBasic::AddTransition(const char *id)
+{
 	string name;
-	QString placeHolderText =
-		QT_UTF8(obs_source_get_display_name(QT_TO_UTF8(idStr)));
+	QString placeHolderText = QT_UTF8(obs_source_get_display_name(id));
 	QString format = placeHolderText + " (%1)";
 	obs_source_t *source = nullptr;
 	int i = 1;
 
-	while ((FindTransition(QT_TO_UTF8(placeHolderText)))) {
+	while (transitionNames.contains(placeHolderText)) {
 		placeHolderText = format.arg(++i);
 	}
 
@@ -474,26 +489,26 @@ void OBSBasic::AddTransition()
 			OBSMessageBox::warning(this,
 					       QTStr("NoNameEntered.Title"),
 					       QTStr("NoNameEntered.Text"));
-			AddTransition();
+			AddTransition(id);
 			return;
 		}
 
-		source = FindTransition(name.c_str());
-		if (source) {
+		if (transitionNames.contains(name.c_str())) {
 			OBSMessageBox::warning(this, QTStr("NameExists.Title"),
 					       QTStr("NameExists.Text"));
 
-			AddTransition();
+			AddTransition(id);
 			return;
 		}
 
-		source = obs_source_create_private(QT_TO_UTF8(idStr),
-						   name.c_str(), NULL);
+		source = obs_source_create_private(id, name.c_str(), NULL);
 		InitTransition(source);
-		ui->transitions->addItem(
-			QT_UTF8(name.c_str()),
-			QVariant::fromValue(OBSSource(source)));
-		ui->transitions->setCurrentIndex(ui->transitions->count() - 1);
+		transitionNames.append(QT_UTF8(name.c_str()));
+		transitions.append(OBSSource(source));
+		transitionIdx = transitions.count() - 1;
+		emit TransitionChanged(
+			transitionNames.last(),
+			!obs_transition_fixed(transitions.last()), true);
 		CreatePropertiesWindow(source);
 		obs_source_release(source);
 
@@ -506,9 +521,8 @@ void OBSBasic::AddTransition()
 	}
 }
 
-void OBSBasic::on_transitionAdd_clicked()
+void OBSBasic::AddTransitionMenu()
 {
-	bool foundConfigurableTransitions = false;
 	QMenu menu(this);
 	size_t idx = 0;
 	const char *id;
@@ -519,28 +533,26 @@ void OBSBasic::on_transitionAdd_clicked()
 			QAction *action = new QAction(name, this);
 			action->setProperty("id", id);
 
-			connect(action, SIGNAL(triggered()), this,
-				SLOT(AddTransition()));
+			connect(action, &QAction::triggered, this,
+				&OBSBasic::AddTransitionAction);
 
 			menu.addAction(action);
-			foundConfigurableTransitions = true;
 		}
 	}
 
-	if (foundConfigurableTransitions)
+	if (!menu.isEmpty())
 		menu.exec(QCursor::pos());
 }
 
-void OBSBasic::on_transitionRemove_clicked()
+void OBSBasic::RemoveTransition()
 {
 	OBSSource tr = GetCurrentTransition();
 
 	if (!tr || !obs_source_configurable(tr) || !QueryRemoveSource(tr))
 		return;
 
-	int idx = ui->transitions->findData(QVariant::fromValue<OBSSource>(tr));
-	if (idx == -1)
-		return;
+	int idx = transitionIdx;
+	QString name = transitionNames[idx];
 
 	for (size_t i = quickTransitions.size(); i > 0; i--) {
 		QuickTransition &qt = quickTransitions[i - 1];
@@ -553,7 +565,11 @@ void OBSBasic::on_transitionRemove_clicked()
 		}
 	}
 
-	ui->transitions->removeItem(idx);
+	SetTransition(transitions[0]);
+
+	transitionNames.removeAt(idx);
+	transitions.removeAt(idx);
+	emit TransitionRemoved(name);
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
@@ -562,11 +578,27 @@ void OBSBasic::on_transitionRemove_clicked()
 	RefreshQuickTransitions();
 }
 
+void OBSBasic::TransitionPropsAction()
+{
+	QMenu menu(this);
+
+	QAction *action = new QAction(QTStr("Rename"), &menu);
+	connect(action, &QAction::triggered, this, &OBSBasic::RenameTransition);
+	menu.addAction(action);
+
+	action = new QAction(QTStr("Properties"), &menu);
+	connect(action, &QAction::triggered, this, [this] {
+		this->CreatePropertiesWindow(
+			this->transitions[this->transitionIdx]);
+	});
+	menu.addAction(action);
+
+	menu.exec(QCursor::pos());
+}
+
 void OBSBasic::RenameTransition()
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	QVariant variant = action->property("transition");
-	obs_source_t *transition = variant.value<OBSSource>();
+	obs_source_t *transition = transitions[transitionIdx];
 
 	string name;
 	QString placeHolderText = QT_UTF8(obs_source_get_name(transition));
@@ -586,8 +618,7 @@ void OBSBasic::RenameTransition()
 		return;
 	}
 
-	source = FindTransition(name.c_str());
-	if (source) {
+	if (transitionNames.contains(name.c_str())) {
 		OBSMessageBox::warning(this, QTStr("NameExists.Title"),
 				       QTStr("NameExists.Text"));
 
@@ -596,49 +627,18 @@ void OBSBasic::RenameTransition()
 	}
 
 	obs_source_set_name(transition, name.c_str());
-	int idx = ui->transitions->findData(variant);
-	if (idx != -1) {
-		ui->transitions->setItemText(idx, QT_UTF8(name.c_str()));
 
-		if (api)
-			api->on_event(
-				OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+	QString oldName = transitionNames[transitionIdx];
+	QString newName = QT_UTF8(name.c_str());
 
-		ClearQuickTransitionWidgets();
-		RefreshQuickTransitions();
-	}
-}
+	transitionNames[transitionIdx] = newName;
+	emit TransitionRenamed(oldName, newName);
 
-void OBSBasic::on_transitionProps_clicked()
-{
-	OBSSource source = GetCurrentTransition();
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
 
-	if (!obs_source_configurable(source))
-		return;
-
-	auto properties = [&]() { CreatePropertiesWindow(source); };
-
-	QMenu menu(this);
-
-	QAction *action = new QAction(QTStr("Rename"), &menu);
-	connect(action, SIGNAL(triggered()), this, SLOT(RenameTransition()));
-	action->setProperty("transition", QVariant::fromValue(source));
-	menu.addAction(action);
-
-	action = new QAction(QTStr("Properties"), &menu);
-	connect(action, &QAction::triggered, properties);
-	menu.addAction(action);
-
-	menu.exec(QCursor::pos());
-}
-
-void OBSBasic::on_transitionDuration_valueChanged(int value)
-{
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED);
-	}
-
-	UNUSED_PARAMETER(value);
+	ClearQuickTransitionWidgets();
+	RefreshQuickTransitions();
 }
 
 QuickTransition *OBSBasic::GetQuickTransition(int id)
@@ -1006,7 +1006,7 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 			return;
 		}
 
-		OBSSource tr = GetTransitionComboItem(ui->transitions, idx);
+		OBSSource tr = transitions[idx];
 
 		if (tr) {
 			const char *name = obs_source_get_name(tr);
@@ -1025,12 +1025,12 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 	connect(duration, (void(QSpinBox::*)(int)) & QSpinBox::valueChanged,
 		setDuration);
 
-	for (int i = -1; i < ui->transitions->count(); i++) {
+	for (int i = -1; i < transitions.count(); i++) {
 		const char *name = "";
 
 		if (i >= 0) {
 			OBSSource tr;
-			tr = GetTransitionComboItem(ui->transitions, i);
+			tr = transitions[i];
 			if (!tr)
 				continue;
 			name = obs_source_get_name(tr);
@@ -1340,8 +1340,8 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 			&OBSBasic::AddQuickTransition);
 	}
 
-	for (int i = 0; i < ui->transitions->count(); i++) {
-		tr = GetTransitionComboItem(ui->transitions, i);
+	for (int i = 0; i < transitions.count(); i++) {
+		tr = transitions[i];
 
 		if (!tr)
 			continue;
@@ -1416,9 +1416,8 @@ void OBSBasic::AddQuickTransition()
 	int trIdx = sender()->property("transition_index").toInt();
 	QSpinBox *duration = sender()->property("duration").value<QSpinBox *>();
 	bool fadeToBlack = sender()->property("fadeToBlack").value<bool>();
-	OBSSource transition =
-		fadeToBlack ? OBSSource(fadeTransition)
-			    : GetTransitionComboItem(ui->transitions, trIdx);
+	OBSSource transition = fadeToBlack ? OBSSource(fadeTransition)
+					   : transitions[trIdx];
 
 	if (!transition)
 		return;
@@ -1476,10 +1475,8 @@ void OBSBasic::QuickTransitionChange()
 	QuickTransition *qt = GetQuickTransition(id);
 
 	if (qt) {
-		OBSSource tr = fadeToBlack
-				       ? OBSSource(fadeTransition)
-				       : GetTransitionComboItem(ui->transitions,
-								trIdx);
+		OBSSource tr = fadeToBlack ? OBSSource(fadeTransition)
+					   : transitions[trIdx];
 		if (tr) {
 			qt->source = tr;
 			ResetQuickTransitionText(qt);
@@ -1550,15 +1547,7 @@ void OBSBasic::RefreshQuickTransitions()
 
 void OBSBasic::EnableTransitionWidgets(bool enable)
 {
-	ui->transitions->setEnabled(enable);
-
-	if (!enable) {
-		ui->transitionProps->setEnabled(false);
-	} else {
-		bool configurable =
-			obs_source_configurable(GetCurrentTransition());
-		ui->transitionProps->setEnabled(configurable);
-	}
+	emit TransitionsWidgetsEnabled(enable);
 
 	if (!IsPreviewProgramMode())
 		return;
@@ -1684,7 +1673,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		if (!previewEnabled)
 			EnablePreviewDisplay(false);
 
-		ui->transitions->setEnabled(true);
+		emit EnableTransitionWidgets(true);
 		tBarActive = false;
 
 		if (api)
@@ -1752,10 +1741,10 @@ void OBSBasic::ResizeProgram(uint32_t cx, uint32_t cy)
 
 obs_data_array_t *OBSBasic::SaveTransitions()
 {
-	obs_data_array_t *transitions = obs_data_array_create();
+	obs_data_array_t *transitionsData = obs_data_array_create();
 
-	for (int i = 0; i < ui->transitions->count(); i++) {
-		OBSSource tr = ui->transitions->itemData(i).value<OBSSource>();
+	for (int i = 0; i < transitions.count(); i++) {
+		OBSSource tr = transitions[i];
 		if (!tr || !obs_source_configurable(tr))
 			continue;
 
@@ -1767,19 +1756,20 @@ obs_data_array_t *OBSBasic::SaveTransitions()
 		obs_data_set_string(sourceData, "id", obs_obj_get_id(tr));
 		obs_data_set_obj(sourceData, "settings", settings);
 
-		obs_data_array_push_back(transitions, sourceData);
+		obs_data_array_push_back(transitionsData, sourceData);
 	}
 
-	return transitions;
+	return transitionsData;
 }
 
-void OBSBasic::LoadTransitions(obs_data_array_t *transitions,
+void OBSBasic::LoadTransitions(obs_data_array_t *transitions_data,
 			       obs_load_source_cb cb, void *private_data)
 {
-	size_t count = obs_data_array_count(transitions);
+	size_t count = obs_data_array_count(transitions_data);
 
 	for (size_t i = 0; i < count; i++) {
-		OBSDataAutoRelease item = obs_data_array_item(transitions, i);
+		OBSDataAutoRelease item =
+			obs_data_array_item(transitions_data, i);
 		const char *name = obs_data_get_string(item, "name");
 		const char *id = obs_data_get_string(item, "id");
 		OBSDataAutoRelease settings =
@@ -1790,11 +1780,13 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitions,
 		if (!obs_obj_invalid(source)) {
 			InitTransition(source);
 
-			ui->transitions->addItem(
-				QT_UTF8(name),
-				QVariant::fromValue(OBSSource(source)));
-			ui->transitions->setCurrentIndex(
-				ui->transitions->count() - 1);
+			transitionNames.append(QT_UTF8(name));
+			transitions.append(OBSSource(source));
+			transitionIdx = transitions.count() - 1;
+			emit TransitionChanged(
+				transitionNames.last(),
+				!obs_transition_fixed(transitions.last()),
+				obs_source_configurable(transitions.last()));
 			if (cb)
 				cb(private_data, source);
 		}

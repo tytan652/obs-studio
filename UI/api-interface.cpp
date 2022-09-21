@@ -113,9 +113,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_get_transitions(
 		struct obs_frontend_source_list *sources) override
 	{
-		for (int i = 0; i < main->ui->transitions->count(); i++) {
-			obs_source_t *tr = main->ui->transitions->itemData(i)
-						   .value<OBSSource>();
+		for (int i = 0; i < main->transitions.count(); i++) {
+			obs_source_t *tr = main->transitions[i];
 
 			if (!tr)
 				continue;
@@ -141,13 +140,13 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	int obs_frontend_get_transition_duration(void) override
 	{
-		return main->ui->transitionDuration->value();
+		return main->transitionDuration;
 	}
 
 	void obs_frontend_set_transition_duration(int duration) override
 	{
-		QMetaObject::invokeMethod(main->ui->transitionDuration,
-					  "setValue", Q_ARG(int, duration));
+		QMetaObject::invokeMethod(main, "SetTransitionDuration",
+					  Q_ARG(int, duration));
 	}
 
 	void obs_frontend_release_tbar(void) override

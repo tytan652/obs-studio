@@ -53,6 +53,7 @@ class QListWidgetItem;
 class VolControl;
 class OBSBasicControls;
 class OBSBasicStats;
+class OBSBasicTransitions;
 class OBSBasicVCamConfig;
 
 #include "ui_OBSBasic.h"
@@ -191,8 +192,9 @@ class OBSBasic : public OBSMainWindow {
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
 
-	// Allow this class to connect OBSBasic private slots
+	// Allow those classes to connect OBSBasic private slots
 	friend class OBSBasicControls;
+	friend class OBSBasicTransitions;
 
 	enum class MoveDir { Up, Down, Left, Right };
 
@@ -445,7 +447,7 @@ private:
 	obs_source_t *FindTransition(const char *name);
 	OBSSource GetCurrentTransition();
 	obs_data_array_t *SaveTransitions();
-	void LoadTransitions(obs_data_array_t *transitions,
+	void LoadTransitions(obs_data_array_t *transitions_data,
 			     obs_load_source_cb cb, void *private_data);
 
 	obs_source_t *fadeTransition;
@@ -641,6 +643,13 @@ private:
 
 	bool IsRecordingPausable();
 
+	QStringList transitionNames;
+	QList<OBSSource> transitions;
+	int transitionIdx = 0;
+	int transitionDuration;
+
+	void AddTransition(const char *id);
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
@@ -687,7 +696,9 @@ public slots:
 	void SaveProjectDeferred();
 	void SaveProject();
 
+	void SetTransition(const QString &transition);
 	void SetTransition(OBSSource transition);
+	void SetTransitionDuration(int value);
 	void OverrideTransition(OBSSource transition);
 	void TransitionToScene(OBSScene scene, bool force = false);
 	void TransitionToScene(OBSSource scene, bool force = false,
@@ -733,7 +744,10 @@ private slots:
 
 	void ProcessHotkey(obs_hotkey_id id, bool pressed);
 
-	void AddTransition();
+	void AddTransitionMenu();
+	void AddTransitionAction();
+	void RemoveTransition();
+	void TransitionPropsAction();
 	void RenameTransition();
 	void TransitionClicked();
 	void TransitionStopped();
@@ -1103,11 +1117,6 @@ private slots:
 	void on_toggleStatusBar_toggled(bool visible);
 	void on_toggleSourceIcons_toggled(bool visible);
 
-	void on_transitions_currentIndexChanged(int index);
-	void on_transitionAdd_clicked();
-	void on_transitionRemove_clicked();
-	void on_transitionProps_clicked();
-	void on_transitionDuration_valueChanged(int value);
 	void on_tbar_position_valueChanged(int value);
 
 	void ShowTransitionProperties();
@@ -1198,6 +1207,9 @@ private:
 	QPointer<OBSBasicControls> controls;
 	QPointer<OBSDock> controlsDock;
 
+	QPointer<OBSBasicTransitions> transitionsWidget;
+	QPointer<OBSDock> transitionsDock;
+
 public:
 	/* `undo_s` needs to be declared after `ui` to prevent an uninitialized
 	 * warning for `ui` while initializing `undo_s`. */
@@ -1256,6 +1268,16 @@ signals:
 
 	// Studio mode signal
 	void PreviewProgramModeChanged(bool enabled);
+
+	// Transitions signals
+	void TransitionsWidgetsEnabled(bool enabled);
+	void TransitionAdded(const QString &name);
+	void TransitionChanged(const QString &transition, bool hasDuration,
+			       bool hasProperties);
+	void UnknownTransitionSet();
+	void TransitionDurationChanged(int value);
+	void TransitionRemoved(const QString &name);
+	void TransitionRenamed(const QString &oldName, const QString &newName);
 };
 
 class SceneRenameDelegate : public QStyledItemDelegate {
