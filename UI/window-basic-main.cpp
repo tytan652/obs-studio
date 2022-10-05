@@ -46,6 +46,7 @@
 #include "visibility-item-widget.hpp"
 #include "item-widget-helpers.hpp"
 #include "basic-controls.hpp"
+#include "basic-mixer.hpp"
 #include "basic-transitions.hpp"
 #include "window-basic-settings.hpp"
 #include "window-namedialog.hpp"
@@ -305,6 +306,14 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(this, &OBSBasic::RecordingUnpaused, this,
 		[this]() { this->recordingPaused = false; });
 
+	/* Add mixer dock */
+	mixer = new OBSBasicMixer(this);
+	mixerDock = new OBSDock(this);
+	mixerDock->setObjectName(QString::fromUtf8("mixerDock"));
+	mixerDock->setWindowTitle(QTStr("Mixer"));
+	mixerDock->setWidget(mixer);
+	addDockWidget(Qt::BottomDockWidgetArea, mixerDock);
+
 	/* Add transitions dock */
 	transitionsWidget = new OBSBasicTransitions(this);
 	transitionsDock = new OBSDock(this);
@@ -452,7 +461,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	assignDockToggle(ui->scenesDock, ui->toggleScenes);
 	assignDockToggle(ui->sourcesDock, ui->toggleSources);
-	assignDockToggle(ui->mixerDock, ui->toggleMixer);
+	assignDockToggle(mixerDock, ui->toggleMixer);
 	assignDockToggle(transitionsDock, ui->toggleTransitions);
 	assignDockToggle(controlsDock, ui->toggleControls);
 	assignDockToggle(statsDock, ui->toggleStats);
@@ -630,14 +639,6 @@ void OBSBasic::copyActionsDynamicProperties()
 
 	for (QAction *x : ui->sourcesToolbar->actions()) {
 		QWidget *temp = ui->sourcesToolbar->widgetForAction(x);
-
-		for (QByteArray &y : x->dynamicPropertyNames()) {
-			temp->setProperty(y, x->property(y));
-		}
-	}
-
-	for (QAction *x : ui->mixerToolbar->actions()) {
-		QWidget *temp = ui->mixerToolbar->widgetForAction(x);
 
 		for (QByteArray &y : x->dynamicPropertyNames()) {
 			temp->setProperty(y, x->property(y));
@@ -2069,8 +2070,8 @@ void OBSBasic::OBSInit()
 		QMetaObject::invokeMethod(this, "on_autoConfigure_triggered",
 					  Qt::QueuedConnection);
 
-	ToggleMixerLayout(config_get_bool(App()->GlobalConfig(), "BasicWindow",
-					  "VerticalVolControl"));
+	mixer->ToggleMixerLayout(config_get_bool(
+		App()->GlobalConfig(), "BasicWindow", "VerticalVolControl"));
 
 	if (config_get_bool(basicConfig, "General", "OpenStatsOnStartup"))
 		on_stats_triggered();
@@ -3562,16 +3563,6 @@ void OBSBasic::VolControlContextMenu()
 		vol->SetContextMenu(nullptr);
 }
 
-void OBSBasic::on_hMixerScrollArea_customContextMenuRequested()
-{
-	StackedMixerAreaContextMenuRequested();
-}
-
-void OBSBasic::on_vMixerScrollArea_customContextMenuRequested()
-{
-	StackedMixerAreaContextMenuRequested();
-}
-
 void OBSBasic::StackedMixerAreaContextMenuRequested()
 {
 	QAction unhideAllAction(QTStr("UnhideAll"), this);
@@ -3608,24 +3599,13 @@ void OBSBasic::StackedMixerAreaContextMenuRequested()
 	popup.exec(QCursor::pos());
 }
 
-void OBSBasic::ToggleMixerLayout(bool vertical)
-{
-	if (vertical) {
-		ui->stackedMixerArea->setMinimumSize(180, 220);
-		ui->stackedMixerArea->setCurrentIndex(1);
-	} else {
-		ui->stackedMixerArea->setMinimumSize(220, 0);
-		ui->stackedMixerArea->setCurrentIndex(0);
-	}
-}
-
 void OBSBasic::ToggleVolControlLayout()
 {
 	bool vertical = !config_get_bool(GetGlobalConfig(), "BasicWindow",
 					 "VerticalVolControl");
 	config_set_bool(GetGlobalConfig(), "BasicWindow", "VerticalVolControl",
 			vertical);
-	ToggleMixerLayout(vertical);
+	mixer->ToggleMixerLayout(vertical);
 
 	// We need to store it so we can delete current and then add
 	// at the right order
@@ -3685,12 +3665,8 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 
 	InsertQObjectByName(volumes, vol);
 
-	for (auto volume : volumes) {
-		if (vertical)
-			ui->vVolControlLayout->addWidget(volume);
-		else
-			ui->hVolControlLayout->addWidget(volume);
-	}
+	for (auto volume : volumes)
+		mixer->AddVolumeControl(volume);
 }
 
 void OBSBasic::DeactivateAudioSource(OBSSource source)
@@ -5021,31 +4997,6 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 	advAudioWindow->show();
 	advAudioWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 	advAudioWindow->SetIconsVisible(iconsVisible);
-}
-
-void OBSBasic::on_actionMixerToolbarAdvAudio_triggered()
-{
-	on_actionAdvAudioProperties_triggered();
-}
-
-void OBSBasic::on_actionMixerToolbarMenu_triggered()
-{
-	QAction unhideAllAction(QTStr("UnhideAll"), this);
-	connect(&unhideAllAction, &QAction::triggered, this,
-		&OBSBasic::UnhideAllAudioControls, Qt::DirectConnection);
-
-	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
-	toggleControlLayoutAction.setCheckable(true);
-	toggleControlLayoutAction.setChecked(config_get_bool(
-		GetGlobalConfig(), "BasicWindow", "VerticalVolControl"));
-	connect(&toggleControlLayoutAction, &QAction::changed, this,
-		&OBSBasic::ToggleVolControlLayout, Qt::DirectConnection);
-
-	QMenu popup;
-	popup.addAction(&unhideAllAction);
-	popup.addSeparator();
-	popup.addAction(&toggleControlLayoutAction);
-	popup.exec(QCursor::pos());
 }
 
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
@@ -8950,15 +8901,14 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 
 	int mixerSize = cx - (cx22_5 * 2 + cx5 + cx21);
 
-	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock,
-				   ui->mixerDock, transitionsDock,
-				   controlsDock};
+	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock, mixerDock,
+				   transitionsDock, controlsDock};
 
 	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx21};
 
 	ui->scenesDock->setVisible(true);
 	ui->sourcesDock->setVisible(true);
-	ui->mixerDock->setVisible(true);
+	mixerDock->setVisible(true);
 	transitionsDock->setVisible(true);
 	controlsDock->setVisible(true);
 	statsDock->setVisible(false);
@@ -8983,7 +8933,7 @@ void OBSBasic::on_lockDocks_toggled(bool lock)
 
 	ui->scenesDock->setFeatures(mainFeatures);
 	ui->sourcesDock->setFeatures(mainFeatures);
-	ui->mixerDock->setFeatures(mainFeatures);
+	mixerDock->setFeatures(mainFeatures);
 	transitionsDock->setFeatures(mainFeatures);
 	controlsDock->setFeatures(mainFeatures);
 	statsDock->setFeatures(features);

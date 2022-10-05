@@ -52,6 +52,7 @@ class QMessageBox;
 class QListWidgetItem;
 class VolControl;
 class OBSBasicControls;
+class OBSBasicMixer;
 class OBSBasicStats;
 class OBSBasicTransitions;
 class OBSBasicVCamConfig;
@@ -194,6 +195,7 @@ class OBSBasic : public OBSMainWindow {
 
 	// Allow those classes to connect OBSBasic private slots
 	friend class OBSBasicControls;
+	friend class OBSBasicMixer;
 	friend class OBSBasicTransitions;
 
 	enum class MoveDir { Up, Down, Left, Right };
@@ -415,7 +417,6 @@ private:
 	void GetAudioSourceProperties();
 	void VolControlContextMenu();
 	void ToggleVolControlLayout();
-	void ToggleMixerLayout(bool vertical);
 
 	void RefreshSceneCollections();
 	void ChangeSceneCollection();
@@ -773,9 +774,6 @@ private slots:
 
 	void MixerRenameSource();
 
-	void on_vMixerScrollArea_customContextMenuRequested();
-	void on_hMixerScrollArea_customContextMenuRequested();
-
 	void on_actionCopySource_triggered();
 	void on_actionPasteRef_triggered();
 	void on_actionPasteDup_triggered();
@@ -1019,8 +1017,6 @@ private slots:
 	void on_actionShowMacPermissions_triggered();
 	void on_actionShowMissingFiles_triggered();
 	void on_actionAdvAudioProperties_triggered();
-	void on_actionMixerToolbarAdvAudio_triggered();
-	void on_actionMixerToolbarMenu_triggered();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();
@@ -1209,6 +1205,9 @@ private:
 
 	QPointer<OBSBasicTransitions> transitionsWidget;
 	QPointer<OBSDock> transitionsDock;
+
+	QPointer<OBSBasicMixer> mixer;
+	QPointer<OBSDock> mixerDock;
 
 public:
 	/* `undo_s` needs to be declared after `ui` to prevent an uninitialized

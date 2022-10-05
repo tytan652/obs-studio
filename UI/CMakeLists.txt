@@ -101,6 +101,7 @@ target_sources(
           forms/OBSBasicControls.ui
           forms/OBSBasicFilters.ui
           forms/OBSBasicInteraction.ui
+          forms/OBSBasicMixer.ui
           forms/OBSBasicSettings.ui
           forms/OBSBasicSourceSelect.ui
           forms/OBSBasicTransform.ui
@@ -226,6 +227,8 @@ target_sources(
   PRIVATE basic-controls.cpp
           basic-controls.hpp
           basic-controls-button.hpp
+          basic-mixer.cpp
+          basic-mixer.hpp
           basic-transitions.cpp
           basic-transitions.hpp
           window-basic-about.cpp
