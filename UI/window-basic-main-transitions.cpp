@@ -23,6 +23,7 @@
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
 #include "window-basic-vcam-config.hpp"
+#include "basic-sources.hpp"
 #include "display-helpers.hpp"
 #include "window-namedialog.hpp"
 #include "menu-button.hpp"
@@ -1279,7 +1280,8 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 
 		for (auto &selectedSource : GetAllSelectedSourceItems()) {
 			OBSSceneItem item =
-				main->ui->sources->Get(selectedSource.row());
+				main->sourcesWidget->ui->sources->Get(
+					selectedSource.row());
 			if (!item)
 				continue;
 

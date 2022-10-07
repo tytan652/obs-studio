@@ -51,8 +51,10 @@
 class QMessageBox;
 class QListWidgetItem;
 class VolControl;
+class SourceTreeItem;
 class OBSBasicControls;
 class OBSBasicMixer;
+class OBSBasicSources;
 class OBSBasicStats;
 class OBSBasicTransitions;
 class OBSBasicVCamConfig;
@@ -196,6 +198,7 @@ class OBSBasic : public OBSMainWindow {
 	// Allow those classes to connect OBSBasic private slots
 	friend class OBSBasicControls;
 	friend class OBSBasicMixer;
+	friend class OBSBasicSources;
 	friend class OBSBasicTransitions;
 
 	enum class MoveDir { Up, Down, Left, Right };
@@ -1051,14 +1054,14 @@ private slots:
 	void on_actionRemoveScene_triggered();
 	void on_actionSceneUp_triggered();
 	void on_actionSceneDown_triggered();
-	void on_sources_customContextMenuRequested(const QPoint &pos);
+	void SourcesContextMenuRequested(const QPoint &pos);
 	void on_scenes_itemDoubleClicked(QListWidgetItem *item);
-	void on_actionAddSource_triggered();
+	void AddSourceActionTriggered();
 	void on_actionRemoveSource_triggered();
 	void on_actionInteract_triggered();
-	void on_actionSourceProperties_triggered();
-	void on_actionSourceUp_triggered();
-	void on_actionSourceDown_triggered();
+	void SourcePropertiesActionTriggered();
+	void SourceUpActionTriggered();
+	void SourceDownActionTriggered();
 
 	void on_actionMoveUp_triggered();
 	void on_actionMoveDown_triggered();
@@ -1208,6 +1211,9 @@ private:
 
 	QPointer<OBSBasicMixer> mixer;
 	QPointer<OBSDock> mixerDock;
+
+	QPointer<OBSBasicSources> sourcesWidget;
+	QPointer<OBSDock> sourcesDock;
 
 public:
 	/* `undo_s` needs to be declared after `ui` to prevent an uninitialized

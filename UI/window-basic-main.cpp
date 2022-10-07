@@ -47,6 +47,7 @@
 #include "item-widget-helpers.hpp"
 #include "basic-controls.hpp"
 #include "basic-mixer.hpp"
+#include "basic-sources.hpp"
 #include "basic-transitions.hpp"
 #include "window-basic-settings.hpp"
 #include "window-namedialog.hpp"
@@ -306,6 +307,14 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(this, &OBSBasic::RecordingUnpaused, this,
 		[this]() { this->recordingPaused = false; });
 
+	/* Add sources dock */
+	sourcesWidget = new OBSBasicSources(this);
+	sourcesDock = new OBSDock(this);
+	sourcesDock->setObjectName(QString::fromUtf8("sourcesDock"));
+	sourcesDock->setWindowTitle(QTStr("Basic.Main.Sources"));
+	sourcesDock->setWidget(sourcesWidget);
+	addDockWidget(Qt::BottomDockWidgetArea, sourcesDock);
+
 	/* Add mixer dock */
 	mixer = new OBSBasicMixer(this);
 	mixerDock = new OBSDock(this);
@@ -360,7 +369,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 #endif
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
-	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
 
 	bool sceneGrid = config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					 "gridMode");
@@ -415,17 +423,16 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(renameScene, SIGNAL(triggered()), this, SLOT(EditSceneName()));
 	ui->scenesDock->addAction(renameScene);
 
-	renameSource = new QAction(ui->sourcesDock);
+	renameSource = new QAction(sourcesDock);
 	renameSource->setShortcutContext(Qt::WidgetWithChildrenShortcut);
 	connect(renameSource, SIGNAL(triggered()), this,
 		SLOT(EditSceneItemName()));
-	ui->sourcesDock->addAction(renameSource);
+	sourcesDock->addAction(renameSource);
 
 #ifdef __APPLE__
 	renameScene->setShortcut({Qt::Key_Return});
 	renameSource->setShortcut({Qt::Key_Return});
 
-	ui->actionRemoveSource->setShortcuts({Qt::Key_Backspace});
 	ui->actionRemoveScene->setShortcuts({Qt::Key_Backspace});
 
 	ui->actionCheckForUpdates->setMenuRole(QAction::AboutQtRole);
@@ -460,7 +467,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	addNudge(Qt::SHIFT | Qt::Key_Right, SLOT(NudgeRightFar()));
 
 	assignDockToggle(ui->scenesDock, ui->toggleScenes);
-	assignDockToggle(ui->sourcesDock, ui->toggleSources);
+	assignDockToggle(sourcesDock, ui->toggleSources);
 	assignDockToggle(mixerDock, ui->toggleMixer);
 	assignDockToggle(transitionsDock, ui->toggleTransitions);
 	assignDockToggle(controlsDock, ui->toggleControls);
@@ -631,14 +638,6 @@ void OBSBasic::copyActionsDynamicProperties()
 	// Themes need the QAction dynamic properties
 	for (QAction *x : ui->scenesToolbar->actions()) {
 		QWidget *temp = ui->scenesToolbar->widgetForAction(x);
-
-		for (QByteArray &y : x->dynamicPropertyNames()) {
-			temp->setProperty(y, x->property(y));
-		}
-	}
-
-	for (QAction *x : ui->sourcesToolbar->actions()) {
-		QWidget *temp = ui->sourcesToolbar->widgetForAction(x);
 
 		for (QByteArray &y : x->dynamicPropertyNames()) {
 			temp->setProperty(y, x->property(y));
@@ -2088,7 +2087,7 @@ void OBSBasic::OBSInit()
 	connect(ui->viewMenu->menuAction(), &QAction::hovered, this,
 		&OBSBasic::UpdateMultiviewProjectorMenu);
 
-	ui->sources->UpdateIcons();
+	sourcesWidget->ui->sources->UpdateIcons();
 
 #if !defined(_WIN32)
 	delete ui->actionShowCrashLogs;
@@ -2841,7 +2840,7 @@ OBSSceneItem OBSBasic::GetSceneItem(QListWidgetItem *item)
 
 OBSSceneItem OBSBasic::GetCurrentSceneItem()
 {
-	return ui->sources->Get(GetTopSelectedSourceItem());
+	return sourcesWidget->ui->sources->Get(GetTopSelectedSourceItem());
 }
 
 void OBSBasic::UpdatePreviewScalingMenu()
@@ -3000,7 +2999,7 @@ void OBSBasic::RemoveScene(OBSSource source)
 
 	if (sel != nullptr) {
 		if (sel == ui->scenes->currentItem())
-			ui->sources->Clear();
+			sourcesWidget->ui->sources->Clear();
 		delete sel;
 	}
 
@@ -3035,7 +3034,7 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 	obs_scene_t *scene = obs_sceneitem_get_scene(item);
 
 	if (GetCurrentScene() == scene)
-		ui->sources->Add(item);
+		sourcesWidget->ui->sources->Add(item);
 
 	SaveProject();
 
@@ -4056,19 +4055,21 @@ void OBSBasic::RemoveSelectedScene()
 
 void OBSBasic::ReorderSources(OBSScene scene)
 {
-	if (scene != GetCurrentScene() || ui->sources->IgnoreReorder())
+	if (scene != GetCurrentScene() ||
+	    sourcesWidget->ui->sources->IgnoreReorder())
 		return;
 
-	ui->sources->ReorderItems();
+	sourcesWidget->ui->sources->ReorderItems();
 	SaveProject();
 }
 
 void OBSBasic::RefreshSources(OBSScene scene)
 {
-	if (scene != GetCurrentScene() || ui->sources->IgnoreReorder())
+	if (scene != GetCurrentScene() ||
+	    sourcesWidget->ui->sources->IgnoreReorder())
 		return;
 
-	ui->sources->RefreshItems();
+	sourcesWidget->ui->sources->RefreshItems();
 	SaveProject();
 }
 
@@ -4649,7 +4650,7 @@ void OBSBasic::ClearSceneData()
 
 	ClearVolumeControls();
 	ClearListItems(ui->scenes);
-	ui->sources->Clear();
+	sourcesWidget->ui->sources->Clear();
 	ClearQuickTransitions();
 	transitions.clear();
 	transitionNames.clear();
@@ -5309,7 +5310,7 @@ void OBSBasic::MoveSceneToBottom()
 void OBSBasic::EditSceneItemName()
 {
 	int idx = GetTopSelectedSourceItem();
-	ui->sources->Edit(idx);
+	sourcesWidget->ui->sources->Edit(idx);
 }
 
 void OBSBasic::SetDeinterlacingMode()
@@ -5582,14 +5583,16 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	if (addSourceMenu)
 		popup.addMenu(addSourceMenu);
 
-	if (ui->sources->MultipleBaseSelected()) {
+	if (sourcesWidget->ui->sources->MultipleBaseSelected()) {
 		popup.addSeparator();
-		popup.addAction(QTStr("Basic.Main.GroupItems"), ui->sources,
+		popup.addAction(QTStr("Basic.Main.GroupItems"),
+				sourcesWidget->ui->sources,
 				SLOT(GroupSelectedItems()));
 
-	} else if (ui->sources->GroupsSelected()) {
+	} else if (sourcesWidget->ui->sources->GroupsSelected()) {
 		popup.addSeparator();
-		popup.addAction(QTStr("Basic.Main.Ungroup"), ui->sources,
+		popup.addAction(QTStr("Basic.Main.Ungroup"),
+				sourcesWidget->ui->sources,
 				SLOT(UngroupSelectedGroups()));
 	}
 
@@ -5608,7 +5611,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		if (addSourceMenu)
 			popup.addSeparator();
 
-		OBSSceneItem sceneItem = ui->sources->Get(idx);
+		OBSSceneItem sceneItem = sourcesWidget->ui->sources->Get(idx);
 		obs_source_t *source = obs_sceneitem_get_source(sceneItem);
 		uint32_t flags = obs_source_get_output_flags(source);
 		bool isAsyncVideo = (flags & OBS_SOURCE_ASYNC_VIDEO) ==
@@ -5695,10 +5698,10 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	popup.exec(QCursor::pos());
 }
 
-void OBSBasic::on_sources_customContextMenuRequested(const QPoint &pos)
+void OBSBasic::SourcesContextMenuRequested(const QPoint &pos)
 {
 	if (ui->scenes->count()) {
-		QModelIndex idx = ui->sources->indexAt(pos);
+		QModelIndex idx = sourcesWidget->ui->sources->indexAt(pos);
 		CreateSourcePopupMenu(idx.row(), false);
 	}
 }
@@ -5855,7 +5858,7 @@ void OBSBasic::AddSourcePopupMenu(const QPoint &pos)
 		popup->exec(pos);
 }
 
-void OBSBasic::on_actionAddSource_triggered()
+void OBSBasic::AddSourceActionTriggered()
 {
 	AddSourcePopupMenu(QCursor::pos());
 }
@@ -5949,7 +5952,7 @@ void OBSBasic::CreateSceneUndoRedoAction(const QString &action_name,
 		for (obs_source_t *source : sources)
 			obs_source_load2(source);
 
-		ui->sources->RefreshItems();
+		sourcesWidget->ui->sources->RefreshItems();
 	};
 
 	const char *undo_json = obs_data_get_last_json(undo_data);
@@ -6040,7 +6043,7 @@ void OBSBasic::on_actionInteract_triggered()
 		CreateInteractionWindow(source);
 }
 
-void OBSBasic::on_actionSourceProperties_triggered()
+void OBSBasic::SourcePropertiesActionTriggered()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 	OBSSource source = obs_sceneitem_get_source(item);
@@ -6077,12 +6080,12 @@ void OBSBasic::MoveSceneItem(enum obs_order_movement movement,
 				  undo_data, redo_data);
 }
 
-void OBSBasic::on_actionSourceUp_triggered()
+void OBSBasic::SourceUpActionTriggered()
 {
 	MoveSceneItem(OBS_ORDER_MOVE_UP, QTStr("Undo.MoveUp"));
 }
 
-void OBSBasic::on_actionSourceDown_triggered()
+void OBSBasic::SourceDownActionTriggered()
 {
 	MoveSceneItem(OBS_ORDER_MOVE_DOWN, QTStr("Undo.MoveDown"));
 }
@@ -7743,13 +7746,13 @@ void OBSBasic::on_actionShowProfileFolder_triggered()
 int OBSBasic::GetTopSelectedSourceItem()
 {
 	QModelIndexList selectedItems =
-		ui->sources->selectionModel()->selectedIndexes();
+		sourcesWidget->ui->sources->selectionModel()->selectedIndexes();
 	return selectedItems.count() ? selectedItems[0].row() : -1;
 }
 
 QModelIndexList OBSBasic::GetAllSelectedSourceItems()
 {
-	return ui->sources->selectionModel()->selectedIndexes();
+	return sourcesWidget->ui->sources->selectionModel()->selectedIndexes();
 }
 
 void OBSBasic::on_preview_customContextMenuRequested(const QPoint &pos)
@@ -7912,8 +7915,8 @@ void OBSBasic::UpdateEditMenu()
 	size_t filter_count = 0;
 
 	if (count == 1) {
-		OBSSceneItem sceneItem =
-			ui->sources->Get(GetTopSelectedSourceItem());
+		OBSSceneItem sceneItem = sourcesWidget->ui->sources->Get(
+			GetTopSelectedSourceItem());
 		OBSSource source = obs_sceneitem_get_source(sceneItem);
 		filter_count = obs_source_filter_count(source);
 	}
@@ -7951,7 +7954,8 @@ void OBSBasic::UpdateEditMenu()
 
 	bool canTransform = false;
 	for (int i = 0; i < count; i++) {
-		OBSSceneItem item = ui->sources->Get(items.value(i).row());
+		OBSSceneItem item =
+			sourcesWidget->ui->sources->Get(items.value(i).row());
 		if (!obs_sceneitem_locked(item))
 			canTransform = true;
 	}
@@ -8357,7 +8361,8 @@ void OBSBasic::CenterSelectedSceneItems(const CenterType &centerType)
 
 	// Filter out items that have no size
 	for (int x = 0; x < selectedItems.count(); x++) {
-		OBSSceneItem item = ui->sources->Get(selectedItems[x].row());
+		OBSSceneItem item =
+			sourcesWidget->ui->sources->Get(selectedItems[x].row());
 		obs_transform_info oti;
 		obs_sceneitem_get_info(item, &oti);
 
@@ -8901,13 +8906,13 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 
 	int mixerSize = cx - (cx22_5 * 2 + cx5 + cx21);
 
-	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock, mixerDock,
+	QList<QDockWidget *> docks{ui->scenesDock, sourcesDock, mixerDock,
 				   transitionsDock, controlsDock};
 
 	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx21};
 
 	ui->scenesDock->setVisible(true);
-	ui->sourcesDock->setVisible(true);
+	sourcesDock->setVisible(true);
 	mixerDock->setVisible(true);
 	transitionsDock->setVisible(true);
 	controlsDock->setVisible(true);
@@ -8932,7 +8937,7 @@ void OBSBasic::on_lockDocks_toggled(bool lock)
 	mainFeatures &= ~QDockWidget::QDockWidget::DockWidgetClosable;
 
 	ui->scenesDock->setFeatures(mainFeatures);
-	ui->sourcesDock->setFeatures(mainFeatures);
+	sourcesDock->setFeatures(mainFeatures);
 	mixerDock->setFeatures(mainFeatures);
 	transitionsDock->setFeatures(mainFeatures);
 	controlsDock->setFeatures(mainFeatures);
@@ -8964,7 +8969,7 @@ void OBSBasic::on_multiviewProjectorWindowed_triggered()
 
 void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 {
-	ui->sourcesToolbar->setVisible(visible);
+	sourcesWidget->ui->sourcesToolbar->setVisible(visible);
 	ui->scenesToolbar->setVisible(visible);
 
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
@@ -8999,7 +9004,7 @@ void OBSBasic::on_toggleStatusBar_toggled(bool visible)
 
 void OBSBasic::on_toggleSourceIcons_toggled(bool visible)
 {
-	ui->sources->SetIconsVisible(visible);
+	sourcesWidget->ui->sources->SetIconsVisible(visible);
 	if (advAudioWindow != nullptr)
 		advAudioWindow->SetIconsVisible(visible);
 
@@ -9300,7 +9305,8 @@ void OBSBasic::on_actionCopySource_triggered()
 	clipboard.clear();
 
 	for (auto &selectedSource : GetAllSelectedSourceItems()) {
-		OBSSceneItem item = ui->sources->Get(selectedSource.row());
+		OBSSceneItem item =
+			sourcesWidget->ui->sources->Get(selectedSource.row());
 		if (!item)
 			continue;
 
@@ -9516,7 +9522,7 @@ static void ConfirmColor(SourceTree *sources, const QColor &color,
 void OBSBasic::ColorChange()
 {
 	QModelIndexList selectedItems =
-		ui->sources->selectionModel()->selectedIndexes();
+		sourcesWidget->ui->sources->selectionModel()->selectedIndexes();
 	QAction *action = qobject_cast<QAction *>(sender());
 	QPushButton *colorButton = qobject_cast<QPushButton *>(sender());
 
@@ -9527,15 +9533,17 @@ void OBSBasic::ColorChange()
 		int preset = colorButton->property("bgColor").value<int>();
 
 		for (int x = 0; x < selectedItems.count(); x++) {
-			SourceTreeItem *treeItem = ui->sources->GetItemWidget(
-				selectedItems[x].row());
+			SourceTreeItem *treeItem =
+				sourcesWidget->ui->sources->GetItemWidget(
+					selectedItems[x].row());
 			treeItem->setStyleSheet("");
 			treeItem->setProperty("bgColor", preset);
 			treeItem->style()->unpolish(treeItem);
 			treeItem->style()->polish(treeItem);
 
 			OBSSceneItem sceneItem =
-				ui->sources->Get(selectedItems[x].row());
+				sourcesWidget->ui->sources->Get(
+					selectedItems[x].row());
 			OBSDataAutoRelease privData =
 				obs_sceneitem_get_private_settings(sceneItem);
 			obs_data_set_int(privData, "color-preset", preset + 1);
@@ -9578,8 +9586,8 @@ void OBSBasic::ColorChange()
 
 			auto changedColor = [=](const QColor &color) {
 				if (color.isValid()) {
-					ConfirmColor(ui->sources, color,
-						     selectedItems);
+					ConfirmColor(sourcesWidget->ui->sources,
+						     color, selectedItems);
 				}
 			};
 
@@ -9624,15 +9632,17 @@ void OBSBasic::ColorChange()
 		} else {
 			for (int x = 0; x < selectedItems.count(); x++) {
 				SourceTreeItem *treeItem =
-					ui->sources->GetItemWidget(
-						selectedItems[x].row());
+					sourcesWidget->ui->sources
+						->GetItemWidget(
+							selectedItems[x].row());
 				treeItem->setStyleSheet("background: none");
 				treeItem->setProperty("bgColor", preset);
 				treeItem->style()->unpolish(treeItem);
 				treeItem->style()->polish(treeItem);
 
-				OBSSceneItem sceneItem = ui->sources->Get(
-					selectedItems[x].row());
+				OBSSceneItem sceneItem =
+					sourcesWidget->ui->sources->Get(
+						selectedItems[x].row());
 				OBSDataAutoRelease privData =
 					obs_sceneitem_get_private_settings(
 						sceneItem);
@@ -9647,13 +9657,13 @@ void OBSBasic::ColorChange()
 SourceTreeItem *OBSBasic::GetItemWidgetFromSceneItem(obs_sceneitem_t *sceneItem)
 {
 	int i = 0;
-	SourceTreeItem *treeItem = ui->sources->GetItemWidget(i);
-	OBSSceneItem item = ui->sources->Get(i);
+	SourceTreeItem *treeItem = sourcesWidget->ui->sources->GetItemWidget(i);
+	OBSSceneItem item = sourcesWidget->ui->sources->Get(i);
 	int64_t id = obs_sceneitem_get_id(sceneItem);
 	while (treeItem && obs_sceneitem_get_id(item) != id) {
 		i++;
-		treeItem = ui->sources->GetItemWidget(i);
-		item = ui->sources->Get(i);
+		treeItem = sourcesWidget->ui->sources->GetItemWidget(i);
+		item = sourcesWidget->ui->sources->Get(i);
 	}
 	if (treeItem)
 		return treeItem;
@@ -10027,7 +10037,8 @@ void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)
 		if (objName.compare("scenesDock") == 0) {
 			ui->scenes->customContextMenuRequested(globalPos);
 		} else if (objName.compare("sourcesDock") == 0) {
-			ui->sources->customContextMenuRequested(globalPos);
+			sourcesWidget->ui->sources->customContextMenuRequested(
+				globalPos);
 		} else if (objName.compare("mixerDock") == 0) {
 			StackedMixerAreaContextMenuRequested();
 		}
@@ -10058,7 +10069,7 @@ void OBSBasic::ResetProjectors()
 
 void OBSBasic::on_sourcePropertiesButton_clicked()
 {
-	on_actionSourceProperties_triggered();
+	SourcePropertiesActionTriggered();
 }
 
 void OBSBasic::on_sourceFiltersButton_clicked()
