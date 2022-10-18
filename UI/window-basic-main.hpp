@@ -53,6 +53,7 @@ class QMessageBox;
 class QListWidgetItem;
 class VolControl;
 class SourceTreeItem;
+class OBSBasicCentral;
 class OBSBasicControls;
 class OBSBasicMixer;
 class OBSBasicScenes;
@@ -199,6 +200,7 @@ class OBSBasic : public OBSMainWindow {
 	friend struct OBSStudioAPI;
 
 	// Allow those classes to connect OBSBasic private slots
+	friend class OBSBasicCentral;
 	friend class OBSBasicControls;
 	friend class OBSBasicMixer;
 	friend class OBSBasicScenes;
@@ -1060,7 +1062,7 @@ private slots:
 	void SourcesContextMenuRequested(const QPoint &pos);
 	void ScenesItemDoubleClicked(QListWidgetItem *item);
 	void AddSourceActionTriggered();
-	void on_actionRemoveSource_triggered();
+	void RemoveSourceActionTriggered();
 	void on_actionInteract_triggered();
 	void SourcePropertiesActionTriggered();
 	void SourceUpActionTriggered();
@@ -1074,9 +1076,6 @@ private slots:
 	void on_actionLockPreview_triggered();
 
 	void on_scalingMenu_aboutToShow();
-	void on_actionScaleWindow_triggered();
-	void on_actionScaleCanvas_triggered();
-	void on_actionScaleOutput_triggered();
 
 	void StreamButtonClicked();
 	void RecordButtonClicked();
@@ -1163,7 +1162,6 @@ private slots:
 	void OpenProperties(OBSSource source = nullptr);
 	void OpenInteraction(OBSSource source = nullptr);
 
-	void EnablePreviewDisplay(bool enable);
 	void TogglePreview();
 
 	void NudgeUp();
@@ -1198,13 +1196,14 @@ public slots:
 	bool ReplayBufferActive();
 	bool VirtualCamActive();
 
-	void ClearContextBar();
 	void UpdateContextBar(bool force = false);
 	void UpdateContextBarDeferred(bool force = false);
 	void UpdateContextBarVisibility();
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;
+
+	QPointer<OBSBasicCentral> centralWidget;
 
 	QPointer<OBSBasicControls> controls;
 	QPointer<OBSDock> controlsDock;

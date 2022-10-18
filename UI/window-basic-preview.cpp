@@ -7,6 +7,7 @@
 #include <graphics/matrix4.h>
 #include "window-basic-preview.hpp"
 #include "window-basic-main.hpp"
+#include "basic-central.hpp"
 #include "basic-sources.hpp"
 #include "obs-app.hpp"
 #include "platform.hpp"
@@ -2280,7 +2281,7 @@ void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal)
 
 OBSBasicPreview *OBSBasicPreview::Get()
 {
-	return OBSBasic::Get()->ui->preview;
+	return OBSBasic::Get()->centralWidget->ui->preview;
 }
 
 static obs_source_t *CreateLabel(float pixelRatio)

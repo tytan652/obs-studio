@@ -23,6 +23,7 @@
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
 #include "window-basic-vcam-config.hpp"
+#include "basic-central.hpp"
 #include "basic-sources.hpp"
 #include "display-helpers.hpp"
 #include "window-namedialog.hpp"
@@ -1585,7 +1586,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 	if (IsPreviewProgramMode()) {
 		if (!previewEnabled)
-			EnablePreviewDisplay(true);
+			centralWidget->EnablePreviewDisplay(true);
 
 		CreateProgramDisplay();
 		CreateProgramOptions();
@@ -1635,10 +1636,10 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		programWidget->setLayout(programLayout);
 
-		ui->previewLayout->addWidget(programOptions);
-		ui->previewLayout->addWidget(programWidget);
-		ui->previewLayout->setAlignment(programOptions,
-						Qt::AlignCenter);
+		centralWidget->ui->previewLayout->addWidget(programOptions);
+		centralWidget->ui->previewLayout->addWidget(programWidget);
+		centralWidget->ui->previewLayout->setAlignment(programOptions,
+							       Qt::AlignCenter);
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
@@ -1674,7 +1675,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 			qt.button = nullptr;
 
 		if (!previewEnabled)
-			EnablePreviewDisplay(false);
+			centralWidget->EnablePreviewDisplay(false);
 
 		emit EnableTransitionWidgets(true);
 		tBarActive = false;
@@ -1831,7 +1832,7 @@ void OBSBasic::UpdatePreviewProgramIndicators()
 							   "StudioModeLabels")
 					 : false;
 
-	ui->previewLabel->setVisible(labels);
+	centralWidget->ui->previewLabel->setVisible(labels);
 
 	if (programLabel)
 		programLabel->setVisible(labels);
@@ -1847,8 +1848,8 @@ void OBSBasic::UpdatePreviewProgramIndicators()
 		QTStr("StudioMode.ProgramSceneName")
 			.arg(QT_UTF8(obs_source_get_name(GetProgramSource())));
 
-	if (ui->previewLabel->text() != preview)
-		ui->previewLabel->setText(preview);
+	if (centralWidget->ui->previewLabel->text() != preview)
+		centralWidget->ui->previewLabel->setText(preview);
 
 	if (programLabel && programLabel->text() != program)
 		programLabel->setText(program);

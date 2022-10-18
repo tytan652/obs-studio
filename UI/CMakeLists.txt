@@ -98,6 +98,7 @@ target_sources(
           forms/OBSAbout.ui
           forms/OBSAdvAudio.ui
           forms/OBSBasic.ui
+          forms/OBSBasicCentral.ui
           forms/OBSBasicControls.ui
           forms/OBSBasicFilters.ui
           forms/OBSBasicInteraction.ui
@@ -226,7 +227,9 @@ target_sources(
 
 target_sources(
   obs
-  PRIVATE basic-controls.cpp
+  PRIVATE basic-central.cpp
+          basic-central.hpp
+          basic-controls.cpp
           basic-controls.hpp
           basic-controls-button.hpp
           basic-mixer.cpp

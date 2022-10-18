@@ -15,7 +15,7 @@ OBSBasicSources::OBSBasicSources(OBSBasic *main)
 	connect(ui->actionAddSource, &QAction::triggered, main,
 		&OBSBasic::AddSourceActionTriggered);
 	connect(ui->actionRemoveSource, &QAction::triggered, main,
-		&OBSBasic::on_actionRemoveSource_triggered);
+		&OBSBasic::RemoveSourceActionTriggered);
 	connect(ui->actionSourceProperties, &QAction::triggered, main,
 		&OBSBasic::SourcePropertiesActionTriggered);
 	connect(ui->actionSourceUp, &QAction::triggered, main,

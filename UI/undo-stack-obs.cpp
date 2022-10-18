@@ -1,5 +1,7 @@
 #include "undo-stack-obs.hpp"
 
+#include "obs-app.hpp"
+
 #include <util/util.hpp>
 
 #define MAX_STACK_SIZE 5000

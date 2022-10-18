@@ -3,6 +3,7 @@
 #include "qt-wrappers.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "basic-central.hpp"
 
 #include <functional>
 
@@ -553,7 +554,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_set_preview_enabled(bool enable) override
 	{
 		if (main->previewEnabled != enable)
-			main->EnablePreviewDisplay(enable);
+			main->centralWidget->EnablePreviewDisplay(enable);
 	}
 
 	obs_source_t *obs_frontend_get_current_preview_scene(void) override
