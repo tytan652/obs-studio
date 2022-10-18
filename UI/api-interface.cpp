@@ -76,8 +76,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_get_scenes(
 		struct obs_frontend_source_list *sources) override
 	{
-		for (int i = 0; i < main->ui->scenes->count(); i++) {
-			QListWidgetItem *item = main->ui->scenes->item(i);
+		for (int i = 0; i < main->GetScenes()->count(); i++) {
+			QListWidgetItem *item = main->GetScenes()->item(i);
 			OBSScene scene = GetOBSRef<OBSScene>(item);
 			obs_source_t *source = obs_scene_get_source(scene);
 

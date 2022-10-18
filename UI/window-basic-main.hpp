@@ -36,6 +36,7 @@
 #include "window-missing-files.hpp"
 #include "window-projector.hpp"
 #include "window-basic-about.hpp"
+#include "basic-scenes.hpp"
 #include "auth-base.hpp"
 #include "log-viewer.hpp"
 #include "undo-stack-obs.hpp"
@@ -54,10 +55,12 @@ class VolControl;
 class SourceTreeItem;
 class OBSBasicControls;
 class OBSBasicMixer;
+class OBSBasicScenes;
 class OBSBasicSources;
 class OBSBasicStats;
 class OBSBasicTransitions;
 class OBSBasicVCamConfig;
+class OBSDock;
 
 #include "ui_OBSBasic.h"
 #include "ui_ColorSelect.h"
@@ -198,6 +201,7 @@ class OBSBasic : public OBSMainWindow {
 	// Allow those classes to connect OBSBasic private slots
 	friend class OBSBasicControls;
 	friend class OBSBasicMixer;
+	friend class OBSBasicScenes;
 	friend class OBSBasicSources;
 	friend class OBSBasicTransitions;
 
@@ -850,7 +854,6 @@ private:
 	void AddSource(const char *id);
 	QMenu *CreateAddSourcePopupMenu();
 	void AddSourcePopupMenu(const QPoint &pos);
-	void copyActionsDynamicProperties();
 
 	static void HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed);
 
@@ -1046,16 +1049,16 @@ private slots:
 
 	void on_OBSBasic_customContextMenuRequested(const QPoint &pos);
 
-	void on_scenes_currentItemChanged(QListWidgetItem *current,
-					  QListWidgetItem *prev);
-	void on_scenes_customContextMenuRequested(const QPoint &pos);
+	void ScenesCurrentItemChanged(QListWidgetItem *current,
+				      QListWidgetItem *prev);
+	void ScenesContextMenuRequested(const QPoint &pos);
 	void GridActionClicked();
-	void on_actionAddScene_triggered();
-	void on_actionRemoveScene_triggered();
-	void on_actionSceneUp_triggered();
-	void on_actionSceneDown_triggered();
+	void AddSceneActionTriggered();
+	void RemoveSceneActionTriggered();
+	void SceneUpActionTriggered();
+	void SceneDownActionTriggered();
 	void SourcesContextMenuRequested(const QPoint &pos);
-	void on_scenes_itemDoubleClicked(QListWidgetItem *item);
+	void ScenesItemDoubleClicked(QListWidgetItem *item);
 	void AddSourceActionTriggered();
 	void on_actionRemoveSource_triggered();
 	void on_actionInteract_triggered();
@@ -1214,6 +1217,10 @@ private:
 
 	QPointer<OBSBasicSources> sourcesWidget;
 	QPointer<OBSDock> sourcesDock;
+
+	QPointer<OBSBasicScenes> scenesWidget;
+	QPointer<OBSDock> scenesDock;
+	inline SceneTree *GetScenes() { return scenesWidget->ui->scenes; }
 
 public:
 	/* `undo_s` needs to be declared after `ui` to prevent an uninitialized
