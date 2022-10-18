@@ -268,12 +268,6 @@
     <addaction name="lockDocks"/>
     <addaction name="resetDocks"/>
     <addaction name="separator"/>
-    <addaction name="toggleScenes"/>
-    <addaction name="toggleSources"/>
-    <addaction name="toggleMixer"/>
-    <addaction name="toggleTransitions"/>
-    <addaction name="toggleControls"/>
-    <addaction name="toggleStats"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>

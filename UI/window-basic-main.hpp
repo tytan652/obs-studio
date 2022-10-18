@@ -23,6 +23,7 @@
 #include <QWidgetAction>
 #include <QSystemTrayIcon>
 #include <QStyledItemDelegate>
+#include <DockManager.h>
 #include <obs.hpp>
 #include <vector>
 #include <memory>
@@ -61,7 +62,7 @@ class OBSBasicSources;
 class OBSBasicStats;
 class OBSBasicTransitions;
 class OBSBasicVCamConfig;
-class OBSDock;
+class OBSAdvDock;
 
 #include "ui_OBSBasic.h"
 #include "ui_ColorSelect.h"
@@ -239,7 +240,9 @@ private:
 
 	std::vector<OBSSignal> signalHandlers;
 
-	QList<QPointer<QDockWidget>> extraDocks;
+	/* Legacy docks */
+	QPointer<QMenu> legacyDocksMenu;
+	QList<QPointer<QDockWidget>> legacyExtraDocks;
 
 	bool loaded = false;
 	long disableSaving = 1;
@@ -267,7 +270,7 @@ private:
 	QPointer<OBSBasicTransform> transformWindow;
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
-	QPointer<QDockWidget> statsDock;
+	QPointer<OBSAdvDock> statsDock;
 	QPointer<OBSAbout> about;
 	QPointer<OBSMissingFiles> missDialog;
 	QPointer<OBSLogViewer> logView;
@@ -544,7 +547,7 @@ private:
 
 	QList<QPoint> visDlgPositions;
 
-	QByteArray startingDockLayout;
+	QByteArray startingWindowState;
 
 	obs_data_array_t *SaveProjectors();
 	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
@@ -554,9 +557,14 @@ private:
 
 	void UpdatePreviewProgramIndicators();
 
+	QStringList extraDockNames;
+	/* This separator is added after custom browser docks action
+	 * or legacy docks menu if one of them is added. */
+	QPointer<QAction> secondMenuDocksSeparator;
+	// This separator separate extra browser docks from other docks
+	QPointer<QAction> extraBrowserMenuDocksSeparator;
 #ifdef BROWSER_AVAILABLE
-	QList<QSharedPointer<QDockWidget>> extraBrowserDocks;
-	QList<QSharedPointer<QAction>> extraBrowserDockActions;
+	QStringList extraBrowserDockNames;
 	QStringList extraBrowserDockTargets;
 
 	void ClearExtraBrowserDocks();
@@ -964,6 +972,16 @@ public:
 
 	QAction *AddDockWidget(QDockWidget *dock);
 
+	/* Advanced docks */
+	void AddAdvDockWidget(OBSAdvDock *dock, bool browser = false);
+	void RemoveAdvDockWidget(const QString &title);
+	bool ApplyDocksLayout(const QByteArray &state);
+	inline QByteArray AdvDockState() { return dockManager->saveState(); }
+	inline bool RestoreAdvDocksState(const QByteArray &state)
+	{
+		return dockManager->restoreState(state);
+	}
+
 	static OBSBasic *Get();
 
 	const char *GetCurrentOutputPath();
@@ -1202,23 +1220,24 @@ public slots:
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;
+	QPointer<ads::CDockManager> dockManager;
 
 	QPointer<OBSBasicCentral> centralWidget;
 
 	QPointer<OBSBasicControls> controls;
-	QPointer<OBSDock> controlsDock;
+	QPointer<OBSAdvDock> controlsDock;
 
 	QPointer<OBSBasicTransitions> transitionsWidget;
-	QPointer<OBSDock> transitionsDock;
+	QPointer<OBSAdvDock> transitionsDock;
 
 	QPointer<OBSBasicMixer> mixer;
-	QPointer<OBSDock> mixerDock;
+	QPointer<OBSAdvDock> mixerDock;
 
 	QPointer<OBSBasicSources> sourcesWidget;
-	QPointer<OBSDock> sourcesDock;
+	QPointer<OBSAdvDock> sourcesDock;
 
 	QPointer<OBSBasicScenes> scenesWidget;
-	QPointer<OBSDock> scenesDock;
+	QPointer<OBSAdvDock> scenesDock;
 	inline SceneTree *GetScenes() { return scenesWidget->ui->scenes; }
 
 public:

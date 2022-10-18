@@ -35,3 +35,48 @@
 #define YOUTUBE_SECRET_HASH   0x@YOUTUBE_SECRET_HASH@
 
 #define DEFAULT_THEME "Yami"
+
+#define SCENES_DOCK_NAME "scenesDock"
+#define SOURCES_DOCK_NAME "sourcesDock"
+#define MIXER_DOCK_NAME "mixerDock"
+#define TRANSITIONS_DOCK_NAME "transitionsDock"
+#define CONTROLS_DOCK_NAME "controlsDock"
+#define STATS_DOCK_NAME "statsDock"
+
+#define OBS_DOCKNAME_NOCLOSE_LIST \
+SCENES_DOCK_NAME << SOURCES_DOCK_NAME << MIXER_DOCK_NAME \
+<< TRANSITIONS_DOCK_NAME << CONTROLS_DOCK_NAME
+
+#define OBS_DOCKNAME_LIST \
+OBS_DOCKNAME_NOCLOSE_LIST << STATS_DOCK_NAME
+
+#define DEFAULT_DOCK_STATE QString(\
+	"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\
+<QtAdvancedDockingSystem Version=\"1\" UserVersion=\"0\" Containers=\"1\" CentralWidget=\"centralDock\">\
+  <Container Floating=\"0\">\
+    <Splitter Orientation=\"-\" Count=\"2\">\
+      <Area Tabs=\"1\" Current=\"centralDock\" Flags=\"1\">\
+        <Widget Name=\"centralDock\" Closed=\"0\"/>\
+      </Area>\
+      <Splitter Orientation=\"|\" Count=\"5\">\
+        <Area Tabs=\"1\" Current=\"" SCENES_DOCK_NAME "\">\
+          <Widget Name=\"" SCENES_DOCK_NAME "\" Closed=\"0\"/>\
+        </Area>\
+        <Area Tabs=\"1\" Current=\"" SOURCES_DOCK_NAME "\">\
+          <Widget Name=\"" SOURCES_DOCK_NAME "\" Closed=\"0\"/>\
+        </Area>\
+        <Area Tabs=\"1\" Current=\"" MIXER_DOCK_NAME "\">\
+          <Widget Name=\"" MIXER_DOCK_NAME "\" Closed=\"0\"/>\
+        </Area>\
+        <Area Tabs=\"1\" Current=\"" TRANSITIONS_DOCK_NAME "\">\
+          <Widget Name=\"" TRANSITIONS_DOCK_NAME "\" Closed=\"0\"/>\
+        </Area>\
+        <Area Tabs=\"1\" Current=\"" CONTROLS_DOCK_NAME "\">\
+          <Widget Name=\"" CONTROLS_DOCK_NAME "\" Closed=\"0\"/>\
+        </Area>\
+        <Sizes>225 225 450 50 50 </Sizes>\
+      </Splitter>\
+      <Sizes>775 225 </Sizes>\
+    </Splitter>\
+  </Container>\
+</QtAdvancedDockingSystem>").toLatin1()

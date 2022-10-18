@@ -230,7 +230,7 @@ static void AddExtraModulePaths()
 
 extern obs_frontend_callbacks *InitializeAPIInterface(OBSBasic *main);
 
-void assignDockToggle(QDockWidget *dock, QAction *action)
+void assignLegacyDockToggle(QDockWidget *dock, QAction *action)
 {
 	auto handleWindowToggle = [action](bool vis) {
 		action->blockSignals(true);
@@ -281,8 +281,43 @@ OBSBasic::OBSBasic(QWidget *parent)
 	api = InitializeAPIInterface(this);
 
 	ui->setupUi(this);
+
+	/* Setup dock manager flags */
+#if !defined(_WIN32) && !defined(__APPLE__)
+	ads::CDockManager::setConfigFlag(
+		ads::CDockManager::FloatingContainerForceQWidgetTitleBar, true);
+#endif
+	ads::CDockManager::setConfigFlag(
+		ads::CDockManager::DockAreaHideDisabledButtons, true);
+	ads::CDockManager::setConfigFlag(
+		ads::CDockManager::DockAreaDynamicTabsMenuButtonVisibility,
+		true);
+	ads::CDockManager::setConfigFlag(
+		ads::CDockManager::OpaqueSplitterResize, true);
+	ads::CDockManager::setConfigFlag(
+		ads::CDockManager::DragPreviewHasWindowFrame, true);
+
+	ads::CDockManager::setConfigFlag(
+		ads::CDockManager::ActiveTabHasCloseButton, false);
+	/* Avoid closing a block of docks at the same time since we remove the
+	 * close button on the tab */
+	ads::CDockManager::setConfigFlag(
+		ads::CDockManager::DockAreaCloseButtonClosesTab, true);
+
+	/* Setup dock manager */
+	dockManager = new ads::CDockManager(this);
+	// Ignore ADS default stylesheet
+	dockManager->setStyleSheet("");
+
 	centralWidget = new OBSBasicCentral(this);
-	setCentralWidget(centralWidget);
+
+	ads::CDockWidget *centralDock = new ads::CDockWidget("centralDock");
+	centralDock->setWidget(centralWidget,
+			       ads::CDockWidget::ForceNoScrollArea);
+	centralDock->setWindowTitle(QTStr("StudioMode.Preview"));
+	centralDock->setSizePolicy(centralWidget->sizePolicy());
+	ads::CDockAreaWidget *dockArea =
+		dockManager->setCentralWidget(centralDock);
 
 	connect(ui->actionScaleWindow, &QAction::triggered, centralWidget,
 		&OBSBasicCentral::ScaleWindowAction);
@@ -317,56 +352,50 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	/* Add scenes dock */
 	scenesWidget = new OBSBasicScenes(this);
-	scenesDock = new OBSDock(this);
-	scenesDock->setObjectName(QString::fromUtf8("scenesDock"));
-	scenesDock->setWindowTitle(QTStr("Basic.Main.Scenes"));
-	scenesDock->setWidget(scenesWidget);
-	addDockWidget(Qt::BottomDockWidgetArea, scenesDock);
+	scenesDock = new OBSAdvDock(QTStr("Basic.Main.Scenes"),
+				    SCENES_DOCK_NAME, scenesWidget);
+	dockArea = dockManager->addDockWidget(ads::BottomDockWidgetArea,
+					      scenesDock, dockArea);
+	ui->menuDocks->addAction(scenesDock->toggleViewAction());
+	scenesDock->SetDefaultSize(225 / 1000, 225 / 1000, true);
 
 	/* Add sources dock */
 	sourcesWidget = new OBSBasicSources(this);
-	sourcesDock = new OBSDock(this);
-	sourcesDock->setObjectName(QString::fromUtf8("sourcesDock"));
-	sourcesDock->setWindowTitle(QTStr("Basic.Main.Sources"));
-	sourcesDock->setWidget(sourcesWidget);
-	addDockWidget(Qt::BottomDockWidgetArea, sourcesDock);
+	sourcesDock = new OBSAdvDock(QTStr("Basic.Main.Sources"),
+				     SOURCES_DOCK_NAME, sourcesWidget);
+	dockArea = dockManager->addDockWidget(ads::RightDockWidgetArea,
+					      sourcesDock, dockArea);
+	ui->menuDocks->addAction(sourcesDock->toggleViewAction());
+	sourcesDock->SetDefaultSize(225 / 1000, 225 / 1000, true);
 
 	/* Add mixer dock */
 	mixer = new OBSBasicMixer(this);
-	mixerDock = new OBSDock(this);
-	mixerDock->setObjectName(QString::fromUtf8("mixerDock"));
-	mixerDock->setWindowTitle(QTStr("Mixer"));
-	mixerDock->setWidget(mixer);
-	addDockWidget(Qt::BottomDockWidgetArea, mixerDock);
+	mixerDock = new OBSAdvDock(QTStr("Mixer"), MIXER_DOCK_NAME, mixer);
+	dockArea = dockManager->addDockWidget(ads::RightDockWidgetArea,
+					      mixerDock, dockArea);
+	ui->menuDocks->addAction(mixerDock->toggleViewAction());
+	mixerDock->SetDefaultSize(45 / 100, 225 / 1000, true);
 
 	/* Add transitions dock */
 	transitionsWidget = new OBSBasicTransitions(this);
-	transitionsDock = new OBSDock(this);
-	transitionsDock->setObjectName(QString::fromUtf8("transitionsDock"));
-	transitionsDock->setWindowTitle(QTStr("Basic.SceneTransitions"));
-	transitionsDock->setWidget(transitionsWidget);
-	addDockWidget(Qt::BottomDockWidgetArea, transitionsDock);
+	transitionsDock = new OBSAdvDock(QTStr("Basic.SceneTransitions"),
+					 TRANSITIONS_DOCK_NAME,
+					 transitionsWidget);
+	dockArea = dockManager->addDockWidget(ads::RightDockWidgetArea,
+					      transitionsDock, dockArea);
+	ui->menuDocks->addAction(transitionsDock->toggleViewAction());
+	transitionsDock->SetDefaultSize(5 / 100, 225 / 1000, true);
 
 	/* Add controls dock */
 	controls = new OBSBasicControls(this);
-	controlsDock = new OBSDock(this);
-	controlsDock->setObjectName(QString::fromUtf8("controlsDock"));
-	controlsDock->setWindowTitle(QTStr("Basic.Main.Controls"));
-	controlsDock->setWidget(controls);
-	addDockWidget(Qt::BottomDockWidgetArea, controlsDock);
+	controlsDock = new OBSAdvDock(QTStr("Basic.Main.Controls"),
+				      CONTROLS_DOCK_NAME, controls);
+	dockArea = dockManager->addDockWidget(ads::RightDockWidgetArea,
+					      controlsDock, dockArea);
+	ui->menuDocks->addAction(controlsDock->toggleViewAction());
+	controlsDock->SetDefaultSize(5 / 100, 225 / 1000, true);
 
-	startingDockLayout = saveState();
-
-	statsDock = new OBSDock();
-	statsDock->setObjectName(QStringLiteral("statsDock"));
-	statsDock->setFeatures(QDockWidget::DockWidgetClosable |
-			       QDockWidget::DockWidgetMovable |
-			       QDockWidget::DockWidgetFloatable);
-	statsDock->setWindowTitle(QTStr("Basic.Stats"));
-	addDockWidget(Qt::BottomDockWidgetArea, statsDock);
-	statsDock->setVisible(false);
-	statsDock->setFloating(true);
-	statsDock->resize(700, 200);
+	startingWindowState = saveState();
 
 	qRegisterMetaType<int64_t>("int64_t");
 	qRegisterMetaType<uint32_t>("uint32_t");
@@ -464,13 +493,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 	addNudge(Qt::SHIFT | Qt::Key_Left, SLOT(NudgeLeftFar()));
 	addNudge(Qt::SHIFT | Qt::Key_Right, SLOT(NudgeRightFar()));
 
-	assignDockToggle(scenesDock, ui->toggleScenes);
-	assignDockToggle(sourcesDock, ui->toggleSources);
-	assignDockToggle(mixerDock, ui->toggleMixer);
-	assignDockToggle(transitionsDock, ui->toggleTransitions);
-	assignDockToggle(controlsDock, ui->toggleControls);
-	assignDockToggle(statsDock, ui->toggleStats);
-
 	// Register shortcuts for Undo/Redo
 	ui->actionMainUndo->setShortcut(Qt::CTRL | Qt::Key_Z);
 	QList<QKeySequence> shrt;
@@ -480,16 +502,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->actionMainUndo->setShortcutContext(Qt::ApplicationShortcut);
 	ui->actionMainRedo->setShortcutContext(Qt::ApplicationShortcut);
-
-	//hide all docking panes
-	ui->toggleScenes->setChecked(false);
-	ui->toggleSources->setChecked(false);
-	ui->toggleMixer->setChecked(false);
-	ui->toggleTransitions->setChecked(false);
-	ui->toggleControls->setChecked(false);
-	ui->toggleStats->setChecked(false);
-
-	QPoint curPos;
 
 	//restore parent window geometry
 	const char *geometry = config_get_string(App()->GlobalConfig(),
@@ -507,21 +519,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 							Qt::AlignCenter, size(),
 							rect));
 		}
-
-		curPos = pos();
-	} else {
-		QRect desktopRect =
-			QGuiApplication::primaryScreen()->geometry();
-		QSize adjSize = desktopRect.size() / 2 - size() / 2;
-		curPos = QPoint(adjSize.width(), adjSize.height());
 	}
-
-	QPoint curSize(width(), height());
-
-	QPoint statsDockSize(statsDock->width(), statsDock->height());
-	QPoint statsDockPos = curSize / 2 - statsDockSize / 2;
-	QPoint newPos = curPos + statsDockPos;
-	statsDock->move(newPos);
 
 	connect(App(), &OBSApp::StyleChanged, this,
 		&OBSBasic::ResetProxyStyleSliders);
@@ -1972,9 +1970,15 @@ void OBSBasic::OBSInit()
 		show();
 #endif
 
-	/* setup stats dock */
+	/* Setup stats dock */
 	OBSBasicStats *statsDlg = new OBSBasicStats(statsDock, false);
-	statsDock->setWidget(statsDlg);
+	statsDock =
+		new OBSAdvDock(QTStr("Basic.Stats"), STATS_DOCK_NAME, statsDlg);
+	statsDock->setVisible(false);
+	dockManager->addDockWidgetFloating(statsDock);
+	ui->menuDocks->addAction(statsDock->toggleViewAction());
+	statsDock->SetDefaultSize(700, 200);
+	statsDock->ToggleViewNoWarning(false);
 
 	/* ----------------------------- */
 	/* add custom browser docks      */
@@ -1984,26 +1988,51 @@ void OBSBasic::OBSInit()
 		QAction *action = new QAction(QTStr("Basic.MainMenu.Docks."
 						    "CustomBrowserDocks"),
 					      this);
-		ui->menuDocks->insertAction(ui->toggleScenes, action);
+		QAction *beforeAction = legacyDocksMenu.isNull()
+						? scenesDock->toggleViewAction()
+						: legacyDocksMenu->menuAction();
+
+		ui->menuDocks->insertAction(beforeAction, action);
 		connect(action, &QAction::triggered, this,
 			&OBSBasic::ManageExtraBrowserDocks);
-		ui->menuDocks->insertSeparator(ui->toggleScenes);
+		if (legacyDocksMenu.isNull())
+			secondMenuDocksSeparator =
+				ui->menuDocks->insertSeparator(
+					scenesDock->toggleViewAction());
 
 		LoadExtraBrowserDocks();
 	}
 #endif
 
-	const char *dockStateStr = config_get_string(
-		App()->GlobalConfig(), "BasicWindow", "DockState");
+	const char *windowStateStr = config_get_string(
+		App()->GlobalConfig(), "BasicWindow", "WindowState");
+	const char *advDockStateStr = config_get_string(
+		App()->GlobalConfig(), "BasicWindow", "AdvDockState");
+	bool restoreResult = false;
 
-	if (!dockStateStr) {
-		on_resetDocks_triggered(true);
+	if (!windowStateStr) {
+		/* Use deprecated "DockState" value if available */
+		const char *dockStateStr = config_get_string(
+			App()->GlobalConfig(), "BasicWindow", "DockState");
+		if (dockStateStr) {
+			QByteArray dockState = QByteArray::fromBase64(
+				QByteArray(dockStateStr));
+			restoreResult = restoreState(dockState);
+		}
 	} else {
-		QByteArray dockState =
-			QByteArray::fromBase64(QByteArray(dockStateStr));
-		if (!restoreState(dockState))
-			on_resetDocks_triggered(true);
+		QByteArray windowState =
+			QByteArray::fromBase64(QByteArray(windowStateStr));
+		restoreResult = restoreState(windowState);
 	}
+
+	if (restoreResult && advDockStateStr) {
+		QByteArray advDockState =
+			QByteArray::fromBase64(QByteArray(advDockStateStr));
+		restoreResult = dockManager->restoreState(advDockState);
+	}
+
+	if (!restoreResult)
+		on_resetDocks_triggered();
 
 	bool pre23Defaults = config_get_bool(App()->GlobalConfig(), "General",
 					     "Pre23Defaults");
@@ -2656,6 +2685,10 @@ OBSBasic::~OBSBasic()
 	 * libobs. */
 	delete cpuUsageTimer;
 	os_cpu_usage_info_destroy(cpuUsageInfo);
+
+	// Stats dock has a os_cpu_usage_info
+	dockManager->removeDockWidget(statsDock);
+	delete statsDock.data();
 
 	obs_hotkey_set_callback_routing_func(nullptr, nullptr);
 	ClearHotkeys();
@@ -4771,8 +4804,10 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	if (program)
 		program->DestroyDisplay();
 
-	config_set_string(App()->GlobalConfig(), "BasicWindow", "DockState",
+	config_set_string(App()->GlobalConfig(), "BasicWindow", "WindowState",
 			  saveState().toBase64().constData());
+	config_set_string(App()->GlobalConfig(), "BasicWindow", "AdvDockState",
+			  dockManager->saveState().toBase64().constData());
 
 #ifdef BROWSER_AVAILABLE
 	if (cef)
@@ -8847,13 +8882,12 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 void OBSBasic::on_resetDocks_triggered(bool force)
 {
 	/* prune deleted extra docks */
-	for (int i = extraDocks.size() - 1; i >= 0; i--) {
-		if (!extraDocks[i]) {
-			extraDocks.removeAt(i);
-		}
-	}
-
-	if (extraDocks.size() && !force) {
+#if BROWSER_AVAILABLE
+	if (extraDockNames.size() || extraBrowserDockNames.size() ||
+	    legacyExtraDocks.size()) {
+#else
+	if (extraDockNames.size() || legacyExtraDocks.size()) {
+#endif
 		QMessageBox::StandardButton button = QMessageBox::question(
 			this, QTStr("ResetUIWarning.Title"),
 			QTStr("ResetUIWarning.Text"));
@@ -8862,73 +8896,57 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 			return;
 	}
 
-	/* undock/hide/center extra docks */
-	for (int i = extraDocks.size() - 1; i >= 0; i--) {
-		if (extraDocks[i]) {
-			extraDocks[i]->setVisible(true);
-			extraDocks[i]->setFloating(true);
-			extraDocks[i]->move(frameGeometry().topLeft() +
-					    rect().center() -
-					    extraDocks[i]->rect().center());
-			extraDocks[i]->setVisible(false);
-		}
-	}
-
-	restoreState(startingDockLayout);
-
-	int cx = width();
-	int cy = height();
-
-	int cx22_5 = cx * 225 / 1000;
-	int cx5 = cx * 5 / 100;
-	int cx21 = cx * 21 / 100;
-
-	cy = cy * 225 / 1000;
-
-	int mixerSize = cx - (cx22_5 * 2 + cx5 + cx21);
-
-	QList<QDockWidget *> docks{scenesDock, sourcesDock, mixerDock,
-				   transitionsDock, controlsDock};
-
-	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx21};
-
-	scenesDock->setVisible(true);
-	sourcesDock->setVisible(true);
-	mixerDock->setVisible(true);
-	transitionsDock->setVisible(true);
-	controlsDock->setVisible(true);
-	statsDock->setVisible(false);
-	statsDock->setFloating(true);
-
-	resizeDocks(docks, {cy, cy, cy, cy, cy}, Qt::Vertical);
-	resizeDocks(docks, sizes, Qt::Horizontal);
-
-	activateWindow();
+	restoreState(startingWindowState);
+	ApplyDocksLayout(DEFAULT_DOCK_STATE);
 }
 
 void OBSBasic::on_lockDocks_toggled(bool lock)
 {
-	QDockWidget::DockWidgetFeatures features =
+	/* Advanced docks */
+	ads::CDockWidget::DockWidgetFeatures features =
+		lock ? ads::CDockWidget::NoDockWidgetFeatures
+		     : ads::CDockWidget::DefaultDockWidgetFeatures;
+
+	// Combine all dock names as one list
+	QStringList dockNames;
+	dockNames << OBS_DOCKNAME_NOCLOSE_LIST;
+
+	// Apply features changes to default docks without DockWidgetClosable
+	for (int i = dockNames.size() - 1; i >= 0; i--) {
+		ads::CDockWidget *dock =
+			dockManager->findDockWidget(dockNames[i]);
+		dock->setFeatures(features &
+				  ~ads::CDockWidget::DockWidgetClosable);
+	}
+	dockNames.clear();
+
+	dockNames << STATS_DOCK_NAME;
+	dockNames << extraDockNames;
+#if BROWSER_AVAILABLE
+	dockNames << extraBrowserDockNames;
+#endif
+
+	// Apply features changes to all docks
+	for (int i = dockNames.size() - 1; i >= 0; i--) {
+		ads::CDockWidget *dock =
+			dockManager->findDockWidget(dockNames[i]);
+		dock->setFeatures(features);
+	}
+
+	/* Legacy docks */
+	QDockWidget::DockWidgetFeatures legacyFeatures =
 		lock ? QDockWidget::NoDockWidgetFeatures
 		     : (QDockWidget::DockWidgetClosable |
 			QDockWidget::DockWidgetMovable |
 			QDockWidget::DockWidgetFloatable);
 
-	QDockWidget::DockWidgetFeatures mainFeatures = features;
-	mainFeatures &= ~QDockWidget::QDockWidget::DockWidgetClosable;
-
-	scenesDock->setFeatures(mainFeatures);
-	sourcesDock->setFeatures(mainFeatures);
-	mixerDock->setFeatures(mainFeatures);
-	transitionsDock->setFeatures(mainFeatures);
-	controlsDock->setFeatures(mainFeatures);
-	statsDock->setFeatures(features);
-
-	for (int i = extraDocks.size() - 1; i >= 0; i--) {
-		if (!extraDocks[i]) {
-			extraDocks.removeAt(i);
+	// Apply features changes to all legacy extra docks
+	// Also prune deleted legacy extra docks
+	for (int i = legacyExtraDocks.size() - 1; i >= 0; i--) {
+		if (!legacyExtraDocks[i]) {
+			legacyExtraDocks.removeAt(i);
 		} else {
-			extraDocks[i]->setFeatures(features);
+			legacyExtraDocks[i]->setFeatures(legacyFeatures);
 		}
 	}
 }
@@ -9691,13 +9709,31 @@ void OBSBasic::ResizeOutputSizeOfSource()
 	on_actionFitToScreen_triggered();
 }
 
+/* Legacy docks */
 QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 {
-	QAction *action = ui->menuDocks->addAction(dock->windowTitle());
+	if (legacyDocksMenu.isNull()) {
+		legacyDocksMenu = new QMenu(QTStr("Basic.MainMenu."
+						  "Docks.LegacyDocks"));
+
+		QAction *beforeAction =
+			secondMenuDocksSeparator.isNull()
+				? scenesDock->toggleViewAction()
+				: secondMenuDocksSeparator.data();
+
+		ui->menuDocks->insertMenu(beforeAction, legacyDocksMenu);
+
+		if (secondMenuDocksSeparator.isNull())
+			secondMenuDocksSeparator =
+				ui->menuDocks->insertSeparator(
+					scenesDock->toggleViewAction());
+	}
+
+	QAction *action = legacyDocksMenu->addAction(dock->windowTitle());
 	action->setProperty("uuid", dock->property("uuid").toString());
 	action->setCheckable(true);
-	assignDockToggle(dock, action);
-	extraDocks.push_back(dock);
+	assignLegacyDockToggle(dock, action);
+	legacyExtraDocks.push_back(dock);
 
 	bool lock = ui->lockDocks->isChecked();
 	QDockWidget::DockWidgetFeatures features =
@@ -9709,13 +9745,89 @@ QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 	dock->setFeatures(features);
 
 	/* prune deleted docks */
-	for (int i = extraDocks.size() - 1; i >= 0; i--) {
-		if (!extraDocks[i]) {
-			extraDocks.removeAt(i);
+	for (int i = legacyExtraDocks.size() - 1; i >= 0; i--) {
+		if (!legacyExtraDocks[i]) {
+			legacyExtraDocks.removeAt(i);
 		}
 	}
 
 	return action;
+}
+
+void OBSBasic::AddAdvDockWidget(OBSAdvDock *dock, bool browser)
+{
+	bool lock = ui->lockDocks->isChecked();
+	ads::CDockWidget::DockWidgetFeatures features =
+		lock ? ads::CDockWidget::NoDockWidgetFeatures
+		     : ads::CDockWidget::DefaultDockWidgetFeatures;
+
+	dock->setFeatures(features);
+	dockManager->addDockWidgetFloating(dock);
+	if (!browser && !extraBrowserMenuDocksSeparator.isNull())
+		ui->menuDocks->insertAction(extraBrowserMenuDocksSeparator,
+					    dock->toggleViewAction());
+	else
+		ui->menuDocks->addAction(dock->toggleViewAction());
+
+	dock->ToggleViewNoWarning(false);
+
+	if (!browser)
+		extraDockNames.push_back(dock->objectName());
+}
+
+void OBSBasic::RemoveAdvDockWidget(const QString &title)
+{
+	if (!extraDockNames.contains(title))
+		return;
+
+	extraDockNames.removeAll(title);
+	ads::CDockWidget *dock = dockManager->findDockWidget(title);
+	dock->deleteDockWidget();
+}
+
+bool OBSBasic::ApplyDocksLayout(const QByteArray &state)
+{
+	/* Legacy docks */
+	// Prune deleted legacy extra docks
+	for (int i = legacyExtraDocks.size() - 1; i >= 0; i--) {
+		if (!legacyExtraDocks[i]) {
+			legacyExtraDocks.removeAt(i);
+		}
+	}
+
+	// Undock/hide/center legacy extra docks
+	for (int i = legacyExtraDocks.size() - 1; i >= 0; i--) {
+		if (legacyExtraDocks[i]) {
+			legacyExtraDocks[i]->setVisible(true);
+			legacyExtraDocks[i]->setFloating(true);
+			legacyExtraDocks[i]->move(
+				frameGeometry().topLeft() + rect().center() -
+				legacyExtraDocks[i]->rect().center());
+			legacyExtraDocks[i]->setVisible(false);
+		}
+	}
+
+	/* Advanced docks */
+	bool result = dockManager->restoreState(state);
+
+	// Combine all dock names as one list
+	QStringList dockNames;
+	dockNames << OBS_DOCKNAME_LIST;
+	dockNames << extraDockNames;
+#if BROWSER_AVAILABLE
+	dockNames << extraBrowserDockNames;
+#endif
+
+	// Reset closed docks positions and size
+	for (int i = 0; i < dockNames.size(); i++) {
+		OBSAdvDock *dock = reinterpret_cast<OBSAdvDock *>(
+			dockManager->findDockWidget(dockNames[i]));
+		dock->ResetPosOnNextOpen(dock->isClosed());
+	}
+
+	activateWindow();
+
+	return result;
 }
 
 OBSBasic *OBSBasic::Get()

@@ -72,8 +72,10 @@ add_subdirectory(frontend-plugins)
 add_executable(obs)
 
 find_qt(COMPONENTS Widgets Network Svg Xml COMPONENTS_LINUX Gui)
+find_package(qtadvanceddocking CONFIG REQUIRED)
 
-target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
+target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network
+                                  ads::qtadvanceddocking)
 
 set_target_properties(
   obs
