@@ -15,7 +15,7 @@ install_obs-deps() {
     status "Set up precompiled macOS OBS dependencies v${1}"
     ensure_dir "${DEPS_BUILD_DIR}"
     step "Download..."
-    check_and_fetch "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-${1}-${ARCH:-x86_64}.tar.xz" "${2}"
+    check_and_fetch "https://github.com/tytan652/obs-deps/releases/download/${1}/macos-deps-${1}-${ARCH:-x86_64}.tar.xz" "${2}"
     mkdir -p obs-deps
     step "Unpack..."
     /usr/bin/tar -xf "./macos-deps-${1}-${ARCH:-x86_64}.tar.xz" -C ./obs-deps
@@ -35,7 +35,7 @@ install_qt-deps() {
         _HASH="${2}"
     fi
 
-    check_and_fetch "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-qt6-${1}-${_ARCH}.tar.xz" "${_HASH}"
+    check_and_fetch "https://github.com/tytan652/obs-deps/releases/download/${1}/macos-deps-qt6-${1}-${_ARCH}.tar.xz" "${_HASH}"
     mkdir -p obs-deps
     step "Unpack..."
     /usr/bin/tar -xf "./macos-deps-qt6-${1}-${_ARCH}.tar.xz" -C ./obs-deps
