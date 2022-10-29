@@ -42,6 +42,8 @@ using namespace json11;
 #define YOUTUBE_CHAT_POPOUT_URL \
 	"https://www.youtube.com/live_chat?is_popout=1&dark_theme=1&v=%1"
 
+#define YOUTUBE_CHAT_DOCK_NAME "obs-youtube_chat"
+
 static const char allowedChars[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 static const int allowedCount = static_cast<int>(sizeof(allowedChars) - 1);
@@ -71,6 +73,16 @@ YoutubeAuth::YoutubeAuth(const Def &d)
 {
 }
 
+YoutubeAuth::~YoutubeAuth()
+{
+#ifdef BROWSER_AVAILABLE
+	OBSBasic *main = OBSBasic::Get();
+	main->RemoveAdvDockWidget(YOUTUBE_CHAT_DOCK_NAME);
+	chat->deleteDockWidget();
+	chat.reset(nullptr);
+#endif
+}
+
 bool YoutubeAuth::RetryLogin()
 {
 	return true;
@@ -79,8 +91,8 @@ bool YoutubeAuth::RetryLogin()
 void YoutubeAuth::SaveInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
-	config_set_string(main->Config(), service(), "DockState",
-			  main->saveState().toBase64().constData());
+	config_set_string(main->Config(), service(), "AdvDockState",
+			  main->AdvDockState().toBase64().constData());
 
 	const char *section_name = section.c_str();
 	config_set_string(main->Config(), section_name, "RefreshToken",
@@ -136,35 +148,50 @@ void YoutubeAuth::LoadUI()
 
 	QCefWidget *browser;
 
-	QSize size = main->frameSize();
-	QPoint pos = main->pos();
-
-	chat.reset(new YoutubeChatDock());
-	chat->setObjectName("ytChat");
-	chat->resize(300, 600);
+	chat.reset(new YoutubeChatDock(QTStr("Auth.Chat"),
+				       YOUTUBE_CHAT_DOCK_NAME));
+	chat->SetDefaultSize(300, 600);
 	chat->setMinimumSize(200, 300);
-	chat->setWindowTitle(QTStr("Auth.Chat"));
-	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	browser = cef->create_widget(chat.data(), YOUTUBE_CHAT_PLACEHOLDER_URL,
 				     panel_cookies);
 	browser->setStartupScript(ytchat_script);
 
-	chat->SetWidget(browser);
-	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
-	chatMenu.reset(main->AddDockWidget(chat.data()));
+	chat->SetCefWidget(browser);
 
-	chat->setFloating(true);
-	chat->move(pos.x() + size.width() - chat->width() - 50, pos.y() + 50);
+	main->AddAdvDockWidget(chat.data());
 
 	if (firstLoad) {
-		chat->setVisible(true);
+		QSize size = main->frameSize();
+		QPoint pos = main->pos();
+
+		ads::CFloatingDockContainer *container =
+			chat->dockContainer()->floatingWidget();
+		container->resize(300, 600);
+		container->move(pos.x() + size.width() - container->width() -
+					50,
+				pos.y() + 50);
+
+		chat->toggleView(true);
 	} else {
-		const char *dockStateStr = config_get_string(
-			main->Config(), service(), "DockState");
-		QByteArray dockState =
-			QByteArray::fromBase64(QByteArray(dockStateStr));
-		main->restoreState(dockState);
+		const char *advDockStateStr = config_get_string(
+			main->Config(), service(), "AdvDockState");
+
+		if (!advDockStateStr) {
+			/* Use deprecated "DockState" value if available */
+			const char *dockStateStr = config_get_string(
+				main->Config(), service(), "DockState");
+
+			if (dockStateStr) {
+				QByteArray dockState = QByteArray::fromBase64(
+					QByteArray(dockStateStr));
+				main->restoreState(dockState);
+			}
+		} else {
+			QByteArray state = QByteArray::fromBase64(
+				QByteArray(advDockStateStr));
+			main->RestoreAdvDocksState(state);
+		}
 	}
 #endif
 
@@ -177,8 +204,8 @@ void YoutubeAuth::SetChatId(const QString &chat_id,
 #ifdef BROWSER_AVAILABLE
 	QString chat_url = QString(YOUTUBE_CHAT_POPOUT_URL).arg(chat_id);
 
-	if (chat && chat->cefWidget) {
-		chat->cefWidget->setURL(chat_url.toStdString());
+	if (chat && chat->CefWidget()) {
+		chat->CefWidget()->setURL(chat_url.toStdString());
 		chat->SetApiChatId(api_chat_id);
 	}
 #else
@@ -190,8 +217,8 @@ void YoutubeAuth::SetChatId(const QString &chat_id,
 void YoutubeAuth::ResetChat()
 {
 #ifdef BROWSER_AVAILABLE
-	if (chat && chat->cefWidget) {
-		chat->cefWidget->setURL(YOUTUBE_CHAT_PLACEHOLDER_URL);
+	if (chat && chat->CefWidget()) {
+		chat->CefWidget()->setURL(YOUTUBE_CHAT_PLACEHOLDER_URL);
 	}
 #endif
 }
@@ -313,7 +340,7 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 }
 
 #ifdef BROWSER_AVAILABLE
-void YoutubeChatDock::SetWidget(QCefWidget *widget_)
+void YoutubeChatDock::SetCefWidget(QCefWidget *widget_)
 {
 	lineEdit = new LineEditAutoResize();
 	lineEdit->setVisible(false);
@@ -334,7 +361,7 @@ void YoutubeChatDock::SetWidget(QCefWidget *widget_)
 
 	QWidget *widget = new QWidget();
 	widget->setLayout(layout);
-	setWidget(widget);
+	setWidget(widget, ads::CDockWidget::ForceNoScrollArea);
 
 	QWidget::connect(lineEdit, SIGNAL(returnPressed()), this,
 			 SLOT(SendChatMessage()));
@@ -342,6 +369,9 @@ void YoutubeChatDock::SetWidget(QCefWidget *widget_)
 			 SLOT(SendChatMessage()));
 
 	cefWidget.reset(widget_);
+
+	connect(this, &ads::CDockWidget::closeRequested, this,
+		&BrowserAdvDock::CloseBrowser);
 }
 
 void YoutubeChatDock::SetApiChatId(const std::string &id)

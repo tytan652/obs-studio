@@ -273,7 +273,115 @@ OBSBasicSettings #PropertiesContainer {
     background-color: palette(dark);
 }
 
-/* Dock Widget */
+/* Advanced Docking System */
+ads--CDockWidget QFrame {
+    background-color: palette(dark);
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+ads--CDockWidget QComboBox,
+ads--CDockWidget QPushButton {
+    margin: 1px 2px;
+}
+
+ads--CDockAreaTitleBar {
+    background: palette(button);
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+ads--CDockAreaTabBar {
+    background: transparent;
+}
+
+#tabsContainerWidget {
+    background: transparent;
+}
+
+ads--CDockWidgetTab {
+    background-color: palette(button);
+    padding: 2px 2px;
+    margin: 4px 0 4px 4px;
+    border-radius: 4px;
+}
+
+ads--CDockWidgetTab:hover {
+    background-color: rgb(79,83,94);
+}
+
+ads--CDockWidgetTab[activeTab="true"] {
+	background-color: palette(dark);
+}
+
+ads--CDockWidgetTab QLabel {
+    font-weight: bold;
+}
+
+ads--CDockAreaWidget #tabsMenuButton::menu-indicator {
+	image: none;
+}
+
+#tabsMenuButton {
+    qproperty-icon: url('./Dark/collapse.svg');
+    qproperty-iconSize: 16px;
+}
+
+#detachGroupButton {
+    qproperty-icon: url('./Dark/popout.svg');
+    qproperty-iconSize: 16px;
+}
+
+#dockAreaCloseButton {
+    qproperty-icon: url('./Dark/close.svg');
+    qproperty-iconSize: 16px;
+}
+
+#tabsMenuButton, #detachGroupButton, #dockAreaCloseButton {
+    padding: 0px 0px;
+    margin: 4px 4px 4px 0;
+    border: 0px solid transparent;
+    border-radius: 4px;
+    background: transparent;
+    opacity: .5;
+}
+
+#tabsMenuButton:hover, #detachGroupButton:hover, #dockAreaCloseButton:hover {
+    background: rgb(79,83,94);
+    opacity: 1;
+}
+
+#dockAreaCloseButton:disabled, #detachGroupButton:disabled {
+    qproperty-icon: none;
+}
+
+ads--CFloatingWidgetTitleBar {
+    background: palette(window);
+    qproperty-maximizeIcon: url(./Dark/maximize.svg);
+    qproperty-normalIcon: url(./Dark/window_restore.svg);
+}
+
+ads--CFloatingWidgetTitleBar QLabel {
+    font-weight: bold;
+}
+
+#floatingTitleCloseButton {
+   qproperty-icon: url(./Dark/close.svg);
+}
+
+#floatingTitleCloseButton, #floatingTitleMaximizeButton {
+   background: transparent;
+   qproperty-iconSize: 16px;
+   border: none;
+   margin: 3px;
+}
+
+#floatingTitleCloseButton:hover, #floatingTitleMaximizeButton:hover {
+    background: palette(dark);
+    opacity: 1;
+}
+
+/* Legacy Dock Widget */
 OBSDock > QWidget {
     background: palette(dark);
     border-bottom-left-radius: 4px;
@@ -1510,4 +1618,8 @@ QDialogButtonBox {
 /* Stats dialog */
 OBSBasicStats {
     background: palette(dark);
+}
+
+OBSBasicStats QLabel {
+    background: transparent;
 }

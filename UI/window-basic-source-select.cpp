@@ -419,9 +419,9 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
 		ui->createNew->setEnabled(false);
 		ui->sourceName->setEnabled(false);
 
-		int count = main->ui->scenes->count();
+		int count = main->GetScenes()->count();
 		for (int i = 0; i < count; i++) {
-			QListWidgetItem *item = main->ui->scenes->item(i);
+			QListWidgetItem *item = main->GetScenes()->item(i);
 			OBSScene scene = GetOBSRef<OBSScene>(item);
 			OBSSource sceneSource = obs_scene_get_source(scene);
 

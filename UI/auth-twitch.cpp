@@ -27,6 +27,11 @@ using namespace json11;
 
 #define TWITCH_SCOPE_VERSION 1
 
+#define TWITCH_CHAT_DOCK_NAME "obs-twitch_chat"
+#define TWITCH_INFO_DOCK_NAME "obs-twitch_info"
+#define TWITCH_STAT_DOCK_NAME "obs-twitch_stat"
+#define TWITCH_FEED_DOCK_NAME "obs-twitch_feed"
+
 static Auth::Def twitchDef = {"Twitch", Auth::Type::OAuth_StreamKey};
 
 /* ------------------------------------------------------------------------- */
@@ -47,6 +52,16 @@ TwitchAuth::TwitchAuth(const Def &d) : OAuthStreamKey(d)
 	uiLoadTimer.setInterval(500);
 	connect(&uiLoadTimer, &QTimer::timeout, this,
 		&TwitchAuth::TryLoadSecondaryUIPanes);
+}
+
+TwitchAuth::~TwitchAuth()
+{
+	OBSBasic *main = OBSBasic::Get();
+
+	main->RemoveAdvDockWidget(TWITCH_CHAT_DOCK_NAME);
+	main->RemoveAdvDockWidget(TWITCH_INFO_DOCK_NAME);
+	main->RemoveAdvDockWidget(TWITCH_STAT_DOCK_NAME);
+	main->RemoveAdvDockWidget(TWITCH_FEED_DOCK_NAME);
 }
 
 bool TwitchAuth::MakeApiRequest(const char *path, Json &json_out)
@@ -151,8 +166,8 @@ void TwitchAuth::SaveInternal()
 	config_set_string(main->Config(), service(), "UUID", uuid.c_str());
 
 	if (uiLoaded) {
-		config_set_string(main->Config(), service(), "DockState",
-				  main->saveState().toBase64().constData());
+		config_set_string(main->Config(), service(), "AdvDockState",
+				  main->AdvDockState().toBase64().constData());
 	}
 	OAuthStreamKey::SaveInternal();
 }
@@ -230,19 +245,14 @@ void TwitchAuth::LoadUI()
 	url += name;
 	url += "/chat";
 
-	QSize size = main->frameSize();
-	QPoint pos = main->pos();
-
-	chat.reset(new BrowserDock());
-	chat->setObjectName("twitchChat");
-	chat->resize(300, 600);
+	BrowserAdvDock *chat =
+		new BrowserAdvDock(QTStr("Auth.Chat"), TWITCH_CHAT_DOCK_NAME);
+	chat->SetDefaultSize(300, 600);
 	chat->setMinimumSize(200, 300);
-	chat->setWindowTitle(QTStr("Auth.Chat"));
-	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(chat.data(), url, panel_cookies);
-	chat->SetWidget(browser);
-	cef->add_force_popup_url(moderation_tools_url, chat.data());
+	browser = cef->create_widget(chat, url, panel_cookies);
+	chat->SetCefWidget(browser);
+	cef->add_force_popup_url(moderation_tools_url, chat);
 
 	if (App()->IsThemeDark()) {
 		script = "localStorage.setItem('twilight.theme', 1);";
@@ -261,22 +271,41 @@ void TwitchAuth::LoadUI()
 
 	browser->setStartupScript(script);
 
-	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
-	chatMenu.reset(main->AddDockWidget(chat.data()));
+	main->AddAdvDockWidget(chat);
 
 	/* ----------------------------------- */
 
-	chat->setFloating(true);
-	chat->move(pos.x() + size.width() - chat->width() - 50, pos.y() + 50);
-
 	if (firstLoad) {
-		chat->setVisible(true);
+		QSize size = main->frameSize();
+		QPoint pos = main->pos();
+
+		ads::CFloatingDockContainer *container =
+			chat->dockContainer()->floatingWidget();
+		container->resize(300, 600);
+		container->move(pos.x() + size.width() - container->width() -
+					50,
+				pos.y() + 50);
+
+		chat->toggleView(true);
 	} else {
-		const char *dockStateStr = config_get_string(
-			main->Config(), service(), "DockState");
-		QByteArray dockState =
-			QByteArray::fromBase64(QByteArray(dockStateStr));
-		main->restoreState(dockState);
+		const char *advDockStateStr = config_get_string(
+			main->Config(), service(), "AdvDockState");
+
+		if (!advDockStateStr) {
+			/* Use deprecated "DockState" value if available */
+			const char *dockStateStr = config_get_string(
+				main->Config(), service(), "DockState");
+
+			if (dockStateStr) {
+				QByteArray dockState = QByteArray::fromBase64(
+					QByteArray(dockStateStr));
+				main->restoreState(dockState);
+			}
+		} else {
+			QByteArray state = QByteArray::fromBase64(
+				QByteArray(advDockStateStr));
+			main->RestoreAdvDocksState(state);
+		}
 	}
 
 	TryLoadSecondaryUIPanes();
@@ -321,19 +350,16 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url += name;
 	url += "/stream-manager/edit-stream-info";
 
-	info.reset(new BrowserDock());
-	info->setObjectName("twitchInfo");
-	info->resize(300, 650);
+	BrowserAdvDock *info = new BrowserAdvDock(QTStr("Auth.StreamInfo"),
+						  TWITCH_INFO_DOCK_NAME);
+	info->SetDefaultSize(300, 650);
 	info->setMinimumSize(200, 300);
-	info->setWindowTitle(QTStr("Auth.StreamInfo"));
-	info->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(info.data(), url, panel_cookies);
-	info->SetWidget(browser);
+	browser = cef->create_widget(info, url, panel_cookies);
+	info->SetCefWidget(browser);
 	browser->setStartupScript(script);
 
-	main->addDockWidget(Qt::RightDockWidgetArea, info.data());
-	infoMenu.reset(main->AddDockWidget(info.data()));
+	main->AddAdvDockWidget(info);
 
 	/* ----------------------------------- */
 
@@ -341,19 +367,16 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url += name;
 	url += "/dashboard/live/stats";
 
-	stat.reset(new BrowserDock());
-	stat->setObjectName("twitchStats");
-	stat->resize(200, 250);
+	BrowserAdvDock *stat = new BrowserAdvDock(QTStr("TwitchAuth.Stats"),
+						  TWITCH_STAT_DOCK_NAME);
+	stat->SetDefaultSize(200, 250);
 	stat->setMinimumSize(200, 150);
-	stat->setWindowTitle(QTStr("TwitchAuth.Stats"));
-	stat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(stat.data(), url, panel_cookies);
-	stat->SetWidget(browser);
+	browser = cef->create_widget(stat, url, panel_cookies);
+	stat->SetCefWidget(browser);
 	browser->setStartupScript(script);
 
-	main->addDockWidget(Qt::RightDockWidgetArea, stat.data());
-	statMenu.reset(main->AddDockWidget(stat.data()));
+	main->AddAdvDockWidget(stat);
 
 	/* ----------------------------------- */
 
@@ -362,50 +385,58 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url += "/stream-manager/activity-feed";
 	url += "?uuid=" + uuid;
 
-	feed.reset(new BrowserDock());
-	feed->setObjectName("twitchFeed");
-	feed->resize(300, 650);
+	BrowserAdvDock *feed = new BrowserAdvDock(QTStr("TwitchAuth.Feed"),
+						  TWITCH_FEED_DOCK_NAME);
+	feed->SetDefaultSize(300, 650);
 	feed->setMinimumSize(200, 300);
-	feed->setWindowTitle(QTStr("TwitchAuth.Feed"));
-	feed->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(feed.data(), url, panel_cookies);
-	feed->SetWidget(browser);
+	browser = cef->create_widget(feed, url, panel_cookies);
+	feed->SetCefWidget(browser);
 	browser->setStartupScript(script);
 
-	main->addDockWidget(Qt::RightDockWidgetArea, feed.data());
-	feedMenu.reset(main->AddDockWidget(feed.data()));
+	main->AddAdvDockWidget(stat);
 
 	/* ----------------------------------- */
 
-	info->setFloating(true);
-	stat->setFloating(true);
-	feed->setFloating(true);
-
-	QSize statSize = stat->frameSize();
-
-	info->move(pos.x() + 50, pos.y() + 50);
-	stat->move(pos.x() + size.width() / 2 - statSize.width() / 2,
-		   pos.y() + size.height() / 2 - statSize.height() / 2);
-	feed->move(pos.x() + 100, pos.y() + 100);
-
 	if (firstLoad) {
-		info->setVisible(true);
-		stat->setVisible(false);
-		feed->setVisible(false);
-	} else {
-		uint32_t lastVersion = config_get_int(App()->GlobalConfig(),
-						      "General", "LastVersion");
+		ads::CFloatingDockContainer *container =
+			info->dockContainer()->floatingWidget();
+		container->resize(300, 650);
+		container->move(pos.x() + 50, pos.y() + 50);
 
-		if (lastVersion <= MAKE_SEMANTIC_VERSION(23, 0, 2)) {
-			feed->setVisible(false);
-		}
+		container = stat->dockContainer()->floatingWidget();
+		QSize statSize = container->frameSize();
+		container->resize(200, 250);
+		container->move(
+			pos.x() + size.width() / 2 - statSize.width() / 2,
+			pos.y() + size.height() / 2 - statSize.height() / 2);
 
+		container = feed->dockContainer()->floatingWidget();
+		container->resize(300, 650);
+		container->move(pos.x() + 100, pos.y() + 100);
+
+		info->toggleView(true);
+
+		return;
+	}
+
+	const char *advDockStateStr =
+		config_get_string(main->Config(), service(), "AdvDockState");
+
+	if (!advDockStateStr) {
+		/* Use deprecated "DockState" value if available */
 		const char *dockStateStr = config_get_string(
 			main->Config(), service(), "DockState");
-		QByteArray dockState =
-			QByteArray::fromBase64(QByteArray(dockStateStr));
-		main->restoreState(dockState);
+
+		if (dockStateStr) {
+			QByteArray dockState = QByteArray::fromBase64(
+				QByteArray(dockStateStr));
+			main->restoreState(dockState);
+		}
+	} else {
+		QByteArray state =
+			QByteArray::fromBase64(QByteArray(advDockStateStr));
+		main->RestoreAdvDocksState(state);
 	}
 }
 

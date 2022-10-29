@@ -11,7 +11,7 @@
 #include "window-dock-browser.hpp"
 #include "lineedit-autoresize.hpp"
 #include <QHBoxLayout>
-class YoutubeChatDock : public BrowserDock {
+class YoutubeChatDock : public BrowserAdvDock {
 	Q_OBJECT
 
 private:
@@ -21,7 +21,12 @@ private:
 	QHBoxLayout *chatLayout;
 
 public:
-	void SetWidget(QCefWidget *widget_);
+	inline YoutubeChatDock(const QString &window_title,
+			       const QString &title)
+		: BrowserAdvDock(window_title, title)
+	{
+	}
+	void SetCefWidget(QCefWidget *widget);
 	void SetApiChatId(const std::string &id);
 
 private slots:
@@ -44,7 +49,6 @@ class YoutubeAuth : public OAuthStreamKey {
 
 #ifdef BROWSER_AVAILABLE
 	QSharedPointer<YoutubeChatDock> chat;
-	QSharedPointer<QAction> chatMenu;
 #endif
 
 	virtual bool RetryLogin() override;
@@ -56,6 +60,7 @@ class YoutubeAuth : public OAuthStreamKey {
 
 public:
 	YoutubeAuth(const Def &d);
+	~YoutubeAuth();
 
 	void SetChatId(const QString &chat_id, const std::string &api_chat_id);
 	void ResetChat();

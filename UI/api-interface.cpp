@@ -3,6 +3,7 @@
 #include "qt-wrappers.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "basic-central.hpp"
 
 #include <functional>
 
@@ -76,8 +77,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_get_scenes(
 		struct obs_frontend_source_list *sources) override
 	{
-		for (int i = 0; i < main->ui->scenes->count(); i++) {
-			QListWidgetItem *item = main->ui->scenes->item(i);
+		for (int i = 0; i < main->GetScenes()->count(); i++) {
+			QListWidgetItem *item = main->GetScenes()->item(i);
 			OBSScene scene = GetOBSRef<OBSScene>(item);
 			obs_source_t *source = obs_scene_get_source(scene);
 
@@ -113,9 +114,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_get_transitions(
 		struct obs_frontend_source_list *sources) override
 	{
-		for (int i = 0; i < main->ui->transitions->count(); i++) {
-			obs_source_t *tr = main->ui->transitions->itemData(i)
-						   .value<OBSSource>();
+		for (int i = 0; i < main->transitions.count(); i++) {
+			obs_source_t *tr = main->transitions[i];
 
 			if (!tr)
 				continue;
@@ -141,13 +141,13 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	int obs_frontend_get_transition_duration(void) override
 	{
-		return main->ui->transitionDuration->value();
+		return main->transitionDuration;
 	}
 
 	void obs_frontend_set_transition_duration(int duration) override
 	{
-		QMetaObject::invokeMethod(main->ui->transitionDuration,
-					  "setValue", Q_ARG(int, duration));
+		QMetaObject::invokeMethod(main, "SetTransitionDuration",
+					  Q_ARG(int, duration));
 	}
 
 	void obs_frontend_release_tbar(void) override
@@ -554,7 +554,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_set_preview_enabled(bool enable) override
 	{
 		if (main->previewEnabled != enable)
-			main->EnablePreviewDisplay(enable);
+			main->centralWidget->EnablePreviewDisplay(enable);
 	}
 
 	obs_source_t *obs_frontend_get_current_preview_scene(void) override

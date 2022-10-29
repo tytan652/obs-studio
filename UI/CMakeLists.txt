@@ -72,8 +72,10 @@ add_subdirectory(frontend-plugins)
 add_executable(obs)
 
 find_qt(COMPONENTS Widgets Network Svg Xml COMPONENTS_LINUX Gui)
+find_package(qtadvanceddocking CONFIG REQUIRED)
 
-target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
+target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network
+                                  ads::qtadvanceddocking)
 
 set_target_properties(
   obs
@@ -98,11 +100,17 @@ target_sources(
           forms/OBSAbout.ui
           forms/OBSAdvAudio.ui
           forms/OBSBasic.ui
+          forms/OBSBasicCentral.ui
+          forms/OBSBasicControls.ui
           forms/OBSBasicFilters.ui
           forms/OBSBasicInteraction.ui
+          forms/OBSBasicMixer.ui
+          forms/OBSBasicScenes.ui
           forms/OBSBasicSettings.ui
+          forms/OBSBasicSources.ui
           forms/OBSBasicSourceSelect.ui
           forms/OBSBasicTransform.ui
+          forms/OBSBasicTransitions.ui
           forms/OBSBasicVCamConfig.ui
           forms/OBSExtraBrowsers.ui
           forms/OBSImporter.ui
@@ -191,8 +199,6 @@ target_sources(
           properties-view.cpp
           properties-view.hpp
           properties-view.moc.hpp
-          record-button.cpp
-          record-button.hpp
           remote-text.cpp
           remote-text.hpp
           scene-tree.cpp
@@ -223,7 +229,20 @@ target_sources(
 
 target_sources(
   obs
-  PRIVATE window-basic-about.cpp
+  PRIVATE basic-central.cpp
+          basic-central.hpp
+          basic-controls.cpp
+          basic-controls.hpp
+          basic-controls-button.hpp
+          basic-mixer.cpp
+          basic-mixer.hpp
+          basic-scenes.cpp
+          basic-scenes.hpp
+          basic-sources.cpp
+          basic-sources.hpp
+          basic-transitions.cpp
+          basic-transitions.hpp
+          window-basic-about.cpp
           window-basic-about.hpp
           window-basic-auto-config.cpp
           window-basic-auto-config.hpp
@@ -261,6 +280,7 @@ target_sources(
           window-basic-transform.cpp
           window-basic-transform.hpp
           window-basic-preview.hpp
+          window-basic-vcam.hpp
           window-basic-vcam-config.cpp
           window-basic-vcam-config.hpp
           window-dock.cpp

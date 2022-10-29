@@ -211,6 +211,9 @@ file(
   "${QtCore_PLUGIN_DIR}/imageformats/qgifd.dll"
   "${QtCore_PLUGIN_DIR}/imageformats/qjpegd.dll")
 
+file(GLOB ADS_DEBUG_BIN_FILES
+     "${qtadvanceddocking_DIR}/../../../bin/qtadvanceddockingd.dll")
+
 file(
   GLOB
   QT_BIN_FILES
@@ -233,6 +236,9 @@ file(
   "${QtCore_PLUGIN_DIR}/imageformats/qgif.dll"
   "${QtCore_PLUGIN_DIR}/imageformats/qjpeg.dll")
 
+file(GLOB ADS_BIN_FILES
+     "${qtadvanceddocking_DIR}/../../../bin/qtadvanceddocking.dll")
+
 file(GLOB QT_ICU_BIN_FILES "${QtCore_BIN_DIR}/icu*.dll")
 
 set(ALL_BASE_BIN_FILES
@@ -247,9 +253,9 @@ set(ALL_BASE_BIN_FILES
     ${RNNOISE_BIN_FILES}
     ${QT_ICU_BIN_FILES})
 
-set(ALL_REL_BIN_FILES ${QT_BIN_FILES})
+set(ALL_REL_BIN_FILES ${QT_BIN_FILES} ${ADS_BIN_FILES})
 
-set(ALL_DBG_BIN_FILES ${QT_DEBUG_BIN_FILES})
+set(ALL_DBG_BIN_FILES ${QT_DEBUG_BIN_FILES} ${ADS_DEBUG_BIN_FILES})
 
 set(ALL_PLATFORM_BIN_FILES)
 set(ALL_PLATFORM_REL_BIN_FILES ${QT_PLAT_BIN_FILES})
@@ -304,11 +310,14 @@ obs_status(STATUS "Qt Debug Styles files: ${QT_DEBUG_STYLES_BIN_FILES}")
 obs_status(STATUS "Qt Debug Iconengine files: ${QT_DEBUG_ICONENGINE_BIN_FILES}")
 obs_status(STATUS
            "Qt Debug Imageformat files: ${QT_DEBUG_IMAGEFORMATS_BIN_FILES}")
+obs_status(STATUS
+           "Qt Advanced Docking System Debug files: ${ADS_DEBUG_BIN_FILES}")
 obs_status(STATUS "Qt Release files: ${QT_BIN_FILES}")
 obs_status(STATUS "Qt Release Platform files: ${QT_PLAT_BIN_FILES}")
 obs_status(STATUS "Qt Release Styles files: ${QT_STYLES_BIN_FILES}")
 obs_status(STATUS "Qt Release Iconengine files: ${QT_ICONENGINE_BIN_FILES}")
 obs_status(STATUS "Qt Release Imageformat files: ${QT_IMAGEFORMATS_BIN_FILES}")
+obs_status(STATUS "Qt Advanced Docking System files: ${ADS_BIN_FILES}")
 obs_status(STATUS "Qt ICU files: ${QT_ICU_BIN_FILES}")
 
 foreach(BinFile ${ALL_BASE_BIN_FILES})

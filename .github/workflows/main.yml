@@ -19,14 +19,14 @@ env:
   CEF_BUILD_VERSION_LINUX: '5060'
   CEF_BUILD_VERSION_WIN: '5060'
   QT_VERSION_MAC: '6.3.1'
-  QT_HASH_MAC_X86_64: 'a83f72a11023b03b6cb2dc365f0a66ad9df31163bbb4fe2df32d601856a9fad3'
-  QT_HASH_MAC_ARM64: '2f30af90c049670a5660656adbb440668aa1b0567f75a5f29e1def9108928403'
-  QT_HASH_MAC_UNIVERSAL: '252e6684f43ab9c6f262c73af739e2296ce391b998da2c4ee04c254aaa07db18'
+  QT_HASH_MAC_X86_64: 'dbd67cee6cd4fb9e6e15ed9053910895ab94c6b53b77d58c87e4b81d99979489'
+  QT_HASH_MAC_ARM64: 'de4241a34c755da481364c439675f3489d4e063fae4868996058f869a8f9c72e'
+  QT_HASH_MAC_UNIVERSAL: '8b86d24da1d6d240ace19ecc0f81ac0e8f72c5a925b3e5f841637d64c8d65b03'
   QT_VERSION_WIN: '6.3.1'
-  DEPS_VERSION_MAC: '2022-08-02'
-  DEPS_HASH_MAC_X86_64: '7637e52305e6fc53014b5aabd583f1a4490b1d97450420e977cae9a336a29525'
-  DEPS_HASH_MAC_ARM64: '755e0fa69b17a3ae444e1befa9d91d77e3cafe628fbd1c6333686091826595cd'
-  DEPS_VERSION_WIN: '2022-08-02'
+  DEPS_VERSION_MAC: '2022-10-19'
+  DEPS_HASH_MAC_X86_64: '77fb53b600c54085b87a99e7927448fe0e8ceb4cb186f919a82a43f8a14103ad'
+  DEPS_HASH_MAC_ARM64: '9a82706380b00f0b6f91ee2146e135ce6cb4788ce7ead23d81d78d5d075718a6'
+  DEPS_VERSION_WIN: '2022-10-19'
   VLC_VERSION_MAC: '3.0.8'
   VLC_HASH_MAC: 'e0149ef4a20a19b9ecd87309c2d27787ee3f47dfd47c6639644bc1f6fd95bdf6'
   VLC_VERSION_WIN: '3.0.0-git'
@@ -197,88 +197,6 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
-          path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
-
-  linux_build:
-    name: '02 - Linux'
-    runs-on: ${{ matrix.ubuntu }}
-    strategy:
-      matrix:
-        ubuntu: ['ubuntu-20.04', 'ubuntu-22.04']
-    if: always()
-    needs: [clang_check]
-    defaults:
-      run:
-        shell: bash
-        working-directory: 'obs-studio'
-    env:
-      BUILD_FOR_DISTRIBUTION: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
-    steps:
-      - name: 'Checkout'
-        uses: actions/checkout@v3
-        with:
-          submodules: 'recursive'
-          path: 'obs-studio'
-          fetch-depth: 0
-
-      - name: 'Check for Github Labels'
-        if: github.event_name == 'pull_request'
-        run: |
-          if test -n "$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" -s "${{ github.event.pull_request.url }}" | jq -e '.labels[] | select(.name == "Seeking Testers")')"; then
-            echo "SEEKING_TESTERS=1" >> $GITHUB_ENV
-          else
-            echo "SEEKING_TESTERS=0" >> $GITHUB_ENV
-          fi
-
-          echo "CACHE_DATE=$(date +"%Y-%m-%d")" >> $GITHUB_ENV
-
-      - name: 'Restore ccache from cache'
-        id: ccache-cache
-        uses: actions/cache@v3
-        env:
-          CACHE_NAME: 'ccache-cache'
-        with:
-          path: ${{ github.workspace }}/.ccache
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ matrix.ubuntu }}-${{ env.CACHE_DATE }}
-
-      - name: 'Restore Chromium Embedded Framework from cache'
-        id: cef-cache
-        uses: actions/cache@v3
-        env:
-          CACHE_NAME: 'cef-cache'
-        with:
-          path: ${{ github.workspace }}/obs-build-dependencies/cef_binary_${{ env.CEF_BUILD_VERSION_LINUX }}_linux64
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_LINUX }}-${{ env.CACHE_REVISION }}
-
-      - name: 'Setup build environment'
-        id: setup
-        run: |
-          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
-
-      - name: 'Install dependencies'
-        env:
-          RESTORED_CEF: ${{ steps.cef-cache.outputs.cache-hit }}
-        run: CI/linux/01_install_dependencies.sh --disable-pipewire
-
-      - name: 'Build OBS'
-        run: CI/linux/02_build_obs.sh --disable-pipewire
-
-      - name: 'Run tests'
-        if: success()
-        run: cmake --build build -t test
-
-      - name: 'Create build artifact'
-        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
-        run: |
-          CI/linux/03_package_obs.sh
-          ARTIFACT_NAME=$(basename $(/usr/bin/find build  -maxdepth 1 -type f -name "obs-studio-*.deb" | sort -rn | head -1))
-          echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
-
-      - name: 'Upload build Artifact'
-        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: 'obs-studio-${{ matrix.ubuntu }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
 
   windows_build:

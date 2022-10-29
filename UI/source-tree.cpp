@@ -1,4 +1,5 @@
 #include "window-basic-main.hpp"
+#include "window-basic-preview.hpp"
 #include "obs-app.hpp"
 #include "source-tree.hpp"
 #include "qt-wrappers.hpp"
