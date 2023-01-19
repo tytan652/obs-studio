@@ -33,6 +33,14 @@ struct obs_service_resolution {
 	int cy;
 };
 
+// NOTE: Odd numbers are reserved for custom type from third-party protocol
+#define OBS_SERVICE_SERVER_URL 0
+#define OBS_SERVICE_STREAM_KEY 2
+#define OBS_SERVICE_USERNAME 4
+#define OBS_SERVICE_PASSWORD 6
+#define OBS_SERVICE_STREAM_ID 8
+#define OBS_SERVICE_ENCRYPT_PASSPHRASE 10
+
 struct obs_service_info {
 	/* required */
 	const char *id;
@@ -88,6 +96,8 @@ struct obs_service_info {
 				int *audio_bitrate);
 
 	const char **(*get_supported_video_codecs)(void *data);
+
+	const char *(*get_info)(uint32_t type, void *data);
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,

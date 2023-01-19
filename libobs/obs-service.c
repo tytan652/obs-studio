@@ -476,3 +476,13 @@ obs_service_get_supported_video_codecs(const obs_service_t *service)
 			service->context.data);
 	return NULL;
 }
+
+const char *obs_service_get_info(uint32_t type, const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_get_info"))
+		return NULL;
+
+	if (!service->info.get_info)
+		return NULL;
+	return service->info.get_info(type, service->context.data);
+}
