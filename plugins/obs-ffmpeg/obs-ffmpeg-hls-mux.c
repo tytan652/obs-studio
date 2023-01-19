@@ -126,8 +126,8 @@ bool ffmpeg_hls_mux_start(void *data)
 	service = obs_output_get_service(stream->output);
 	if (!service)
 		return false;
-	path_str = obs_service_get_url(service);
-	stream_key = obs_service_get_key(service);
+	path_str = obs_service_get_info(OBS_SERVICE_SERVER_URL, service);
+	stream_key = obs_service_get_info(OBS_SERVICE_STREAM_KEY, service);
 	dstr_copy(&stream->stream_key, stream_key);
 	dstr_copy(&path, path_str);
 	dstr_replace(&path, "{stream_key}", stream_key);

@@ -1049,7 +1049,7 @@ static int init_connect(struct ftl_stream *stream)
 		obs_output_get_video_encoder(stream->output);
 	obs_data_t *video_settings = obs_encoder_get_settings(video_encoder);
 
-	ingest_url = obs_service_get_url(service);
+	ingest_url = obs_service_get_info(OBS_SERVICE_SERVER_URL, service);
 	if (strncmp(ingest_url, FTL_URL_PROTOCOL, strlen(FTL_URL_PROTOCOL)) ==
 	    0) {
 		dstr_copy(&stream->path, ingest_url + strlen(FTL_URL_PROTOCOL));
@@ -1057,7 +1057,7 @@ static int init_connect(struct ftl_stream *stream)
 		dstr_copy(&stream->path, ingest_url);
 	}
 
-	key = obs_service_get_key(service);
+	key = obs_service_get_info(OBS_SERVICE_STREAM_KEY, service);
 
 	int target_bitrate = (int)obs_data_get_int(video_settings, "bitrate");
 	int peak_bitrate = (int)((float)target_bitrate * 1.1f);
@@ -1093,8 +1093,10 @@ static int init_connect(struct ftl_stream *stream)
 		}
 	}
 
-	dstr_copy(&stream->username, obs_service_get_username(service));
-	dstr_copy(&stream->password, obs_service_get_password(service));
+	dstr_copy(&stream->username,
+		  obs_service_get_info(OBS_SERVICE_USERNAME, service));
+	dstr_copy(&stream->password,
+		  obs_service_get_info(OBS_SERVICE_PASSWORD, service));
 	dstr_depad(&stream->path);
 
 	stream->drop_threshold_usec =
