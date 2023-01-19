@@ -830,7 +830,8 @@ bool SimpleOutput::SetupStreaming(obs_service_t *service)
 	const char *type = obs_service_get_output_type(service);
 	if (!type) {
 		type = "rtmp_output";
-		const char *url = obs_service_get_url(service);
+		const char *url =
+			obs_service_get_info(OBS_SERVICE_SERVER_URL, service);
 		if (url != NULL &&
 		    strncmp(url, FTL_PROTOCOL, strlen(FTL_PROTOCOL)) == 0) {
 			type = "ftl_output";
@@ -1769,7 +1770,8 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 	const char *type = obs_service_get_output_type(service);
 	if (!type) {
 		type = "rtmp_output";
-		const char *url = obs_service_get_url(service);
+		const char *url =
+			obs_service_get_info(OBS_SERVICE_SERVER_URL, service);
 		if (url != NULL &&
 		    strncmp(url, FTL_PROTOCOL, strlen(FTL_PROTOCOL)) == 0) {
 			type = "ftl_output";
