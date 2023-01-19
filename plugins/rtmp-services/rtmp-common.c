@@ -925,6 +925,33 @@ static const char *rtmp_common_password(void *data)
 	return NULL;
 }
 
+static const char *rtmp_common_get_info(uint32_t type, void *data)
+{
+	switch (type) {
+	case OBS_SERVICE_SERVER_URL:
+		return rtmp_common_url(data);
+	case OBS_SERVICE_STREAM_KEY:
+	case OBS_SERVICE_STREAM_ID:
+		return rtmp_common_key(data);
+	case OBS_SERVICE_USERNAME:
+		return rtmp_common_username(data);
+	case OBS_SERVICE_PASSWORD:
+		return rtmp_common_password(data);
+	case OBS_SERVICE_ENCRYPT_PASSPHRASE: {
+		const char *url = rtmp_common_url(data);
+
+		if ((strncmp(url, "srt://", 6) == 0))
+			return rtmp_common_password(data);
+		else if ((strncmp(url, "rist://", 7) == 0))
+			return rtmp_common_key(data);
+
+		break;
+	}
+	}
+
+	return NULL;
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -936,6 +963,7 @@ struct obs_service_info rtmp_common_service = {
 	.get_key = rtmp_common_key,
 	.get_username = rtmp_common_username,
 	.get_password = rtmp_common_password,
+	.get_info = rtmp_common_get_info,
 	.apply_encoder_settings = rtmp_common_apply_settings,
 	.get_output_type = rtmp_common_get_output_type,
 	.get_supported_resolutions = rtmp_common_get_supported_resolutions,

@@ -124,6 +124,33 @@ static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings,
 	}
 }
 
+static const char *rtmp_custom_get_info(uint32_t type, void *data)
+{
+	switch (type) {
+	case OBS_SERVICE_SERVER_URL:
+		return rtmp_custom_url(data);
+	case OBS_SERVICE_STREAM_KEY:
+	case OBS_SERVICE_STREAM_ID:
+		return rtmp_custom_key(data);
+	case OBS_SERVICE_USERNAME:
+		return rtmp_custom_username(data);
+	case OBS_SERVICE_PASSWORD:
+		return rtmp_custom_password(data);
+	case OBS_SERVICE_ENCRYPT_PASSPHRASE: {
+		const char *url = rtmp_custom_url(data);
+
+		if ((strncmp(url, "srt://", 6) == 0))
+			return rtmp_custom_password(data);
+		else if ((strncmp(url, "rist://", 7) == 0))
+			return rtmp_custom_key(data);
+
+		break;
+	}
+	}
+
+	return NULL;
+}
+
 struct obs_service_info rtmp_custom_service = {
 	.id = "rtmp_custom",
 	.get_name = rtmp_custom_name,
@@ -133,6 +160,7 @@ struct obs_service_info rtmp_custom_service = {
 	.get_properties = rtmp_custom_properties,
 	.get_url = rtmp_custom_url,
 	.get_key = rtmp_custom_key,
+	.get_info = rtmp_custom_get_info,
 	.get_username = rtmp_custom_username,
 	.get_password = rtmp_custom_password,
 	.apply_encoder_settings = rtmp_custom_apply_settings,
