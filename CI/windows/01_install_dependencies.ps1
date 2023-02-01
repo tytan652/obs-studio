@@ -32,7 +32,7 @@ Function Install-obs-deps {
 
         Write-Step "Download..."
         $ProgressPreference = $(if ($Quiet.isPresent) { "SilentlyContinue" } else { "Continue" })
-        Invoke-WebRequest -Uri "https://github.com/obsproject/obs-deps/releases/download/${Version}/windows-deps-${Version}-${ArchSuffix}.zip" -UseBasicParsing -OutFile "windows-deps-${Version}-${ArchSuffix}.zip"
+        Invoke-WebRequest -Uri "https://github.com/tytan652/obs-deps/releases/download/${Version}/windows-deps-${Version}-${ArchSuffix}.zip" -UseBasicParsing -OutFile "windows-deps-${Version}-${ArchSuffix}.zip"
         $ProgressPreference = "Continue"
 
         Write-Step "Unpack..."
@@ -58,7 +58,7 @@ function Install-qt-deps {
 
         Write-Step "Download..."
         $ProgressPreference = $(if ($Quiet.isPresent) { 'SilentlyContinue' } else { 'Continue' })
-        Invoke-WebRequest -Uri "https://github.com/obsproject/obs-deps/releases/download/${Version}/windows-deps-qt6-${Version}-${ArchSuffix}.zip" -UseBasicParsing -OutFile "windows-deps-qt6-${Version}-${ArchSuffix}.zip"
+        Invoke-WebRequest -Uri "https://github.com/tytan652/obs-deps/releases/download/${Version}/windows-deps-qt6-${Version}-${ArchSuffix}.zip" -UseBasicParsing -OutFile "windows-deps-qt6-${Version}-${ArchSuffix}.zip"
         $ProgressPreference = "Continue"
 
         Write-Step "Unpack..."
