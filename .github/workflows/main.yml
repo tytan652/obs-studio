@@ -395,6 +395,7 @@ jobs:
         id: setup
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SKIP_MODULE: 2
         run: |
           if [[ "${{ matrix.arch }}" != "x86_64" ]]; then
             dnf install -y -q jq gh docker
@@ -405,17 +406,13 @@ jobs:
 
           git config --global --add safe.directory $GITHUB_WORKSPACE
 
-          # Shorten the manifest to only build everything except CEF and OBS (-2)
-          jq 'del(.modules[-2:]) | .modules += [{"name": "obs", "buildsystem": "simple", "build-commands": ["cp -a /usr/bin/ls /app/bin/obs"]}]' CI/flatpak/com.obsproject.Studio.json > tmp.json
-          mv tmp.json CI/flatpak/com.obsproject.Studio.json
-
-          # Generating the key with the shorten manifest
-          # This make the cache key change only if a deps is modified
-          CACHE_KEY=$(cat CI/flatpak/com.obsproject.Studio.json | sha256sum | cut -d " " -f 1)
+          # Generating the key without skipped modules and cleanup objects
+          CACHE_KEY=$(jq "del(.cleanup) | del(.modules[].cleanup) | del(.modules[-$SKIP_MODULE:])" CI/flatpak/com.obsproject.Studio.json | sha256sum | cut -d " " -f 1)
 
           KEY="$CACHE_KEY-${{ matrix.arch }}"
           CACHE_HIT=$(gh actions-cache list --key $KEY | grep -q $KEY && echo 'true' || echo 'false')
 
+          echo "stop_at_module=$(jq ".modules[-$SKIP_MODULE].name" CI/flatpak/com.obsproject.Studio.json | tr -d '"')" >> $GITHUB_OUTPUT
           echo "cache_key=$CACHE_KEY" >> $GITHUB_OUTPUT
           echo "skip_build=$CACHE_HIT" >> $GITHUB_OUTPUT
 
@@ -427,10 +424,10 @@ jobs:
 
       - name: Build Flatpak Manifest
         if: ${{ !fromJSON(steps.setup.outputs.skip_build) }}
-        uses: flatpak/flatpak-github-actions/flatpak-builder@v5
+        uses: tytan652/flatpak-github-actions/flatpak-builder@32dad0c0d9e0bed3af014680cfabe7f2510b6d11
         with:
-          build-bundle: false
           manifest-path: CI/flatpak/com.obsproject.Studio.json
+          stop-at-module: ${{ steps.setup.outputs.stop_at_module }}
           cache-key: ${{ steps.setup.outputs.cache_key }}
           arch: ${{ matrix.arch }}
 
