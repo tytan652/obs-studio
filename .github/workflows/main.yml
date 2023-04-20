@@ -251,6 +251,7 @@ jobs:
     name: '02 - Linux'
     runs-on: ${{ matrix.ubuntu }}
     strategy:
+      fail-fast: false
       matrix:
         ubuntu: ['ubuntu-20.04', 'ubuntu-22.04']
         include:
@@ -337,6 +338,7 @@ jobs:
     needs: [config, clang_check]
     if: always()
     strategy:
+      fail-fast: false
       matrix:
         arch: [x64, x86]
     env:
