@@ -1,0 +1,1 @@
+../plugins/obs-qsv11/QSV11-License-Clarification-Email.txt
