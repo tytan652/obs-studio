@@ -66,3 +66,180 @@ License: BSD-3-Clause
 Files: plugins/obs-qsv11/libmfx/*
 Copyright: 2012-2020 Intel Corporation
 License: MIT
+
+## Locales
+Files: UI/data/locale.ini
+Copyright: 2013-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: UI/data/locale/*.ini
+Copyright: 2013-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: UI/frontend-plugins/aja-output-ui/data/locale/*.ini
+Copyright: 2021-2023 OBS Studio Contributors
+           2021-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: UI/frontend-plugins/frontend-tools/data/locale/*.ini
+Copyright: 2016-2023 OBS Studio Contributors
+           2016-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/aja/data/locale/*.ini
+Copyright: 2021-2023 OBS Studio Contributors
+           2021-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/coreaudio-encoder/data/locale/*.ini
+Copyright: 2015-2023 OBS Studio Contributors
+           2015-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/decklink/data/locale/*.ini
+Copyright: 2015-2023 OBS Studio Contributors
+           2015-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/image-source/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/linux-alsa/data/locale/*.ini
+Copyright: 2016-2023 OBS Studio Contributors
+           2016-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/linux-capture/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/linux-jack/data/locale/*.ini
+Copyright: 2015-2023 OBS Studio Contributors
+           2015-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+# NOTE: linux-pipewire was split from linux-capture
+Files: plugins/linux-pipewire/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/linux-pulseaudio/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/linux-v4l2/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/mac-avcapture/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/mac-capture/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/mac-syphon/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/mac-videotoolbox/data/locale/*.ini
+Copyright: 2015-2023 OBS Studio Contributors
+           2015-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/mac-virtualcam/src/obs-plugin/data/locale/*.ini
+Copyright: 2020-2023 OBS Studio Contributors
+           2020-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/obs-ffmpeg/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/obs-filters/data/locale/*.ini
+Copyright: 2015-2023 OBS Studio Contributors
+           2015-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/obs-libfdk/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/obs-outputs/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/obs-text/data/locale/*.ini
+Copyright: 2016-2023 OBS Studio Contributors
+           2016-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/obs-transitions/data/locale/*.ini
+Copyright: 2016-2023 OBS Studio Contributors
+           2016-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/obs-vst/data/locale/*.ini
+Copyright: 2017-2023 OBS Studio Contributors
+           2017-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/obs-x264/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/oss-audio/data/locale/*.ini
+Copyright: 2020 OBS Studio Contributors
+           2020-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/rtmp-services/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/sndio/data/locale/*.ini
+Copyright: 2020 OBS Studio Contributors
+           2020-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/text-freetype2/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/vlc-video/data/locale/*.ini
+Copyright: 2016-2023 OBS Studio Contributors
+           2016-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/win-capture/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/win-dshow/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
+
+Files: plugins/win-wasapi/data/locale/*.ini
+Copyright: 2014-2023 OBS Studio Contributors
+           2014-2023 OBS Studio Translators
+License: GPL-2.0-or-later
