@@ -8,7 +8,7 @@ Upstream-Contact: Hugh Bailey ("Jim") <obs.jim@gmail.com>
 # Copyright: $YEAR $NAME <$CONTACT>
 # License: ...
 
-## Vendored dependencies (except glad)
+## Vendored dependencies
 Files: deps/blake2/src/*
 Copyright: 2012 Samuel Neves <sneves@dei.uc.pt>
 License: CC0-1.0 or OpenSSL or Apache-2.0
@@ -66,3 +66,21 @@ License: BSD-3-Clause
 Files: plugins/obs-qsv11/libmfx/*
 Copyright: 2012-2020 Intel Corporation
 License: MIT
+
+## Glad
+# Based on https://github.com/Dav1dde/glad/tree/master#whats-the-license-of-glad-generated-code
+Files: deps/glad/include/EGL/*
+Copyright: 2007-2020 The Khronos Group Inc.
+License: Apache-2.0
+
+Files: deps/glad/include/KHR/*
+Copyright: 2008-2018 The Khronos Group Inc.
+License: MIT
+
+Files: deps/glad/include/glad/*
+Copyright: none
+License: WTFPL or CC0-1.0
+
+Files: deps/glad/src/*
+Copyright: none
+License: WTFPL or CC0-1.0
