@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Chris Venter	<chris.venter@gmail.com>
+//
+// SPDX-License-Identifier: CC-PDDC
+
 /*
 cencode.h - c header for a base64 encoding algorithm
 
