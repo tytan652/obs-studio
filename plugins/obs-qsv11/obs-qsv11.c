@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2015 Intel Corporation.
+// SPDX-FileCopyrightText: 2016-2023 OBS Studio Contributors
+//
+// SPDX-License-Identifier: GPL-2.0-or-later OR BSD-3-Clause
+
 /*
 
 This file is provided under a dual BSD/GPLv2 license.  When using or

@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2016 Intel Corporation.
+// SPDX-FileCopyrightText: 2016-2023 OBS Studio Contributors
+//
+// SPDX-License-Identifier: GPL-2.0-or-later OR BSD-3-Clause
+
 #include "common_directx9.h"
 #include "device_directx9.h"
 

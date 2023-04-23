@@ -1,3 +1,10 @@
+#[[
+SPDX-FileCopyrightText: 2015 Intel Corporation.
+SPDX-FileCopyrightText: 2016-2023 OBS Studio Contributors
+
+SPDX-License-Identifier: GPL-2.0-or-later OR BSD-3-Clause
+]]
+
 option(ENABLE_QSV11 "Build Intel QSV11 Hardware Encoder." TRUE)
 
 if(NOT ENABLE_QSV11)

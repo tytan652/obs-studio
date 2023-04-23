@@ -97,6 +97,19 @@ Files: deps/glad/src/*
 Copyright: none
 License: WTFPL or CC0-1.0
 
+## obs-qsv11
+
+# Locales
+Files: plugins/obs-qsv11/data/locale/*.ini
+Copyright: 2016-2022 OBS Studio Contributors
+           2016-2023 OBS Studio Translators
+License: GPL-2.0-or-later or BSD-3-Clause
+
+# "Exclude" QSV11 License Clarification Email from REUSE
+Files: plugins/obs-qsv11/QSV11-License-Clarification-Email.txt
+Copyright: 2021 Aidan Delaney <aidan.delaney@gmail.com>
+License: LicenseRef-QSV11-License-Clarification-Email
+
 ## Locales
 Files: UI/data/locale.ini
 Copyright: 2013-2023 OBS Studio Contributors

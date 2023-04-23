@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 OBS Studio Contributors
+//
+// SPDX-License-Identifier: GPL-2.0-or-later OR BSD-3-Clause
+
 #include "mfxstructures.h"
 #include "mfxadapter.h"
 #include "mfxvideo++.h"
