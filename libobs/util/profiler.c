@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2015 Palana <palana@stunned.de>
+// SPDX-FileCopyrightText: 2015-2021 OBS Studio Contributors
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include <inttypes.h>
 #include "profiler.h"
 

@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2014-2016 Hugh Bailey <obs.jim@gmail.com>
+// SPDX-FileCopyrightText: 2022 OBS Studio Contributors
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #ifdef _MSC_VER
 #pragma warning(disable : 4152) /* casting func ptr to void */
 #endif

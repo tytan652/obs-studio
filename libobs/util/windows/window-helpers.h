@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2014-2016 Hugh Bailey <obs.jim@gmail.com>
+// SPDX-FileCopyrightText: 2020-2021 OBS Studio Contributors
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #pragma once
 
 #include <obs-properties.h>

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Colin Edwards <colin@recursivepenguin.com>
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #pragma once
 
 #include "c99defs.h"

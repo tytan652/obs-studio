@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 Hugh Bailey <obs.jim@gmail.com>
+//
+// SPDX-License-Identifier: ISC
+
 #pragma once
 
 #include "c99defs.h"

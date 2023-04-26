@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2014-2020 Hugh Bailey <obs.jim@gmail.com>
+// SPDX-FileCopyrightText: 2015-2022 OBS Studio Contributors
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "window-helpers.h"
 
 #include <util/dstr.h>

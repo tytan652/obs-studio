@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2021 Hugh Bailey <obs.jim@gmail.com>
+//
+// SPDX-License-Identifier: ISC
+
 #include "task.h"
 #include "bmem.h"
 #include "threading.h"

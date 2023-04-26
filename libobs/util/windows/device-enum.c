@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2022 Hugh Bailey <obs.jim@gmail.com>
+//
+// SPDX-License-Identifier: ISC
+
 #include "device-enum.h"
 #include "../dstr.h"
 

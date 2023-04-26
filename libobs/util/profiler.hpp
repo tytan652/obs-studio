@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2015 Palana <palana@stunned.de>
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #pragma once
 
 #include "profiler.h"
