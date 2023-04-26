@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2019 OBS Studio Contributors
+#
+# SPDX-License-Identifier: GPL-2.0-or-later
+
 Language: Cpp
 SortIncludes: false
 DisableFormat: true

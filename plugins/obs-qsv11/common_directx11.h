@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2005-2014 Intel Corporation.
+//
+// SPDX-License-Identifier: LicenseRef-QSV11-License-Clarification-Email
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #pragma once
 
 #include "common_utils.h"

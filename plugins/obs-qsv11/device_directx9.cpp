@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2011-2015 Intel Corporation.
+// SPDX-FileCopyrightText: 2016-2017 OBS Studio Contributors
+//
+// SPDX-License-Identifier: LicenseRef-QSV11-License-Clarification-Email
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 // #include "mfx_samples_config.h"
 
 #if defined(WIN32) || defined(WIN64)

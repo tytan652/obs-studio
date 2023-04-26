@@ -1,3 +1,9 @@
+// SPDX-FileCopyrightText: 2005-2014 Intel Corporation.
+// SPDX-FileCopyrightText: 2016-2018 OBS Studio Contributors
+//
+// SPDX-License-Identifier: LicenseRef-QSV11-License-Clarification-Email
+// SPDX-License-Identifier: GPL-2.0-or-later
+
 #include "common_utils.h"
 
 // ATTENTION: If D3D surfaces are used, DX9_D3D or DX11_D3D must be set in project settings or hardcoded here

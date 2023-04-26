@@ -1,3 +1,9 @@
+#[[
+SPDX-FileCopyrightText: 2022 OBS Studio Contributors
+
+SPDX-License-Identifier: GPL-2.0-or-later
+]]
+
 project(obs-qsv-test)
 
 include_directories(SYSTEM ${CMAKE_SOURCE_DIR}/libobs)
