@@ -1,0 +1,86 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: OBS Studio
+Upstream-Contact: Hugh Bailey ("Jim") <obs.jim@gmail.com>
+
+# Sample paragraph, commented out:
+#
+# Files: src/*
+# Copyright: $YEAR $NAME <$CONTACT>
+# License: ...
+
+## Vendored dependencies
+Files: deps/blake2/src/*
+Copyright: 2012 Samuel Neves <sneves@dei.uc.pt>
+License: CC0-1.0 or OpenSSL or Apache-2.0
+
+Files: deps/jansson/*
+Copyright: 2009-2016 Petri Lehtinen <petri@digip.org>
+License: MIT
+
+Files: deps/json11/*
+Copyright: 2013 Dropbox, Inc.
+License: MIT
+
+Files: deps/libcaption/*
+Copyright: 2016-2017 Twitch Interactive, Inc. or its affiliates. All Rights Reserved.
+License: MIT
+
+Files: deps/uthash/uthash/*
+Copyright: 2005-2021, Troy D. Hanson
+License: BSD-3-Clause
+
+Files: deps/w32-pthreads/*
+Copyright: 2001,2006 Ross P. Johnson
+License: LGPL-2.1-or-later
+
+Files: libobs/util/simde/*
+Copyright: 2017-2020 Evan Nemerson <evan@nemerson.com>
+License: MIT and CC0-1.0
+
+Files: libobs/graphics/libnsgif/*
+Copyright: 2003 James Bursa <bursa@users.sourceforge.net>
+           2004 John Tytgat <John.Tytgat@aaug.net>
+           2004 Richard Wilson <richard.wilson@netsurf-browser.org>
+           2008 Sean Fox <dyntryx@gmail.com>
+License: MIT
+
+Files: plugins/decklink/linux/decklink-sdk/*
+Copyright: 2020 Blackmagic Design
+License: BSL-1.0
+
+Files: plugins/decklink/mac/decklink-sdk/*
+Copyright: 2020 Blackmagic Design
+License: BSL-1.0
+
+Files: plugins/decklink/win/decklink-sdk/*
+Copyright: 2020 Blackmagic Design
+License: BSL-1.0
+
+Files: plugins/obs-filters/rnnoise/*
+Copyright: 2017 Mozilla
+           2007-2017 Jean-Marc Valin
+           2005-2017, Xiph.Org Foundation
+           2003-2004, Mark Borgerding
+License: BSD-3-Clause
+
+Files: plugins/obs-qsv11/libmfx/*
+Copyright: 2012-2020 Intel Corporation
+License: MIT
+
+## Glad
+# Based on https://github.com/Dav1dde/glad/tree/master#whats-the-license-of-glad-generated-code
+Files: deps/glad/include/EGL/*
+Copyright: 2007-2020 The Khronos Group Inc.
+License: Apache-2.0
+
+Files: deps/glad/include/KHR/*
+Copyright: 2008-2018 The Khronos Group Inc.
+License: MIT
+
+Files: deps/glad/include/glad/*
+Copyright: none
+License: WTFPL or CC0-1.0
+
+Files: deps/glad/src/*
+Copyright: none
+License: WTFPL or CC0-1.0
