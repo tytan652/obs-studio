@@ -9,6 +9,7 @@ This folder contains:
 The manifest is composed of multiple files:
  - The main manifest `com.obsproject.Studio.json`
  - The `modules` folder which contains OBS Studio dependencies modules
+   - `modules/generated` is meant for sources JSONs created with [Flatpak Builder Tools](https://github.com/flatpak/flatpak-builder-tools)
 
 ### Manifest modules
 

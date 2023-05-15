@@ -42,6 +42,10 @@ indent_size = 4
 indent_style = space
 indent_size = 4
 
+# Generated files with Flatpak Builder Tools does not have final newline
+[build-aux/modules/generated/*.json]
+insert_final_newline = false
+
 [*.py]
 indent_style = space
 indent_size = 4

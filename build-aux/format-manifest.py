@@ -32,7 +32,8 @@ def main():
             # Overwrite JSON file
             with open(os.path.join(root, file), "w") as f:
                 json.dump(j, f, indent=4, ensure_ascii=False)
-                f.write("\n")
+                if not root.endswith("generated"):
+                    f.write("\n")
 
     return 0
 
