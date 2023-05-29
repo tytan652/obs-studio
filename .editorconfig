@@ -53,3 +53,11 @@ indent_size = 2
 [{*.zsh,.*.zsh,build-aux/.functions/*,.github/scripts/utils.zsh/*}]
 indent_style = space
 indent_size = 2
+
+[json-schema/*.json]
+indent_style = space
+indent_size = 4
+
+[plugins/obs-services/json/**/*.json]
+indent_style = space
+indent_size = 4
