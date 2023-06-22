@@ -35,8 +35,15 @@ if(YOUTUBE_CLIENTID
             youtube-oauth.cpp
             youtube-oauth.hpp)
 
-  target_link_libraries(obs-youtube PRIVATE OBS::frontend-api OBS::obf OBS::oauth-service-base
-                                            OBS::oauth-local-redirect Qt::Core Qt::Widgets)
+  target_link_libraries(
+    obs-youtube
+    PRIVATE OBS::frontend-api
+            OBS::obf
+            OBS::oauth-service-base
+            OBS::oauth-local-redirect
+            nlohmann_json::nlohmann_json
+            Qt::Core
+            Qt::Widgets)
 
   target_compile_definitions(
     obs-youtube
