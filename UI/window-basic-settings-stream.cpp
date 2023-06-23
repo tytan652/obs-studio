@@ -85,6 +85,10 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	QMetaObject::invokeMethod(this, &OBSBasicSettings::UpdateResFPSLimits,
 				  Qt::QueuedConnection);
+
+	if (obs_video_active()) {
+		ui->streamPage->setEnabled(false);
+	}
 }
 
 void OBSBasicSettings::SaveStream1Settings()
