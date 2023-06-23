@@ -6760,7 +6760,9 @@ void OBSBasic::StartStreaming()
 	if (disableOutputsRef)
 		return;
 
-	if (serviceBroadcastFlow) {
+	/* Ignore broadcast flow if bandwidth test is enabled */
+	bool bwtest = obs_service_bandwidth_test_enabled(service);
+	if (!bwtest && serviceBroadcastFlow) {
 		if (serviceBroadcastFlow->BroadcastState() ==
 		    OBS_BROADCAST_NONE) {
 			ui->streamButton->setChecked(false);
@@ -6809,7 +6811,8 @@ void OBSBasic::StartStreaming()
 		return;
 	}
 
-	if (serviceBroadcastFlow) {
+	/* Ignore broadcast flow if bandwidth test is enabled */
+	if (!bwtest && serviceBroadcastFlow) {
 		ui->broadcastButton->setChecked(false);
 
 		if (serviceBroadcastFlow->BroadcastStartType() ==
@@ -6836,7 +6839,8 @@ void OBSBasic::StartStreaming()
 	if (replayBufferWhileStreaming)
 		StartReplayBuffer();
 
-	if (!serviceBroadcastFlow ||
+	/* Ignore broadcast flow if bandwidth test is enabled */
+	if (bwtest || !serviceBroadcastFlow ||
 	    serviceBroadcastFlow->BroadcastStartType() !=
 		    OBS_BROADCAST_START_DIFFER_FROM_STREAM)
 		return;
@@ -6871,6 +6875,13 @@ void OBSBasic::StartStreaming()
 
 void OBSBasic::ManageBroadcastButtonClicked()
 {
+	if (obs_service_bandwidth_test_enabled(service)) {
+		OBSMessageBox::warning(
+			this, QTStr("Basic.Main.ManageBroadcastBWTest.Title"),
+			QTStr("Basic.Main.ManageBroadcastBWTest.Text"));
+		return;
+	}
+
 	bool streamingActive = outputHandler->StreamingActive();
 
 	serviceBroadcastFlow->ManageBroadcast(streamingActive);
@@ -7090,7 +7101,9 @@ void OBSBasic::StopStreaming()
 	if (outputHandler->StreamingActive())
 		outputHandler->StopStreaming(streamingStopping);
 
-	if (serviceBroadcastFlow)
+	/* Ignore broadcast flow if bandwidth test is enabled */
+	if (!obs_service_bandwidth_test_enabled(service) &&
+	    serviceBroadcastFlow)
 		serviceBroadcastFlow->StopStreaming();
 
 	OnDeactivate();
@@ -7119,7 +7132,9 @@ void OBSBasic::ForceStopStreaming()
 	if (outputHandler->StreamingActive())
 		outputHandler->StopStreaming(true);
 
-	if (serviceBroadcastFlow)
+	/* Ignore broadcast flow if bandwidth test is enabled */
+	if (!obs_service_bandwidth_test_enabled(service) &&
+	    serviceBroadcastFlow)
 		serviceBroadcastFlow->StopStreaming();
 
 	OnDeactivate();
@@ -7206,7 +7221,9 @@ void OBSBasic::StreamingStart()
 		sysTrayStream->setEnabled(true);
 	}
 
-	if (serviceBroadcastFlow &&
+	/* Ignore broadcast flow if bandwidth test is enabled */
+	if (!obs_service_bandwidth_test_enabled(service) &&
+	    serviceBroadcastFlow &&
 	    serviceBroadcastFlow->BroadcastStartType() ==
 		    OBS_BROADCAST_START_DIFFER_FROM_STREAM &&
 	    !broadcastStreamCheckThread) {
@@ -7330,7 +7347,9 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	}
 
 	// Reset broadcast button state/text
-	if (serviceBroadcastFlow &&
+	/* Ignore broadcast flow if bandwidth test is enabled */
+	if (!obs_service_bandwidth_test_enabled(service) &&
+	    serviceBroadcastFlow &&
 	    serviceBroadcastFlow->BroadcastState() != OBS_BROADCAST_ACTIVE)
 		ResetBroadcastButtonState();
 }
@@ -7854,11 +7873,13 @@ void OBSBasic::OnVirtualCamStop(int)
 
 void OBSBasic::on_streamButton_clicked()
 {
+	bool bwtest = obs_service_bandwidth_test_enabled(service);
 	if (outputHandler->StreamingActive()) {
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					       "WarnBeforeStoppingStream");
 
-		if (isVisible() && serviceBroadcastFlow) {
+		/* Ignore broadcast flow if bandwidth test is enabled */
+		if (isVisible() && !bwtest && serviceBroadcastFlow) {
 			if (serviceBroadcastFlow->BroadcastStopType() ==
 			    OBS_BROADCAST_STOP_WITH_STREAM) {
 				QMessageBox::StandardButton button =
@@ -7922,10 +7943,9 @@ void OBSBasic::on_streamButton_clicked()
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					       "WarnBeforeStartingStream");
 
-		bool bwtest = obs_service_bandwidth_test_enabled(service);
-
 		// Disable confirmation if this is going to open broadcast setup
-		if (serviceBroadcastFlow &&
+		/* Ignore broadcast flow if bandwidth test is enabled */
+		if (!bwtest && serviceBroadcastFlow &&
 		    serviceBroadcastFlow->BroadcastState() ==
 			    OBS_BROADCAST_NONE) {
 			confirm = false;
