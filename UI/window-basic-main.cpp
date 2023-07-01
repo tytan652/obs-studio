@@ -2224,9 +2224,6 @@ void OBSBasic::OnFirstLoad()
 		introCheckThread->start();
 	}
 #endif
-
-	Auth::Load();
-
 	bool showLogViewerOnStartup = config_get_bool(
 		App()->GlobalConfig(), "LogViewer", "ShowLogStartup");
 
@@ -4989,9 +4986,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	signalHandlers.clear();
 
-	Auth::Save();
 	SaveProjectNow();
-	auth.reset();
 
 	delete extraBrowsers;
 
@@ -7911,14 +7906,8 @@ void OBSBasic::on_streamButton_clicked()
 			return;
 		}
 
-		Auth *auth = GetAuth();
-
-		auto action =
-			(auth && auth->external())
-				? StreamSettingsAction::ContinueStream
-				: UIValidation::StreamSettingsConfirmation(
-					  this, service);
-		switch (action) {
+		switch (UIValidation::StreamSettingsConfirmation(this,
+								 service)) {
 		case StreamSettingsAction::ContinueStream:
 			break;
 		case StreamSettingsAction::OpenSettings:
