@@ -2441,6 +2441,9 @@ void OBSBasicSettings::LoadOutputSettings()
 		ui->advNetworkGroupBox->setEnabled(false);
 	}
 
+	/* Services side but requires to be done once encoders are loaded */
+	UpdateServiceRecommendations();
+
 	loading = false;
 }
 
@@ -4308,6 +4311,9 @@ void OBSBasicSettings::on_advOutEncoder_currentIndexChanged()
 
 	ui->advOutUseRescale->setVisible(true);
 	ui->advOutRescale->setVisible(true);
+
+	/* Update services page test if codec has changed */
+	UpdateServiceRecommendations();
 }
 
 void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
@@ -5404,6 +5410,9 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 		idx = ui->simpleOutPreset->findData(QVariant(defaultPreset));
 
 	ui->simpleOutPreset->setCurrentIndex(idx);
+
+	/* Update services page test if codec has changed */
+	UpdateServiceRecommendations();
 }
 
 #define ESTIMATE_STR "Basic.Settings.Output.ReplayBuffer.Estimate"
