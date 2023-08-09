@@ -329,16 +329,8 @@ endif()
 
 if(YOUTUBE_ENABLED)
   target_compile_definitions(obs PRIVATE YOUTUBE_ENABLED)
-  target_sources(
-    obs
-    PRIVATE auth-youtube.cpp
-            auth-youtube.hpp
-            window-dock-youtube-app.cpp
-            window-dock-youtube-app.hpp
-            window-youtube-actions.cpp
-            window-youtube-actions.hpp
-            youtube-api-wrappers.cpp
-            youtube-api-wrappers.hpp)
+  target_sources(obs PRIVATE auth-youtube.cpp auth-youtube.hpp youtube-api-wrappers.cpp youtube-api-wrappers.hpp
+                             window-youtube-actions.cpp window-youtube-actions.hpp)
 endif()
 
 if(OS_WINDOWS)

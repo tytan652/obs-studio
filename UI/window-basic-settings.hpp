@@ -350,8 +350,6 @@ private:
 
 	bool AskIfCanCloseSettings();
 
-	void UpdateYouTubeAppDockSettings();
-
 	QIcon generalIcon;
 	QIcon streamIcon;
 	QIcon outputIcon;

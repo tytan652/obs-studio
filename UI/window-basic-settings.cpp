@@ -48,10 +48,6 @@
 #include "window-basic-main-outputs.hpp"
 #include "window-projector.hpp"
 
-#ifdef YOUTUBE_ENABLED
-#include "youtube-api-wrappers.hpp"
-#endif
-
 #include <util/platform.h>
 #include <util/dstr.hpp>
 #include "ui-config.h"
@@ -4249,27 +4245,6 @@ void OBSBasicSettings::on_listWidget_itemSelectionChanged()
 	pageIndex = row;
 }
 
-void OBSBasicSettings::UpdateYouTubeAppDockSettings()
-{
-#if defined(BROWSER_AVAILABLE) && defined(YOUTUBE_ENABLED)
-	if (cef_js_avail) {
-		std::string service = ui->service->currentText().toStdString();
-		if (IsYouTubeService(service)) {
-			if (!main->GetYouTubeAppDock()) {
-				main->NewYouTubeAppDock();
-			}
-			main->GetYouTubeAppDock()->SettingsUpdated(
-				!IsYouTubeService(service) || stream1Changed);
-		} else {
-			if (main->GetYouTubeAppDock()) {
-				main->GetYouTubeAppDock()->AccountDisconnected();
-			}
-			main->DeleteYouTubeAppDock();
-		}
-	}
-#endif
-}
-
 void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 {
 	QDialogButtonBox::ButtonRole val = ui->buttonBox->buttonRole(button);
@@ -4280,8 +4255,6 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 			return;
 
 		SaveSettings();
-
-		UpdateYouTubeAppDockSettings();
 		ClearChanged();
 	}
 

@@ -5,14 +5,8 @@ if(YOUTUBE_CLIENTID
   target_sources(
     obs-studio
     PRIVATE # cmake-format: sortable
-            auth-youtube.cpp
-            auth-youtube.hpp
-            window-dock-youtube-app.cpp
-            window-dock-youtube-app.hpp
-            window-youtube-actions.cpp
-            window-youtube-actions.hpp
-            youtube-api-wrappers.cpp
-            youtube-api-wrappers.hpp)
+            auth-youtube.cpp auth-youtube.hpp window-youtube-actions.cpp window-youtube-actions.hpp
+            youtube-api-wrappers.cpp youtube-api-wrappers.hpp)
 
   target_enable_feature(obs-studio "YouTube API connection" YOUTUBE_ENABLED)
 else()

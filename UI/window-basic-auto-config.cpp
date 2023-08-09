@@ -1065,13 +1065,6 @@ void AutoConfig::done(int result)
 		if (type == Type::Streaming)
 			SaveStreamSettings();
 		SaveSettings();
-
-#ifdef YOUTUBE_ENABLED
-		if (YouTubeAppDock::IsYTServiceSelected()) {
-			OBSBasic *main = OBSBasic::Get();
-			main->NewYouTubeAppDock();
-		}
-#endif
 	}
 }
 

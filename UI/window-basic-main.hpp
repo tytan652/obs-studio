@@ -36,9 +36,6 @@
 #include "window-missing-files.hpp"
 #include "window-projector.hpp"
 #include "window-basic-about.hpp"
-#ifdef YOUTUBE_ENABLED
-#include "window-dock-youtube-app.hpp"
-#endif
 #include "auth-base.hpp"
 #include "log-viewer.hpp"
 #include "undo-stack-obs.hpp"
@@ -265,9 +262,6 @@ private:
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
 	QPointer<QDockWidget> statsDock;
-#ifdef YOUTUBE_ENABLED
-	QPointer<YouTubeAppDock> youtubeAppDock;
-#endif
 	QPointer<OBSAbout> about;
 	QPointer<OBSMissingFiles> missDialog;
 	QPointer<OBSLogViewer> logView;
@@ -638,8 +632,7 @@ private:
 #ifdef YOUTUBE_ENABLED
 	void YoutubeStreamCheck(const std::string &key);
 	void ShowYouTubeAutoStartWarning();
-	void YouTubeActionDialogOk(const QString &broadcast_id,
-				   const QString &stream_id, const QString &key,
+	void YouTubeActionDialogOk(const QString &id, const QString &key,
 				   bool autostart, bool autostop,
 				   bool start_now);
 #endif
@@ -1260,14 +1253,7 @@ public:
 				   const char *file) const override;
 
 	static void InitBrowserPanelSafeBlock();
-#ifdef YOUTUBE_ENABLED
-	void NewYouTubeAppDock();
-	void DeleteYouTubeAppDock();
-	YouTubeAppDock *GetYouTubeAppDock();
-#endif
 };
-
-extern bool cef_js_avail;
 
 class SceneRenameDelegate : public QStyledItemDelegate {
 	Q_OBJECT
