@@ -10,6 +10,7 @@ RestreamBrowserWidget::RestreamBrowserWidget(const QString &url_)
 	  QWidget()
 {
 	setMinimumSize(200, 300);
+	setProperty("Dock_WA_NativeWindow", true);
 
 	QVBoxLayout *layout = new QVBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
