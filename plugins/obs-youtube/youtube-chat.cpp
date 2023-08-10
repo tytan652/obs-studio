@@ -39,6 +39,7 @@ YoutubeChat::YoutubeChat(YouTubeApi::ServiceOAuth *api)
 
 	resize(300, 600);
 	setMinimumSize(200, 300);
+	setProperty("Dock_WA_NativeWindow", true);
 
 	lineEdit = new LineEditAutoResize();
 	lineEdit->setVisible(false);
