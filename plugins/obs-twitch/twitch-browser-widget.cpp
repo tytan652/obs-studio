@@ -31,6 +31,7 @@ TwitchBrowserWidget::TwitchBrowserWidget(const Addon &addon_,
 	  QWidget()
 {
 	setMinimumSize(200, 300);
+	setProperty("Dock_WA_NativeWindow", true);
 
 	QString urlList = forcePopupUrl_.join(";");
 	forcePopupUrl = strlist_split(urlList.toUtf8().constData(), ';', false);
