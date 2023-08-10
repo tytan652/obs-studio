@@ -403,7 +403,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	}
 
 	bool obs_frontend_add_dock_by_id(const char *id, const char *title,
-					 void *widget) override
+					 void *_widget) override
 	{
 		if (main->IsDockObjectNameUsed(QT_UTF8(id))) {
 			blog(LOG_WARNING,
@@ -414,11 +414,15 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		}
 
 		OBSDock *dock = new OBSDock(main);
-		dock->setWidget((QWidget *)widget);
+		QWidget *widget = (QWidget *)_widget;
+		dock->setWidget(widget);
 		dock->setWindowTitle(QT_UTF8(title));
 		dock->setObjectName(QT_UTF8(id));
 
 		main->AddDockWidget(dock, Qt::RightDockWidgetArea);
+
+		if (widget->property("Dock_WA_NativeWindow").toBool())
+			dock->setAttribute(Qt::WA_NativeWindow);
 
 		dock->setFloating(true);
 		dock->setVisible(false);
