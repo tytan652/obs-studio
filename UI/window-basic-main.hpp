@@ -267,7 +267,6 @@ private:
 	QPointer<QDockWidget> statsDock;
 #ifdef YOUTUBE_ENABLED
 	QPointer<YouTubeAppDock> youtubeAppDock;
-	uint64_t lastYouTubeAppDockCreationTime = 0;
 #endif
 	QPointer<OBSAbout> about;
 	QPointer<OBSMissingFiles> missDialog;
