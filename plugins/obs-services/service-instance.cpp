@@ -1,0 +1,500 @@
+// SPDX-FileCopyrightText: 2023 tytan652 <tytan652@tytanium.xyz>
+//
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include "service-instance.hpp"
+
+#include <util/dstr.hpp>
+
+#include "service-config.hpp"
+#include "services-json-util.hpp"
+
+ServiceInstance::ServiceInstance(const OBSServices::Service &service_)
+	: service(service_)
+{
+	uint32_t flags = 0;
+
+	/* Common can only be "set" if set to true in the schema */
+	if (!service.common.value_or(false))
+		flags |= OBS_SERVICE_UNCOMMON;
+
+	/* Generate supported protocols string.
+	 * A vector is used to check already added protocol because std::string's
+	 * find() does not work well with protocols like RTMP and RTMPS*/
+	std::vector<std::string> addedProtocols;
+	std::string protocols;
+	for (size_t i = 0; i < service.servers.size(); i++) {
+		std::string protocol =
+			ServerProtocolToStdString(service.servers[i].protocol);
+
+		bool alreadyAdded = false;
+		for (size_t i = 0; i < addedProtocols.size(); i++)
+			alreadyAdded |= (addedProtocols[i] == protocol);
+
+		if (!alreadyAdded) {
+			if (!protocols.empty())
+				protocols += ";";
+
+			protocols += protocol;
+			addedProtocols.push_back(protocol);
+		}
+	}
+	supportedProtocols = bstrdup(protocols.c_str());
+
+	/* Generate supported resolution */
+	if (service.supportedResolutions.has_value()) {
+		DARRAY(struct obs_service_resolution) res_list;
+		supportedResolutionsWithFps =
+			service.supportedResolutions->at(0).find("@") !=
+			std::string::npos;
+
+		da_init(res_list);
+		for (size_t i = 0; i < service.supportedResolutions->size();
+		     i++) {
+			std::string res_str =
+				service.supportedResolutions->at(i);
+			obs_service_resolution res = {};
+			if (supportedResolutionsWithFps) {
+				sscanf(res_str.c_str(), "%dx%d@%d", &res.cx,
+				       &res.cy, &res.fps);
+			} else {
+				sscanf(res_str.c_str(), "%dx%d", &res.cx,
+				       &res.cy);
+				res.fps = 0;
+			}
+			da_push_back(res_list, &res);
+		}
+
+		if (res_list.num == service.supportedResolutions->size()) {
+			supportedResolutions = res_list.array;
+			supportedResolutionsCount = res_list.num;
+
+			info.get_supported_resolutions2 =
+				InfoGetSupportedResolutions2;
+
+			if (supportedResolutionsWithFps &&
+			    service.maximums->videoBitrateMatrix.has_value()) {
+				info.get_max_video_bitrate =
+					InfoGetMaxVideoBitrate;
+			}
+		}
+	}
+
+	if (service.maximums.has_value() &&
+	    (service.maximums->videoBitrate.has_value() ||
+	     service.maximums->audioBitrate.has_value()))
+		info.get_max_codec_bitrate = InfoGetMaxCodecBitrate;
+
+	/* Fill service info and register it */
+	info.type_data = this;
+	info.id = service.id.c_str();
+
+	info.get_name = InfoGetName;
+	info.create = InfoCreate;
+	info.destroy = InfoDestroy;
+	info.update = InfoUpdate;
+
+	info.get_connect_info = InfoGetConnectInfo;
+
+	info.get_protocol = InfoGetProtocol;
+
+	if (service.supportedCodecs.has_value()) {
+		if (service.supportedCodecs.value().video.has_value())
+			info.get_supported_video_codecs =
+				InfoGetSupportedVideoCodecs;
+
+		if (service.supportedCodecs.value().audio.has_value())
+			info.get_supported_audio_codecs =
+				InfoGetSupportedAudioCodecs;
+	}
+
+	info.can_try_to_connect = InfoCanTryToConnect;
+
+	info.flags = flags;
+
+	info.get_defaults2 = InfoGetDefault2;
+	info.get_properties2 = InfoGetProperties2;
+
+	info.supported_protocols = supportedProtocols;
+
+	info.apply_encoder_settings2 = InfoApplySettings2;
+
+	obs_register_service(&info);
+}
+
+OBSServices::RistProperties ServiceInstance::GetRISTProperties() const
+{
+	return service.rist.value_or(OBSServices::RistProperties{true, false});
+}
+
+OBSServices::SrtProperties ServiceInstance::GetSRTProperties() const
+{
+	return service.srt.value_or(OBSServices::SrtProperties{true, false});
+}
+
+static inline void AddSupportedVideoCodecs(
+	const std::map<std::string,
+		       std::vector<OBSServices::ProtocolSupportedVideoCodec>>
+		&map,
+	const std::string &key, std::string &codecs)
+{
+	if (map.count(key) == 0)
+		return;
+
+	for (auto &codec : map.at(key)) {
+		if (!codecs.empty())
+			codecs += ";";
+
+		codecs += SupportedVideoCodecToStdString(codec);
+	}
+}
+
+char **
+ServiceInstance::GetSupportedVideoCodecs(const std::string &protocol) const
+{
+	std::string codecs;
+	auto *prtclCodecs = &service.supportedCodecs.value().video.value();
+
+	AddSupportedVideoCodecs(*prtclCodecs, "*", codecs);
+	AddSupportedVideoCodecs(*prtclCodecs, protocol, codecs);
+
+	if (codecs.empty())
+		return nullptr;
+
+	return strlist_split(codecs.c_str(), ';', false);
+}
+
+static inline void AddSupportedAudioCodecs(
+	const std::map<std::string,
+		       std::vector<OBSServices::ProtocolSupportedAudioCodec>>
+		&map,
+	const std::string &key, std::string &codecs)
+{
+	if (map.count(key) == 0)
+		return;
+
+	for (auto &codec : map.at(key)) {
+		if (!codecs.empty())
+			codecs += ";";
+
+		codecs += SupportedAudioCodecToStdString(codec);
+	}
+}
+
+char **
+ServiceInstance::GetSupportedAudioCodecs(const std::string &protocol) const
+{
+	std::string codecs;
+	auto *prtclCodecs = &service.supportedCodecs.value().audio.value();
+
+	AddSupportedAudioCodecs(*prtclCodecs, "*", codecs);
+	AddSupportedAudioCodecs(*prtclCodecs, protocol, codecs);
+
+	if (codecs.empty())
+		return nullptr;
+
+	return strlist_split(codecs.c_str(), ';', false);
+}
+
+void ServiceInstance::ApplySettings2(obs_encoder_type encoderType,
+				     const char *encoderId_,
+				     obs_data_t *encoderSettings) const
+{
+	std::string codec = obs_get_encoder_codec(encoderId_);
+
+	if (service.maximums.has_value()) {
+		int maxbitrate = 0;
+
+		struct obs_video_info ovi;
+		if (encoderType == OBS_ENCODER_VIDEO &&
+		    supportedResolutionsWithFps &&
+		    service.maximums->videoBitrateMatrix.has_value() &&
+		    obs_get_video_info(&ovi)) {
+			int cur_fps = ovi.fps_num / ovi.fps_den;
+			obs_service_resolution res{(int)ovi.output_width,
+						   (int)ovi.output_height,
+						   cur_fps};
+
+			maxbitrate = GetMaxVideoBitrate(codec.c_str(), res);
+		} else {
+			maxbitrate = GetMaxCodecBitrate(codec.c_str());
+		}
+
+		if (maxbitrate != 0 &&
+		    obs_data_get_int(encoderSettings, "bitrate") < maxbitrate)
+			obs_data_set_int(encoderSettings, "bitrate",
+					 maxbitrate);
+	}
+
+	if (!service.recommended.has_value())
+		return;
+
+	if (codec == "h264" && service.recommended->h264.has_value()) {
+		if (service.recommended->h264->profile.has_value()) {
+			std::string profile = H264ProfileToStdString(
+				service.recommended->h264->profile.value());
+			obs_data_set_string(encoderSettings, "profile",
+					    profile.c_str());
+		}
+
+		if (service.recommended->h264->keyint.has_value())
+			obs_data_set_int(
+				encoderSettings, "keyint_sec",
+				service.recommended->h264->keyint.value());
+
+		if (service.recommended->h264->bframes.has_value())
+			obs_data_set_int(
+				encoderSettings, "bf",
+				service.recommended->h264->bframes.value());
+	}
+
+	std::string encoderId(encoderId_);
+	if (encoderId == "obs_x264" &&
+	    service.recommended->obsX264.has_value()) {
+		obs_data_set_string(
+			encoderSettings, "x264opts",
+			service.recommended->obsX264.value().c_str());
+	}
+}
+
+const char *ServiceInstance::GetName()
+{
+	return service.name.c_str();
+}
+
+void ServiceInstance::GetDefaults(obs_data_t *settings)
+{
+	std::string protocol =
+		ServerProtocolToStdString(service.servers[0].protocol);
+	obs_data_set_default_string(settings, "protocol", protocol.c_str());
+	obs_data_set_default_string(settings, "server",
+				    service.servers[0].url.c_str());
+}
+
+void ServiceInstance::GetSupportedResolutions(
+	struct obs_service_resolution **resolutions, size_t *count,
+	bool *withFps) const
+{
+	*withFps = supportedResolutionsWithFps;
+	*count = supportedResolutionsCount;
+	*resolutions = (struct obs_service_resolution *)bmemdup(
+		supportedResolutions.Get(),
+		supportedResolutionsCount *
+			sizeof(struct obs_service_resolution));
+}
+
+int ServiceInstance::GetMaxCodecBitrate(const char *codec_) const
+{
+	std::string codec(codec_);
+
+	if (!service.maximums->videoBitrateMatrix.has_value() &&
+	    service.maximums->videoBitrate.has_value()) {
+		if (service.maximums->videoBitrate->count(codec))
+			return (int)service.maximums->videoBitrate->at(codec);
+	}
+
+	if (service.maximums->audioBitrate.has_value()) {
+		if (service.maximums->audioBitrate->count(codec))
+			return (int)service.maximums->audioBitrate->at(codec);
+	}
+
+	return 0;
+}
+
+int ServiceInstance::GetMaxVideoBitrate(
+	const char *codec_, struct obs_service_resolution resolution) const
+{
+	DStr res_dstr;
+	dstr_catf(res_dstr, "%dx%d@%d", resolution.cx, resolution.cy,
+		  resolution.fps);
+	std::string res_str(res_dstr);
+	std::string codec(codec_);
+
+	if (service.maximums->videoBitrateMatrix->count(res_str)) {
+		const auto bitrates =
+			service.maximums->videoBitrateMatrix->at(res_str);
+		if (bitrates.count(codec))
+			return (int)bitrates.at(codec);
+	}
+
+	return 0;
+}
+
+bool ModifiedProtocolCb(void *service_, obs_properties_t *props,
+			obs_property_t *, obs_data_t *settings)
+{
+	const OBSServices::Service *service =
+		reinterpret_cast<OBSServices::Service *>(service_);
+	std::string protocol = obs_data_get_string(settings, "protocol");
+	obs_property_t *p = obs_properties_get(props, "server");
+
+	if (protocol.empty())
+		return false;
+
+	OBSServices::ServerProtocol proto = StdStringToServerProtocol(protocol);
+
+	obs_property_list_clear(p);
+	for (size_t i = 0; i < service->servers.size(); i++) {
+		const OBSServices::Server *server = &service->servers[i];
+		if (server->protocol != proto)
+			continue;
+
+		obs_property_list_add_string(p, server->name.c_str(),
+					     server->url.c_str());
+	}
+
+	obs_property_t *propGetStreamKey =
+		obs_properties_get(props, "get_stream_key");
+
+	std::unordered_map<std::string, obs_property_t *> properties;
+#define ADD_TO_MAP(property) \
+	properties.emplace(property, obs_properties_get(props, property))
+	ADD_TO_MAP("stream_id");
+	ADD_TO_MAP("username");
+	ADD_TO_MAP("password");
+	ADD_TO_MAP("encrypt_passphrase");
+	ADD_TO_MAP("bearer_token");
+#undef ADD_TO_MAP
+
+	if (propGetStreamKey)
+		obs_property_set_visible(propGetStreamKey, false);
+
+	for (auto const &[key, val] : properties)
+		obs_property_set_visible(val, false);
+
+	switch (proto) {
+	case OBSServices::ServerProtocol::RTMP:
+	case OBSServices::ServerProtocol::RTMPS:
+	case OBSServices::ServerProtocol::HLS:
+		obs_property_set_description(
+			properties["stream_id"],
+			obs_module_text("Services.StreamID.Key"));
+		obs_property_set_visible(properties["stream_id"], true);
+		if (propGetStreamKey)
+			obs_property_set_visible(propGetStreamKey, true);
+		break;
+	case OBSServices::ServerProtocol::SRT: {
+		bool hasProps = service->srt.has_value();
+		obs_property_set_description(
+			properties["stream_id"],
+			obs_module_text("Services.StreamID"));
+		obs_property_set_visible(properties["stream_id"],
+					 hasProps ? service->srt->streamId
+						  : true);
+		obs_property_set_visible(
+			properties["encrypt_passphrase"],
+			hasProps ? service->srt->encryptPassphrase : false);
+		break;
+	}
+	case OBSServices::ServerProtocol::RIST: {
+		bool hasProps = service->rist.has_value();
+		obs_property_set_visible(
+			properties["encrypt_passphrase"],
+			hasProps ? service->rist->encryptPassphrase : true);
+		obs_property_set_visible(
+			properties["username"],
+			hasProps ? service->rist->srpUsernamePassword : false);
+		obs_property_set_visible(
+			properties["password"],
+			hasProps ? service->rist->srpUsernamePassword : false);
+		break;
+	}
+	case OBSServices::ServerProtocol::WHIP:
+		obs_property_set_visible(properties["bearer_token"], true);
+		break;
+	}
+
+	return true;
+}
+
+obs_properties_t *ServiceInstance::GetProperties()
+{
+	obs_properties_t *ppts = obs_properties_create();
+	obs_property_t *p;
+	obs_property_t *uniqueProtocol;
+
+	if (service.moreInfoLink) {
+		BPtr<char> url = bstrdup(service.moreInfoLink->c_str());
+
+		p = obs_properties_add_button(
+			ppts, "more_info", obs_module_text("Services.MoreInfo"),
+			nullptr);
+		obs_property_button_set_type(p, OBS_BUTTON_URL);
+		obs_property_button_set_url(p, url);
+	}
+
+	p = obs_properties_add_list(ppts, "protocol",
+				    obs_module_text("Services.Protocol"),
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+
+	uniqueProtocol = obs_properties_add_text(ppts, "unique_protocol",
+						 "placeholder", OBS_TEXT_INFO);
+	obs_property_set_visible(uniqueProtocol, false);
+
+	obs_properties_add_list(ppts, "server",
+				obs_module_text("Services.Server"),
+				OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+
+	for (size_t i = 0; i < service.servers.size(); i++) {
+		std::string protocol =
+			ServerProtocolToStdString(service.servers[i].protocol);
+
+		if (protocol.empty() ||
+		    !obs_is_output_protocol_registered(protocol.c_str()))
+			continue;
+
+		bool alreadyListed = false;
+
+		for (size_t i = 0; i < obs_property_list_item_count(p); i++)
+			alreadyListed |=
+				(strcmp(obs_property_list_item_string(p, i),
+					protocol.c_str()) == 0);
+
+		if (!alreadyListed)
+			obs_property_list_add_string(p, protocol.c_str(),
+						     protocol.c_str());
+	}
+
+	if (obs_property_list_item_count(p) == 1) {
+		DStr info;
+		dstr_catf(info, obs_module_text("Services.Protocol.OnlyOne"),
+			  obs_property_list_item_string(p, 0));
+
+		obs_property_set_visible(p, false);
+		obs_property_set_visible(uniqueProtocol, true);
+		obs_property_set_description(uniqueProtocol, info);
+	}
+
+	obs_property_set_modified_callback2(p, ModifiedProtocolCb,
+					    (void *)&service);
+
+	obs_properties_add_text(ppts, "stream_id",
+				obs_module_text("Services.StreamID"),
+				OBS_TEXT_PASSWORD);
+
+	if (service.streamKeyLink) {
+		BPtr<char> url = bstrdup(service.streamKeyLink->c_str());
+
+		p = obs_properties_add_button(
+			ppts, "get_stream_key",
+			obs_module_text("Services.GetStreamKey"), nullptr);
+		obs_property_button_set_type(p, OBS_BUTTON_URL);
+		obs_property_button_set_url(p, url);
+	}
+
+	obs_properties_add_text(ppts, "username",
+				obs_module_text("Services.Username"),
+				OBS_TEXT_DEFAULT);
+	obs_properties_add_text(ppts, "password",
+				obs_module_text("Services.Password"),
+				OBS_TEXT_PASSWORD);
+	obs_properties_add_text(ppts, "encrypt_passphrase",
+				obs_module_text("Services.EncryptPassphrase"),
+				OBS_TEXT_PASSWORD);
+	obs_properties_add_text(ppts, "bearer_token",
+				obs_module_text("Services.BearerToken"),
+				OBS_TEXT_PASSWORD);
+
+	return ppts;
+}

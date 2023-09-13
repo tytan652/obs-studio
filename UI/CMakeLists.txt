@@ -20,6 +20,10 @@ if(NOT TARGET OBS::json11)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/json11" "${CMAKE_BINARY_DIR}/deps/json11")
 endif()
 
+if(NOT TARGET OBS::obf)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/obf" "${CMAKE_BINARY_DIR}/deps/obf")
+endif()
+
 add_executable(obs-studio)
 add_executable(OBS::studio ALIAS obs-studio)
 
@@ -31,7 +35,8 @@ target_link_libraries(
           FFmpeg::avformat
           OBS::libobs
           OBS::frontend-api
-          OBS::json11)
+          OBS::json11
+          OBS::obf)
 
 include(cmake/ui-qt.cmake)
 include(cmake/ui-elements.cmake)
@@ -39,15 +44,6 @@ include(cmake/ui-windows.cmake)
 include(cmake/feature-importers.cmake)
 include(cmake/feature-browserpanels.cmake)
 
-if(NOT OAUTH_BASE_URL)
-  # cmake-format: off
-  set(OAUTH_BASE_URL "https://auth.obsproject.com/" CACHE STRING "Default OAuth base URL")
-  mark_as_advanced(OAUTH_BASE_URL)
-  # cmake-format: on
-endif()
-include(cmake/feature-twitch.cmake)
-include(cmake/feature-restream.cmake)
-include(cmake/feature-youtube.cmake)
 include(cmake/feature-sparkle.cmake)
 include(cmake/feature-whatsnew.cmake)
 
@@ -59,19 +55,13 @@ target_sources(
   obs-studio
   PRIVATE # cmake-format: sortable
           api-interface.cpp
-          auth-base.cpp
-          auth-base.hpp
-          auth-listener.cpp
-          auth-listener.hpp
-          auth-oauth.cpp
-          auth-oauth.hpp
+          broadcast-flow.cpp
+          broadcast-flow.hpp
           display-helpers.hpp
           ffmpeg-utils.cpp
           ffmpeg-utils.hpp
           multiview.cpp
           multiview.hpp
-          obf.c
-          obf.h
           obs-app.cpp
           obs-app.hpp
           obs-proxy-style.cpp

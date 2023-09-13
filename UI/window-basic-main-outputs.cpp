@@ -818,8 +818,12 @@ void SimpleOutput::Update()
 	obs_data_set_string(audioSettings, "rate_control", "CBR");
 	obs_data_set_int(audioSettings, "bitrate", audioBitrate);
 
-	obs_service_apply_encoder_settings(main->GetService(), videoSettings,
-					   audioSettings);
+	obs_service_apply_encoder_settings2(main->GetService(),
+					    obs_encoder_get_id(videoStreaming),
+					    videoSettings);
+	obs_service_apply_encoder_settings2(main->GetService(),
+					    obs_encoder_get_id(audioStreaming),
+					    audioSettings);
 
 	if (!enforceBitrate) {
 		blog(LOG_INFO, "User is ignoring service bitrate limits.");
@@ -1092,10 +1096,6 @@ bool SimpleOutput::SetupStreaming(obs_service_t *service)
 	if (!Active())
 		SetupOutputs();
 
-	Auth *auth = main->GetAuth();
-	if (auth)
-		auth->OnStreamConfig();
-
 	/* --------------------- */
 
 	const char *type = GetStreamOutputType(service);
@@ -1142,8 +1142,6 @@ bool SimpleOutput::SetupStreaming(obs_service_t *service)
 	return true;
 }
 
-static inline bool ServiceSupportsVodTrack(const char *service);
-
 static void clear_archive_encoder(obs_output_t *output,
 				  const char *expected_name)
 {
@@ -1171,13 +1169,13 @@ void SimpleOutput::SetupVodTrack(obs_service_t *service)
 		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
 
 	OBSDataAutoRelease settings = obs_service_get_settings(service);
-	const char *name = obs_data_get_string(settings, "service");
-
 	const char *id = obs_service_get_id(service);
 	if (strcmp(id, "rtmp_custom") == 0)
 		enable = enableForCustomServer ? enable : false;
 	else
-		enable = advanced && enable && ServiceSupportsVodTrack(name);
+		enable = advanced && enable &&
+			 (obs_service_get_audio_track_cap(service) ==
+			  OBS_SERVICE_AUDIO_ARCHIVE_TRACK);
 
 	if (enable)
 		obs_output_set_audio_encoder(streamOutput, audioArchive, 1);
@@ -1713,8 +1711,9 @@ void AdvancedOutput::UpdateStreamSettings()
 	if (applyServiceSettings) {
 		int bitrate = (int)obs_data_get_int(settings, "bitrate");
 		int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
-		obs_service_apply_encoder_settings(main->GetService(), settings,
-						   nullptr);
+		obs_service_apply_encoder_settings2(
+			main->GetService(), obs_encoder_get_id(videoStreaming),
+			settings);
 		if (!enforceBitrate) {
 			blog(LOG_INFO,
 			     "User is ignoring service bitrate limits.");
@@ -1763,18 +1762,6 @@ void AdvancedOutput::Update()
 	UpdateAudioSettings();
 }
 
-static inline bool ServiceSupportsVodTrack(const char *service)
-{
-	static const char *vodTrackServices[] = {"Twitch"};
-
-	for (const char *vodTrackService : vodTrackServices) {
-		if (astrcmpi(vodTrackService, service) == 0)
-			return true;
-	}
-
-	return false;
-}
-
 inline void AdvancedOutput::SetupStreaming()
 {
 	bool rescale = config_get_bool(main->Config(), "AdvOut", "Rescale");
@@ -1796,8 +1783,9 @@ inline void AdvancedOutput::SetupStreaming()
 	const char *id = obs_service_get_id(main->GetService());
 	if (strcmp(id, "rtmp_custom") == 0) {
 		OBSDataAutoRelease settings = obs_data_create();
-		obs_service_apply_encoder_settings(main->GetService(), settings,
-						   nullptr);
+		obs_service_apply_encoder_settings2(
+			main->GetService(), obs_encoder_get_id(videoStreaming),
+			settings);
 		obs_encoder_update(videoStreaming, settings);
 	}
 }
@@ -2010,8 +1998,9 @@ inline void AdvancedOutput::UpdateAudioSettings()
 			if (applyServiceSettings) {
 				int bitrate = (int)obs_data_get_int(settings[i],
 								    "bitrate");
-				obs_service_apply_encoder_settings(
-					main->GetService(), nullptr,
+				obs_service_apply_encoder_settings2(
+					main->GetService(),
+					obs_encoder_get_id(streamAudioEnc),
 					settings[i]);
 
 				if (!enforceBitrate)
@@ -2071,9 +2060,8 @@ inline void AdvancedOutput::SetupVodTrack(obs_service_t *service)
 		vodTrackEnabled = enableForCustomServer ? vodTrackEnabled
 							: false;
 	} else {
-		OBSDataAutoRelease settings = obs_service_get_settings(service);
-		const char *service = obs_data_get_string(settings, "service");
-		if (!ServiceSupportsVodTrack(service))
+		if (obs_service_get_audio_track_cap(service) !=
+		    OBS_SERVICE_AUDIO_ARCHIVE_TRACK)
 			vodTrackEnabled = false;
 	}
 
@@ -2094,10 +2082,6 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 
 	if (!Active())
 		SetupOutputs();
-
-	Auth *auth = main->GetAuth();
-	if (auth)
-		auth->OnStreamConfig();
 
 	/* --------------------- */
 

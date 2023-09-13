@@ -25,8 +25,6 @@
 #include <string>
 
 #include <obs.hpp>
-
-#include "auth-base.hpp"
 #include "ffmpeg-utils.hpp"
 
 class OBSBasic;
@@ -92,8 +90,6 @@ private:
 
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
 
-	std::shared_ptr<Auth> auth;
-
 	bool generalChanged = false;
 	bool stream1Changed = false;
 	bool outputsChanged = false;
@@ -104,7 +100,6 @@ private:
 	bool advancedChanged = false;
 	int pageIndex = 0;
 	bool loading = true;
-	bool forceAuthReload = false;
 	bool forceUpdateCheck = false;
 	std::string savedTheme;
 	int sampleRateIndex = 0;
@@ -113,8 +108,6 @@ private:
 	bool hotkeysLoaded = false;
 
 	int lastSimpleRecQualityIdx = 0;
-	int lastServiceIdx = -1;
-	int lastIgnoreRecommended = -1;
 	int lastChannelSetupIdx = 0;
 
 	static constexpr uint32_t ENCODER_HIDE_FLAGS =
@@ -122,7 +115,8 @@ private:
 
 	std::vector<FFmpegFormat> formats;
 
-	OBSPropertiesView *streamProperties = nullptr;
+	OBSPropertiesView *streamServiceProps = nullptr;
+
 	OBSPropertiesView *streamEncoderProps = nullptr;
 	OBSPropertiesView *recordEncoderProps = nullptr;
 
@@ -249,37 +243,29 @@ private:
 	void LoadBranchesList();
 
 	/* stream */
+	OBSServiceAutoRelease tempService;
+
 	void InitStreamPage();
-	inline bool IsCustomService() const;
-	inline bool IsWHIP() const;
+	inline bool IsCustomOrInternalService() const;
 	void LoadServices(bool showAll);
-	void OnOAuthStreamKeyConnected();
-	void OnAuthConnected();
-	QString lastService;
-	QString protocol;
-	QString lastCustomServer;
 	int prevLangIndex;
 	bool prevBrowserAccel;
 
-	void ServiceChanged(bool resetFields = false);
-	QString FindProtocol();
-	void UpdateServerList();
 	void UpdateKeyLink();
 	void UpdateVodTrackSetting();
 	void UpdateServiceRecommendations();
-	void UpdateMoreInfoLink();
 	void UpdateAdvNetworkGroup();
+
+	OBSPropertiesView *CreateTempServicePropertyView(obs_data_t *settings,
+							 bool changed = false);
 
 private slots:
 	void RecreateOutputResolutionWidget();
 	bool UpdateResFPSLimits();
 	void DisplayEnforceWarning(bool checked);
-	void on_show_clicked();
-	void on_authPwShow_clicked();
-	void on_connectAccount_clicked();
-	void on_disconnectAccount_clicked();
-	void on_useStreamKey_clicked();
-	void on_useAuth_toggled();
+
+	void ServicePropertyViewChanged();
+	void RestoreServiceSettings(QString settingsJson);
 
 	void on_hotkeyFilterReset_clicked();
 	void on_hotkeyFilterSearch_textChanged(const QString text);
@@ -350,8 +336,6 @@ private:
 
 	bool AskIfCanCloseSettings();
 
-	void UpdateYouTubeAppDockSettings();
-
 	QIcon generalIcon;
 	QIcon streamIcon;
 	QIcon outputIcon;
@@ -374,8 +358,6 @@ private:
 	int SimpleOutGetSelectedAudioTracks();
 	int AdvOutGetSelectedAudioTracks();
 
-	OBSService GetStream1Service();
-
 	bool ServiceAndVCodecCompatible();
 	bool ServiceAndACodecCompatible();
 	bool ServiceSupportsCodecCheck();
@@ -387,7 +369,6 @@ private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
 
 	void on_service_currentIndexChanged(int idx);
-	void on_customServer_textChanged(const QString &text);
 	void on_simpleOutputBrowse_clicked();
 	void on_advOutRecPathBrowse_clicked();
 	void on_advOutFFPathBrowse_clicked();
@@ -456,8 +437,6 @@ private slots:
 
 	void SimpleStreamingEncoderChanged();
 
-	OBSService SpawnTempService();
-
 	void SetGeneralIcon(const QIcon &icon);
 	void SetStreamIcon(const QIcon &icon);
 	void SetOutputIcon(const QIcon &icon);
@@ -466,8 +445,6 @@ private slots:
 	void SetHotkeysIcon(const QIcon &icon);
 	void SetAccessibilityIcon(const QIcon &icon);
 	void SetAdvancedIcon(const QIcon &icon);
-
-	void UseStreamKeyAdvClicked();
 
 	void SimpleStreamAudioEncoderChanged();
 	void AdvAudioEncodersChanged();

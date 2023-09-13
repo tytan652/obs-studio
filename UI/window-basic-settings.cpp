@@ -48,10 +48,6 @@
 #include "window-basic-main-outputs.hpp"
 #include "window-projector.hpp"
 
-#ifdef YOUTUBE_ENABLED
-#include "youtube-api-wrappers.hpp"
-#endif
-
 #include <util/platform.h>
 #include <util/dstr.hpp>
 #include "ui-config.h"
@@ -407,14 +403,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->multiviewDrawAreas,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewLayout,      COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->service,              COMBO_CHANGED,  STREAM1_CHANGED);
-	HookWidget(ui->server,               COMBO_CHANGED,  STREAM1_CHANGED);
-	HookWidget(ui->customServer,         EDIT_CHANGED,   STREAM1_CHANGED);
-	HookWidget(ui->key,                  EDIT_CHANGED,   STREAM1_CHANGED);
-	HookWidget(ui->bandwidthTestEnable,  CHECK_CHANGED,  STREAM1_CHANGED);
-	HookWidget(ui->twitchAddonDropdown,  COMBO_CHANGED,  STREAM1_CHANGED);
-	HookWidget(ui->useAuth,              CHECK_CHANGED,  STREAM1_CHANGED);
-	HookWidget(ui->authUsername,         EDIT_CHANGED,   STREAM1_CHANGED);
-	HookWidget(ui->authPw,               EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->ignoreRecommended,    CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->outputMode,           COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputPath,     EDIT_CHANGED,   OUTPUTS_CHANGED);
@@ -953,9 +941,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->advOutRescale->lineEdit()->setValidator(validator);
 	ui->advOutRecRescale->lineEdit()->setValidator(validator);
 	ui->advOutFFRescale->lineEdit()->setValidator(validator);
-
-	connect(ui->useStreamKeyAdv, &QCheckBox::clicked, this,
-		&OBSBasicSettings::UseStreamKeyAdvClicked);
 
 	connect(ui->simpleOutStrAEncoder, &QComboBox::currentIndexChanged, this,
 		&OBSBasicSettings::SimpleStreamAudioEncoderChanged);
@@ -2455,6 +2440,9 @@ void OBSBasicSettings::LoadOutputSettings()
 		ui->advOutputAudioTracksTab->setEnabled(false);
 		ui->advNetworkGroupBox->setEnabled(false);
 	}
+
+	/* Services side but requires to be done once encoders are loaded */
+	UpdateServiceRecommendations();
 
 	loading = false;
 }
@@ -4249,27 +4237,6 @@ void OBSBasicSettings::on_listWidget_itemSelectionChanged()
 	pageIndex = row;
 }
 
-void OBSBasicSettings::UpdateYouTubeAppDockSettings()
-{
-#if defined(BROWSER_AVAILABLE) && defined(YOUTUBE_ENABLED)
-	if (cef_js_avail) {
-		std::string service = ui->service->currentText().toStdString();
-		if (IsYouTubeService(service)) {
-			if (!main->GetYouTubeAppDock()) {
-				main->NewYouTubeAppDock();
-			}
-			main->GetYouTubeAppDock()->SettingsUpdated(
-				!IsYouTubeService(service) || stream1Changed);
-		} else {
-			if (main->GetYouTubeAppDock()) {
-				main->GetYouTubeAppDock()->AccountDisconnected();
-			}
-			main->DeleteYouTubeAppDock();
-		}
-	}
-#endif
-}
-
 void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 {
 	QDialogButtonBox::ButtonRole val = ui->buttonBox->buttonRole(button);
@@ -4280,8 +4247,6 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 			return;
 
 		SaveSettings();
-
-		UpdateYouTubeAppDockSettings();
 		ClearChanged();
 	}
 
@@ -4346,6 +4311,9 @@ void OBSBasicSettings::on_advOutEncoder_currentIndexChanged()
 
 	ui->advOutUseRescale->setVisible(true);
 	ui->advOutRescale->setVisible(true);
+
+	/* Update services page test if codec has changed */
+	UpdateServiceRecommendations();
 }
 
 void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
@@ -4509,12 +4477,6 @@ bool OBSBasicSettings::AskIfCanCloseSettings()
 
 	if (!Changed() || QueryChanges())
 		canCloseSettings = true;
-
-	if (forceAuthReload) {
-		main->auth->Save();
-		main->auth->Load();
-		forceAuthReload = false;
-	}
 
 	if (forceUpdateCheck) {
 		main->CheckForUpdates(false);
@@ -5448,6 +5410,9 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 		idx = ui->simpleOutPreset->findData(QVariant(defaultPreset));
 
 	ui->simpleOutPreset->setCurrentIndex(idx);
+
+	/* Update services page test if codec has changed */
+	UpdateServiceRecommendations();
 }
 
 #define ESTIMATE_STR "Basic.Settings.Output.ReplayBuffer.Estimate"
@@ -5735,11 +5700,10 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 	QString qual = ui->simpleOutRecQuality->currentData().toString();
 	QString warning;
 	bool enforceBitrate = !ui->ignoreRecommended->isChecked();
-	OBSService service = GetStream1Service();
 
 	delete simpleOutRecWarning;
 
-	if (enforceBitrate && service) {
+	if (enforceBitrate && tempService) {
 		OBSDataAutoRelease videoSettings = obs_data_create();
 		OBSDataAutoRelease audioSettings = obs_data_create();
 		int oldVBitrate = ui->simpleOutputVBitrate->value();
@@ -5748,8 +5712,31 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		obs_data_set_int(videoSettings, "bitrate", oldVBitrate);
 		obs_data_set_int(audioSettings, "bitrate", oldABitrate);
 
-		obs_service_apply_encoder_settings(service, videoSettings,
-						   audioSettings);
+		QString streamEnc =
+			ui->simpleOutStrEncoder->currentData().toString();
+
+		obs_service_apply_encoder_settings2(
+			tempService,
+			get_simple_output_encoder(QT_TO_UTF8(streamEnc)),
+			videoSettings);
+
+		const char *aencoder = EncoderAvailable("ffmpeg_opus")
+					       ? "ffmpeg_opus"
+					       : nullptr;
+		if (ui->simpleOutStrAEncoder->currentData().toString() ==
+		    "aac") {
+			aencoder = nullptr;
+			if (EncoderAvailable("CoreAudio_AAC")) {
+				aencoder = "CoreAudio_AAC";
+			} else if (EncoderAvailable("libfdk_aac")) {
+				aencoder = "libfdk_aac";
+			} else if (EncoderAvailable("ffmpeg_aac")) {
+				aencoder = "ffmpeg_aac";
+			}
+		}
+
+		obs_service_apply_encoder_settings2(tempService, aencoder,
+						    audioSettings);
 
 		int newVBitrate = obs_data_get_int(videoSettings, "bitrate");
 		int newABitrate = obs_data_get_int(audioSettings, "bitrate");
@@ -6159,7 +6146,8 @@ void OBSBasicSettings::RecreateOutputResolutionWidget()
 
 void OBSBasicSettings::UpdateAdvNetworkGroup()
 {
-	bool enabled = protocol.contains("RTMP");
+	bool enabled =
+		QT_UTF8(obs_service_get_protocol(tempService)).contains("RTMP");
 
 	ui->advNetworkDisabled->setVisible(!enabled);
 

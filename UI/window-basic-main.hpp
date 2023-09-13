@@ -36,12 +36,9 @@
 #include "window-missing-files.hpp"
 #include "window-projector.hpp"
 #include "window-basic-about.hpp"
-#ifdef YOUTUBE_ENABLED
-#include "window-dock-youtube-app.hpp"
-#endif
-#include "auth-base.hpp"
 #include "log-viewer.hpp"
 #include "undo-stack-obs.hpp"
+#include "broadcast-flow.hpp"
 
 #include <obs-frontend-internal.hpp>
 
@@ -225,8 +222,6 @@ class OBSBasic : public OBSMainWindow {
 private:
 	obs_frontend_callbacks *api = nullptr;
 
-	std::shared_ptr<Auth> auth;
-
 	std::vector<VolControl *> volumes;
 
 	std::vector<OBSSignal> signalHandlers;
@@ -265,10 +260,6 @@ private:
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
 	QPointer<QDockWidget> statsDock;
-#ifdef YOUTUBE_ENABLED
-	QPointer<YouTubeAppDock> youtubeAppDock;
-	uint64_t lastYouTubeAppDockCreationTime = 0;
-#endif
 	QPointer<OBSAbout> about;
 	QPointer<OBSMissingFiles> missDialog;
 	QPointer<OBSLogViewer> logView;
@@ -553,6 +544,7 @@ private:
 	QList<QPoint> visDlgPositions;
 
 	QByteArray startingDockLayout;
+	QByteArray dockStateToRestore;
 
 	obs_data_array_t *SaveProjectors();
 	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
@@ -631,21 +623,17 @@ private:
 	void MoveSceneItem(enum obs_order_movement movement,
 			   const QString &action_name);
 
-	bool autoStartBroadcast = true;
-	bool autoStopBroadcast = true;
-	bool broadcastActive = false;
-	bool broadcastReady = false;
-	QPointer<QThread> youtubeStreamCheckThread;
-#ifdef YOUTUBE_ENABLED
-	void YoutubeStreamCheck(const std::string &key);
-	void ShowYouTubeAutoStartWarning();
-	void YouTubeActionDialogOk(const QString &broadcast_id,
-				   const QString &stream_id, const QString &key,
-				   bool autostart, bool autostop,
-				   bool start_now);
-#endif
-	void BroadcastButtonClicked();
-	void SetBroadcastFlowEnabled(bool enabled);
+	OBSBroadcastFlow *serviceBroadcastFlow = nullptr;
+	QList<OBSBroadcastFlow> broadcastFlows;
+	QPointer<QThread> broadcastStreamCheckThread;
+
+	void ResetServiceBroadcastFlow();
+	void LoadServiceBroadcastFlow();
+
+	void BroadcastStarted();
+	void ResetBroadcastButtonState();
+
+	void BroadcastStreamCheck();
 
 	void UpdatePreviewSafeAreas();
 	bool drawSafeAreas = false;
@@ -678,8 +666,6 @@ public slots:
 	void DeferSaveEnd();
 
 	void DisplayStreamStartError();
-
-	void SetupBroadcast();
 
 	void StartStreaming();
 	void StopStreaming();
@@ -851,6 +837,10 @@ private slots:
 	void RestartVirtualCam(const VCamConfig &config);
 	void RestartingVirtualCam();
 
+	void ManageBroadcastButtonClicked();
+	void StartBroadcastButtonClicked();
+	void StopBroadcastButtonClicked();
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);
@@ -904,6 +894,10 @@ public:
 	obs_service_t *GetService();
 	void SetService(obs_service_t *service);
 
+	bool AddBroadcastFlow(const obs_service_t *service,
+			      const obs_frontend_broadcast_flow &flow);
+	void RemoveBroadcastFlow(const obs_service_t *service);
+
 	int GetTransitionDuration();
 	int GetTbarPosition();
 
@@ -949,8 +943,6 @@ public:
 	void SaveService();
 	bool LoadService();
 
-	inline Auth *GetAuth() { return auth.get(); }
-
 	inline void EnableOutputs(bool enable)
 	{
 		if (enable) {
@@ -988,6 +980,9 @@ public:
 	void RemoveDockWidget(const QString &name);
 	bool IsDockObjectNameUsed(const QString &name);
 	void AddCustomDockWidget(QDockWidget *dock);
+
+	QWidget *GetBrowserWidget(const obs_frontend_browser_params &params);
+	void DeleteCookie(const std::string &url);
 
 	static OBSBasic *Get();
 
@@ -1040,6 +1035,8 @@ public:
 	void SetDisplayAffinity(QWindow *window);
 
 	QColor GetSelectionColor() const;
+
+	void RestoreState(const QByteArray &state);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
@@ -1261,14 +1258,7 @@ public:
 				   const char *file) const override;
 
 	static void InitBrowserPanelSafeBlock();
-#ifdef YOUTUBE_ENABLED
-	void NewYouTubeAppDock();
-	void DeleteYouTubeAppDock();
-	YouTubeAppDock *GetYouTubeAppDock();
-#endif
 };
-
-extern bool cef_js_avail;
 
 class SceneRenameDelegate : public QStyledItemDelegate {
 	Q_OBJECT

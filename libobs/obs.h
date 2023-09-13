@@ -2639,7 +2639,7 @@ obs_service_get_password(const obs_service_t *service);
  * @param  video_encoder_settings  Video encoder settings.  Optional.
  * @param  audio_encoder_settings  Audio encoder settings.  Optional.
  */
-EXPORT void
+OBS_DEPRECATED EXPORT void
 obs_service_apply_encoder_settings(obs_service_t *service,
 				   obs_data_t *video_encoder_settings,
 				   obs_data_t *audio_encoder_settings);
@@ -2648,11 +2648,12 @@ EXPORT void *obs_service_get_type_data(obs_service_t *service);
 
 EXPORT const char *obs_service_get_id(const obs_service_t *service);
 
-EXPORT void obs_service_get_supported_resolutions(
+OBS_DEPRECATED EXPORT void obs_service_get_supported_resolutions(
 	const obs_service_t *service,
 	struct obs_service_resolution **resolutions, size_t *count);
 EXPORT void obs_service_get_max_fps(const obs_service_t *service, int *fps);
 
+OBS_DEPRECATED
 EXPORT void obs_service_get_max_bitrate(const obs_service_t *service,
 					int *video_bitrate, int *audio_bitrate);
 
@@ -2677,6 +2678,36 @@ EXPORT const char *obs_service_get_connect_info(const obs_service_t *service,
 						uint32_t type);
 
 EXPORT bool obs_service_can_try_to_connect(const obs_service_t *service);
+
+EXPORT enum obs_service_audio_track_cap
+obs_service_get_audio_track_cap(const obs_service_t *service);
+
+EXPORT uint32_t obs_get_service_flags(const char *id);
+EXPORT uint32_t obs_service_get_flags(const obs_service_t *service);
+
+EXPORT const char *obs_get_service_supported_protocols(const char *id);
+
+EXPORT bool obs_service_can_bandwidth_test(const obs_service_t *service);
+EXPORT void obs_service_enable_bandwidth_test(const obs_service_t *service,
+					      bool enabled);
+EXPORT bool obs_service_bandwidth_test_enabled(const obs_service_t *service);
+
+EXPORT int obs_service_get_max_codec_bitrate(const obs_service_t *service,
+					     const char *codec);
+
+EXPORT void obs_service_get_supported_resolutions2(
+	const obs_service_t *service,
+	struct obs_service_resolution **resolutions, size_t *count,
+	bool *with_fps);
+
+EXPORT int
+obs_service_get_max_video_bitrate(const obs_service_t *service,
+				  const char *codec,
+				  struct obs_service_resolution resolution);
+
+EXPORT void obs_service_apply_encoder_settings2(obs_service_t *service,
+						const char *encoder_id,
+						obs_data_t *encoder_settings);
 
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */

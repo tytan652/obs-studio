@@ -12,6 +12,7 @@
 #include <vector>
 #include <string>
 #include <mutex>
+#include <obs.hpp>
 
 class Ui_AutoConfigStartPage;
 class Ui_AutoConfigVideoPage;
@@ -19,7 +20,7 @@ class Ui_AutoConfigStreamPage;
 class Ui_AutoConfigTestPage;
 
 class AutoConfigStreamPage;
-class Auth;
+class OBSPropertiesView;
 
 class AutoConfig : public QWizard {
 	Q_OBJECT
@@ -34,12 +35,6 @@ class AutoConfig : public QWizard {
 		Streaming,
 		Recording,
 		VirtualCam,
-	};
-
-	enum class Service {
-		Twitch,
-		YouTube,
-		Other,
 	};
 
 	enum class Encoder {
@@ -68,7 +63,6 @@ class AutoConfig : public QWizard {
 
 	AutoConfigStreamPage *streamPage = nullptr;
 
-	Service service = Service::Other;
 	Quality recordingQuality = Quality::Stream;
 	Encoder recordingEncoder = Encoder::Stream;
 	Encoder streamingEncoder = Encoder::x264;
@@ -84,7 +78,7 @@ class AutoConfig : public QWizard {
 	std::string serviceName;
 	std::string serverName;
 	std::string server;
-	std::string key;
+	OBSServiceAutoRelease service = nullptr;
 
 	bool hardwareEncodingAvailable = false;
 	bool nvencAvailable = false;
@@ -93,21 +87,13 @@ class AutoConfig : public QWizard {
 	bool appleAvailable = false;
 
 	int startingBitrate = 2500;
-	bool customServer = false;
 	bool bandwidthTest = false;
-	bool testRegions = true;
-	bool twitchAuto = false;
-	bool regionUS = true;
-	bool regionEU = true;
-	bool regionAsia = true;
-	bool regionOther = true;
 	bool preferHighFPS = false;
 	bool preferHardware = false;
 	int specificFPSNum = 0;
 	int specificFPSDen = 0;
 
 	void TestHardwareEncoding();
-	bool CanTestServer(const char *server);
 
 	virtual void done(int result) override;
 
@@ -165,43 +151,31 @@ class AutoConfigStreamPage : public QWizardPage {
 
 	friend class AutoConfig;
 
-	enum class Section : int {
-		Connect,
-		StreamKey,
-	};
-
-	std::shared_ptr<Auth> auth;
-
 	std::unique_ptr<Ui_AutoConfigStreamPage> ui;
 	QString lastService;
 	bool ready = false;
 
+	OBSServiceAutoRelease tempService;
+	OBSPropertiesView *streamServiceProps = nullptr;
+
 	void LoadServices(bool showAll);
-	inline bool IsCustomService() const;
+
+	OBSPropertiesView *CreateTempServicePropertyView(obs_data_t *settings);
+
+private slots:
+	void on_service_currentIndexChanged(int idx);
 
 public:
-	AutoConfigStreamPage(QWidget *parent = nullptr);
+	AutoConfigStreamPage(obs_service_t *service, QWidget *parent = nullptr);
 	~AutoConfigStreamPage();
 
 	virtual bool isComplete() const override;
 	virtual int nextId() const override;
 	virtual bool validatePage() override;
 
-	void OnAuthConnected();
-	void OnOAuthStreamKeyConnected();
-
 public slots:
-	void on_show_clicked();
-	void on_connectAccount_clicked();
-	void on_disconnectAccount_clicked();
-	void on_useStreamKey_clicked();
 	void ServiceChanged();
-	void UpdateKeyLink();
-	void UpdateMoreInfoLink();
-	void UpdateServerList();
 	void UpdateCompleted();
-
-	void reset_service_ui_fields(std::string &service);
 };
 
 class AutoConfigTestPage : public QWizardPage {
@@ -255,9 +229,13 @@ class AutoConfigTestPage : public QWizardPage {
 			  address(address_)
 		{
 		}
-	};
 
-	void GetServers(std::vector<ServerInfo> &servers);
+		inline ServerInfo(const char *address_)
+			: name(address_),
+			  address(address_)
+		{
+		}
+	};
 
 public:
 	AutoConfigTestPage(QWidget *parent = nullptr);

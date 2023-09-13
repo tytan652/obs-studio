@@ -6,6 +6,10 @@
 
 #include <functional>
 
+#ifdef ENABLE_WAYLAND
+#include <obs-nix-platform.h>
+#endif
+
 using namespace std;
 
 Q_DECLARE_METATYPE(OBSScene);
@@ -399,7 +403,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	}
 
 	bool obs_frontend_add_dock_by_id(const char *id, const char *title,
-					 void *widget) override
+					 void *_widget) override
 	{
 		if (main->IsDockObjectNameUsed(QT_UTF8(id))) {
 			blog(LOG_WARNING,
@@ -410,11 +414,15 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		}
 
 		OBSDock *dock = new OBSDock(main);
-		dock->setWidget((QWidget *)widget);
+		QWidget *widget = (QWidget *)_widget;
+		dock->setWidget(widget);
 		dock->setWindowTitle(QT_UTF8(title));
 		dock->setObjectName(QT_UTF8(id));
 
 		main->AddDockWidget(dock, Qt::RightDockWidgetArea);
+
+		if (widget->property("Dock_WA_NativeWindow").toBool())
+			dock->setAttribute(Qt::WA_NativeWindow);
 
 		dock->setFloating(true);
 		dock->setVisible(false);
@@ -443,6 +451,59 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		main->AddCustomDockWidget(d);
 
 		return true;
+	}
+
+	bool obs_frontend_is_browser_available(void) override
+	{
+#ifdef BROWSER_AVAILABLE
+#ifdef ENABLE_WAYLAND
+		return (obs_get_nix_platform() != OBS_NIX_PLATFORM_WAYLAND);
+#else
+		return true;
+#endif
+#else
+		return false;
+#endif
+	}
+
+	void *obs_frontend_get_browser_widget_s(
+		const struct obs_frontend_browser_params *params,
+		size_t size) override
+	{
+#ifdef BROWSER_AVAILABLE
+#ifdef ENABLE_WAYLAND
+		if (!obs_frontend_is_browser_available())
+			return nullptr;
+#endif
+		struct obs_frontend_browser_params data = {0};
+		if (size > sizeof(data)) {
+			blog(LOG_ERROR,
+			     "Tried to add obs_frontend_get_browser_widget with size "
+			     "%llu which is more than OBS Studio currently "
+			     "supports (%llu)",
+			     (long long unsigned)size,
+			     (long long unsigned)sizeof(data));
+			return nullptr;
+		}
+
+		memcpy(&data, params, size);
+
+		return (void *)main->GetBrowserWidget(data);
+#else
+		UNUSED_PARAMETER(params);
+		UNUSED_PARAMETER(size);
+		return nullptr;
+#endif
+	}
+
+	void obs_frontend_delete_browser_cookie(const char *url) override
+	{
+		if (!url)
+			return;
+
+		std::string urlStr = url;
+		if (!urlStr.empty())
+			main->DeleteCookie(urlStr);
 	}
 
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
@@ -745,6 +806,33 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 			[undo](const std::string &data) { undo(data.c_str()); },
 			[redo](const std::string &data) { redo(data.c_str()); },
 			undo_data, redo_data, repeatable);
+	}
+
+	void obs_frontend_add_broadcast_flow_s(
+		const obs_service_t *service,
+		const struct obs_frontend_broadcast_flow *flow,
+		size_t size) override
+	{
+		struct obs_frontend_broadcast_flow data = {0};
+		if (size > sizeof(data)) {
+			blog(LOG_ERROR,
+			     "Tried to add obs_frontend_broadcast_flow with size "
+			     "%llu which is more than OBS Studio currently "
+			     "supports (%llu)",
+			     (long long unsigned)size,
+			     (long long unsigned)sizeof(data));
+			return;
+		}
+
+		memcpy(&data, flow, size);
+
+		main->AddBroadcastFlow(service, data);
+	}
+
+	void obs_frontend_remove_broadcast_flow(
+		const obs_service_t *service) override
+	{
+		main->RemoveBroadcastFlow(service);
 	}
 
 	void on_load(obs_data_t *settings) override

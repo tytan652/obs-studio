@@ -188,6 +188,7 @@ static bool rtmp_custom_can_try_to_connect(void *data)
 
 struct obs_service_info rtmp_custom_service = {
 	.id = "rtmp_custom",
+	.flags = OBS_SERVICE_DEPRECATED | OBS_SERVICE_INTERNAL,
 	.get_name = rtmp_custom_name,
 	.create = rtmp_custom_create,
 	.destroy = rtmp_custom_destroy,
@@ -201,4 +202,5 @@ struct obs_service_info rtmp_custom_service = {
 	.get_password = rtmp_custom_password,
 	.apply_encoder_settings = rtmp_custom_apply_settings,
 	.can_try_to_connect = rtmp_custom_can_try_to_connect,
+	.supported_protocols = "RTMP;RTMPS;FTL;SRT;RIST",
 };

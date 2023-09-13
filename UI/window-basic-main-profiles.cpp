@@ -313,16 +313,21 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
 			  newDir.c_str());
 
-	Auth::Save();
 	if (create_new) {
-		auth.reset();
 		DestroyPanelCookieManager();
-#ifdef YOUTUBE_ENABLED
-		if (youtubeAppDock)
-			DeleteYouTubeAppDock();
-#endif
 	} else if (!rename) {
 		DuplicateCurrentCookieProfile(config);
+	}
+
+	if (!rename) {
+		/* Save dock state before saving */
+		config_set_string(basicConfig, "BasicWindow", "DockState",
+				  saveState().toBase64().constData());
+
+		/* Save dock state on the new profile if duplication */
+		if (!create_new)
+			config_set_string(config, "BasicWindow", "DockState",
+					  saveState().toBase64().constData());
 	}
 
 	config_set_string(config, "General", "Name", newName.c_str());
@@ -344,8 +349,6 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 	UpdateTitleBar();
 	UpdateVolumeControlsDecayRate();
 
-	Auth::Load();
-
 	// Run auto configuration setup wizard when a new profile is made to assist
 	// setting up blank settings
 	if (create_new && showWizardChecked) {
@@ -355,9 +358,24 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 		wizard.exec();
 	}
 
-	if (api && !rename) {
+	if (rename)
+		return true;
+
+	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+	}
+
+	if (create_new) {
+		on_resetDocks_triggered(true);
+	} else {
+		/* Restore dock state post duplication
+		 * Plugins might have removed and added back docks */
+		const char *dockStateStr = config_get_string(
+			basicConfig, "BasicWindow", "DockState");
+
+		QByteArray dockState = QByteArray::fromBase64(dockStateStr);
+		RestoreState(dockState);
 	}
 	return true;
 }
@@ -604,8 +622,6 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 	bool needsRestart =
 		ProfileNeedsRestart(config, settingsRequiringRestart);
 
-	Auth::Save();
-	auth.reset();
 	DeleteCookies();
 	DestroyPanelCookieManager();
 
@@ -624,8 +640,6 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 	UpdateTitleBar();
 	UpdateVolumeControlsDecayRate();
 
-	Auth::Load();
-
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
@@ -641,6 +655,20 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 			restart = true;
 			close();
 		}
+	}
+
+	/* Recover DockState from global config if profile has none */
+	const char *dockStateStr = config_get_string(
+		config_has_user_value(basicConfig, "BasicWindow", "DockState")
+			? basicConfig
+			: App()->GlobalConfig(),
+		"BasicWindow", "DockState");
+
+	if (!dockStateStr)
+		on_resetDocks_triggered(true);
+	else {
+		QByteArray dockState = QByteArray::fromBase64(dockStateStr);
+		RestoreState(dockState);
 	}
 }
 
@@ -759,6 +787,11 @@ void OBSBasic::ChangeProfile()
 		return;
 	}
 
+	/* Save dock state before the changing event is emitted */
+	config_set_string(basicConfig, "BasicWindow", "DockState",
+			  saveState().toBase64().constData());
+	basicConfig.SaveSafe("tmp");
+
 	size_t path_len = path.size();
 	path += "/basic.ini";
 
@@ -783,13 +816,7 @@ void OBSBasic::ChangeProfile()
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile", newName);
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir", newDir);
 
-	Auth::Save();
-	auth.reset();
 	DestroyPanelCookieManager();
-#ifdef YOUTUBE_ENABLED
-	if (youtubeAppDock)
-		DeleteYouTubeAppDock();
-#endif
 
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
@@ -799,12 +826,6 @@ void OBSBasic::ChangeProfile()
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
 	UpdateVolumeControlsDecayRate();
-
-	Auth::Load();
-#ifdef YOUTUBE_ENABLED
-	if (YouTubeAppDock::IsYTServiceSelected() && !youtubeAppDock)
-		NewYouTubeAppDock();
-#endif
 
 	CheckForSimpleModeX264Fallback();
 
@@ -824,6 +845,20 @@ void OBSBasic::ChangeProfile()
 			restart = true;
 			close();
 		}
+	}
+
+	/* Recover DockState from global config if profile has none */
+	const char *dockStateStr = config_get_string(
+		config_has_user_value(basicConfig, "BasicWindow", "DockState")
+			? basicConfig
+			: App()->GlobalConfig(),
+		"BasicWindow", "DockState");
+
+	if (!dockStateStr)
+		on_resetDocks_triggered(true);
+	else {
+		QByteArray dockState = QByteArray::fromBase64(dockStateStr);
+		RestoreState(dockState);
 	}
 }
 

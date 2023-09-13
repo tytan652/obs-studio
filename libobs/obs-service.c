@@ -126,8 +126,11 @@ const char *obs_service_get_name(const obs_service_t *service)
 static inline obs_data_t *get_defaults(const struct obs_service_info *info)
 {
 	obs_data_t *settings = obs_data_create();
-	if (info->get_defaults)
+	if (info->get_defaults2) {
+		info->get_defaults2(info->type_data, settings);
+	} else if (info->get_defaults) {
 		info->get_defaults(settings);
+	}
 	return settings;
 }
 
@@ -140,11 +143,17 @@ obs_data_t *obs_service_defaults(const char *id)
 obs_properties_t *obs_get_service_properties(const char *id)
 {
 	const struct obs_service_info *info = find_service(id);
-	if (info && info->get_properties) {
+	if (info && (info->get_properties || info->get_properties2)) {
 		obs_data_t *defaults = get_defaults(info);
 		obs_properties_t *properties;
 
-		properties = info->get_properties(NULL);
+		if (info->get_properties2) {
+			properties =
+				info->get_properties2(NULL, info->type_data);
+		} else {
+			properties = info->get_properties(NULL);
+		}
+
 		obs_properties_apply_settings(properties, defaults);
 		obs_data_release(defaults);
 		return properties;
@@ -157,8 +166,13 @@ obs_properties_t *obs_service_properties(const obs_service_t *service)
 	if (!obs_service_valid(service, "obs_service_properties"))
 		return NULL;
 
-	if (service->info.get_properties) {
-		obs_properties_t *props;
+	obs_properties_t *props;
+	if (service->info.get_properties2) {
+		props = service->info.get_properties2(service->context.settings,
+						      service->info.type_data);
+		obs_properties_apply_settings(props, service->context.settings);
+		return props;
+	} else if (service->info.get_properties) {
 		props = service->info.get_properties(service->context.data);
 		obs_properties_apply_settings(props, service->context.settings);
 		return props;
@@ -521,4 +535,137 @@ bool obs_service_can_try_to_connect(const obs_service_t *service)
 	if (!service->info.can_try_to_connect)
 		return true;
 	return service->info.can_try_to_connect(service->context.data);
+}
+
+enum obs_service_audio_track_cap
+obs_service_get_audio_track_cap(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_get_audio_track_cap"))
+		return OBS_SERVICE_AUDIO_SINGLE_TRACK;
+
+	if (!service->info.get_audio_track_cap)
+		return OBS_SERVICE_AUDIO_SINGLE_TRACK;
+	return service->info.get_audio_track_cap(service->context.data);
+}
+
+uint32_t obs_get_service_flags(const char *id)
+{
+	const struct obs_service_info *info = find_service(id);
+	return info ? info->flags : 0;
+}
+
+uint32_t obs_service_get_flags(const obs_service_t *service)
+{
+	return obs_service_valid(service, "obs_service_get_flags")
+		       ? service->info.flags
+		       : 0;
+}
+
+const char *obs_get_service_supported_protocols(const char *id)
+{
+	const struct obs_service_info *info = find_service(id);
+	return info ? info->supported_protocols : NULL;
+}
+
+bool obs_service_can_bandwidth_test(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_has_bandwidth_test"))
+		return false;
+
+	if (!(service->info.can_bandwidth_test &&
+	      service->info.enable_bandwidth_test &&
+	      service->info.bandwidth_test_enabled))
+		return false;
+
+	return service->info.can_bandwidth_test(service->context.data);
+}
+
+void obs_service_enable_bandwidth_test(const obs_service_t *service,
+				       bool enabled)
+{
+	if (!obs_service_valid(service, "obs_service_enable_bandwidth_test"))
+		return;
+
+	if (service->info.enable_bandwidth_test)
+		service->info.enable_bandwidth_test(service->context.data,
+						    enabled);
+}
+
+bool obs_service_bandwidth_test_enabled(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_bandwidth_test_enabled"))
+		return false;
+
+	if (!service->info.bandwidth_test_enabled)
+		return false;
+
+	return service->info.bandwidth_test_enabled(service->context.data);
+}
+
+int obs_service_get_max_codec_bitrate(const obs_service_t *service,
+				      const char *codec)
+{
+	if (!obs_service_valid(service, "obs_service_get_max_codec_bitrate"))
+		return 0;
+
+	if (!service->info.get_max_codec_bitrate)
+		return 0;
+
+	return service->info.get_max_codec_bitrate(service->context.data,
+						   codec);
+}
+
+void obs_service_get_supported_resolutions2(
+	const obs_service_t *service,
+	struct obs_service_resolution **resolutions, size_t *count,
+	bool *with_fps)
+{
+	if (!obs_service_valid(service, "obs_service_supported_resolutions2"))
+		return;
+	if (!obs_ptr_valid(resolutions, "obs_service_supported_resolutions2"))
+		return;
+	if (!obs_ptr_valid(count, "obs_service_supported_resolutions2"))
+		return;
+	if (!obs_ptr_valid(with_fps, "obs_service_supported_resolutions2"))
+		return;
+
+	*resolutions = NULL;
+	*count = 0;
+	*with_fps = false;
+
+	if (service->info.get_supported_resolutions2) {
+		service->info.get_supported_resolutions2(
+			service->context.data, resolutions, count, with_fps);
+	} else if (service->info.get_supported_resolutions) {
+		service->info.get_supported_resolutions(service->context.data,
+							resolutions, count);
+	}
+}
+
+int obs_service_get_max_video_bitrate(const obs_service_t *service,
+				      const char *codec,
+				      struct obs_service_resolution resolution)
+{
+	if (!obs_service_valid(service, "obs_service_get_max_video_bitrate"))
+		return 0;
+
+	if (!service->info.get_max_video_bitrate)
+		return 0;
+
+	return service->info.get_max_video_bitrate(service->context.data, codec,
+						   resolution);
+}
+
+void obs_service_apply_encoder_settings2(obs_service_t *service,
+					 const char *encoder_id,
+					 obs_data_t *encoder_settings)
+{
+	if (!obs_service_valid(service, "obs_service_apply_encoder_settings2"))
+		return;
+	if (!service->info.apply_encoder_settings2)
+		return;
+
+	if (encoder_id && encoder_settings)
+		service->info.apply_encoder_settings2(
+			service->context.data, encoder_id, encoder_settings);
 }

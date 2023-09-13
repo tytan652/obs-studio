@@ -350,6 +350,47 @@ bool obs_frontend_add_custom_qdock(const char *id, void *dock)
 				   : false;
 }
 
+bool obs_frontend_is_browser_available(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_is_browser_available()
+				   : false;
+}
+
+void *obs_frontend_get_browser_widget_s(
+	const struct obs_frontend_browser_params *params, size_t size)
+{
+	if (!callbacks_valid())
+		return nullptr;
+
+	if ((offsetof(struct obs_frontend_browser_params, url) +
+		     sizeof(params->url) >
+	     size) ||
+	    !params->url) {
+		blog(LOG_ERROR, "Required value 'url' not found."
+				" obs_frontend_get_browser_widget failed.");
+		return nullptr;
+	}
+
+	struct obs_frontend_browser_params zeroed = {0};
+	if (size > sizeof(zeroed)) {
+		blog(LOG_ERROR,
+		     "Tried to add obs_frontend_get_browser_widget with size "
+		     "%llu which is more than obs-frontend-api currently "
+		     "supports (%llu)",
+		     (long long unsigned)size,
+		     (long long unsigned)sizeof(zeroed));
+		return nullptr;
+	}
+
+	return c->obs_frontend_get_browser_widget_s(params, size);
+}
+
+void obs_frontend_delete_browser_cookie(const char *url)
+{
+	if (callbacks_valid())
+		c->obs_frontend_delete_browser_cookie(url);
+}
+
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 				     void *private_data)
 {
@@ -630,4 +671,87 @@ void obs_frontend_add_undo_redo_action(const char *name,
 	if (callbacks_valid())
 		c->obs_frontend_add_undo_redo_action(
 			name, undo, redo, undo_data, redo_data, repeatable);
+}
+
+void obs_frontend_add_broadcast_flow_s(
+	const obs_service_t *service,
+	const struct obs_frontend_broadcast_flow *flow, size_t size)
+{
+	if (!callbacks_valid())
+		return;
+
+	if (obs_frontend_streaming_active()) {
+		blog(LOG_ERROR, "obs_frontend_broadcast_flow can not be added "
+				"while streaming is active");
+		return;
+	}
+
+#define CHECK_REQUIRED_VAL(val)                                           \
+	do {                                                              \
+		if ((offsetof(struct obs_frontend_broadcast_flow, val) +  \
+			     sizeof(flow->val) >                          \
+		     size) ||                                             \
+		    !flow->val) {                                         \
+			blog(LOG_ERROR,                                   \
+			     "Required value '" #val "' not found."       \
+			     " obs_frontend_add_broadcast_flow failed."); \
+			return;                                           \
+		}                                                         \
+	} while (false)
+
+	CHECK_REQUIRED_VAL(priv);
+	CHECK_REQUIRED_VAL(get_broadcast_state);
+	CHECK_REQUIRED_VAL(get_broadcast_start_type);
+	CHECK_REQUIRED_VAL(get_broadcast_stop_type);
+
+	if ((flow->flags & OBS_BROADCAST_FLOW_ALLOW_MANAGE_WHILE_STREAMING) !=
+	    0) {
+		CHECK_REQUIRED_VAL(manage_broadcast2);
+	} else {
+		CHECK_REQUIRED_VAL(manage_broadcast);
+	}
+
+	CHECK_REQUIRED_VAL(stopped_streaming);
+
+	if ((flow->flags & OBS_BROADCAST_FLOW_ALLOW_DIFFERED_BROADCAST_START) !=
+	    0) {
+		CHECK_REQUIRED_VAL(differed_start_broadcast);
+		CHECK_REQUIRED_VAL(is_broadcast_stream_active);
+		CHECK_REQUIRED_VAL(get_last_error);
+	}
+
+	if ((flow->flags & OBS_BROADCAST_FLOW_ALLOW_DIFFERED_BROADCAST_STOP) !=
+	    0) {
+		CHECK_REQUIRED_VAL(differed_stop_broadcast);
+		CHECK_REQUIRED_VAL(get_last_error);
+	}
+#undef CHECK_REQUIRED_VAL
+
+	struct obs_frontend_broadcast_flow zeroed = {0};
+	if (size > sizeof(zeroed)) {
+		blog(LOG_ERROR,
+		     "Tried to add obs_frontend_broadcast_flow with size "
+		     "%llu which is more than obs-frontend-api currently "
+		     "supports (%llu)",
+		     (long long unsigned)size,
+		     (long long unsigned)sizeof(zeroed));
+		return;
+	}
+
+	c->obs_frontend_add_broadcast_flow_s(service, flow, size);
+}
+
+void obs_frontend_remove_broadcast_flow(const obs_service_t *service)
+{
+	if (!callbacks_valid())
+		return;
+
+	if (obs_frontend_streaming_active()) {
+		blog(LOG_ERROR,
+		     "obs_frontend_broadcast_flow can not be removed "
+		     "while streaming is active");
+		return;
+	}
+
+	c->obs_frontend_remove_broadcast_flow(service);
 }

@@ -73,6 +73,14 @@ struct obs_frontend_callbacks {
 	virtual bool obs_frontend_add_custom_qdock(const char *id,
 						   void *dock) = 0;
 
+	virtual bool obs_frontend_is_browser_available(void) = 0;
+
+	virtual void *obs_frontend_get_browser_widget_s(
+		const struct obs_frontend_browser_params *params,
+		size_t size) = 0;
+
+	virtual void obs_frontend_delete_browser_cookie(const char *url) = 0;
+
 	virtual void
 	obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 					void *private_data) = 0;
@@ -167,6 +175,13 @@ struct obs_frontend_callbacks {
 						       const char *undo_data,
 						       const char *redo_data,
 						       bool repeatable) = 0;
+
+	virtual void obs_frontend_add_broadcast_flow_s(
+		const obs_service_t *service,
+		const struct obs_frontend_broadcast_flow *flow,
+		size_t size) = 0;
+	virtual void
+	obs_frontend_remove_broadcast_flow(const obs_service_t *service) = 0;
 };
 
 EXPORT void

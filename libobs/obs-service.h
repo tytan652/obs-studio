@@ -28,9 +28,16 @@
 extern "C" {
 #endif
 
+enum obs_service_info_flag {
+	OBS_SERVICE_DEPRECATED = (1 << 0),
+	OBS_SERVICE_INTERNAL = (1 << 1),
+	OBS_SERVICE_UNCOMMON = (1 << 2),
+};
+
 struct obs_service_resolution {
 	int cx;
 	int cy;
+	int fps;
 };
 
 /* NOTE: Odd numbers are reserved for custom info from third-party protocols */
@@ -43,6 +50,12 @@ enum obs_service_connect_info {
 	OBS_SERVICE_CONNECT_INFO_PASSWORD = 6,
 	OBS_SERVICE_CONNECT_INFO_ENCRYPT_PASSPHRASE = 8,
 	OBS_SERVICE_CONNECT_INFO_BEARER_TOKEN = 10,
+};
+
+enum obs_service_audio_track_cap {
+	OBS_SERVICE_AUDIO_SINGLE_TRACK = 0,
+	OBS_SERVICE_AUDIO_ARCHIVE_TRACK = 1,
+	OBS_SERVICE_AUDIO_MULTI_TRACK = 2,
 };
 
 struct obs_service_info {
@@ -82,6 +95,7 @@ struct obs_service_info {
 
 	bool (*deprecated_1)();
 
+	/* deprecated */
 	void (*apply_encoder_settings)(void *data,
 				       obs_data_t *video_encoder_settings,
 				       obs_data_t *audio_encoder_settings);
@@ -92,11 +106,14 @@ struct obs_service_info {
 	/* TODO: Rename to 'get_preferred_output_type' once a API/ABI break happen */
 	const char *(*get_output_type)(void *data);
 
+	/* deprecated */
 	void (*get_supported_resolutions)(
 		void *data, struct obs_service_resolution **resolutions,
 		size_t *count);
+
 	void (*get_max_fps)(void *data, int *fps);
 
+	/* deprecated */
 	void (*get_max_bitrate)(void *data, int *video_bitrate,
 				int *audio_bitrate);
 
@@ -109,6 +126,31 @@ struct obs_service_info {
 	const char *(*get_connect_info)(void *data, uint32_t type);
 
 	bool (*can_try_to_connect)(void *data);
+
+	enum obs_service_audio_track_cap (*get_audio_track_cap)(void *data);
+
+	uint32_t flags;
+
+	const char *supported_protocols;
+
+	void (*get_defaults2)(void *type_data, obs_data_t *settings);
+	obs_properties_t *(*get_properties2)(void *data, void *type_data);
+
+	bool (*can_bandwidth_test)(void *data);
+	void (*enable_bandwidth_test)(void *data, bool enabled);
+	bool (*bandwidth_test_enabled)(void *data);
+
+	void (*get_supported_resolutions2)(
+		void *data, struct obs_service_resolution **resolutions,
+		size_t *count, bool *with_fps);
+
+	int (*get_max_video_bitrate)(void *data, const char *codec,
+				     struct obs_service_resolution resolution);
+
+	int (*get_max_codec_bitrate)(void *data, const char *codec);
+
+	void (*apply_encoder_settings2)(void *data, const char *encoder_id,
+					obs_data_t *encoder_settings);
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,

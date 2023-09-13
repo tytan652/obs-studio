@@ -18,51 +18,6 @@ if(TARGET obs-browser
   target_include_directories(obs-browser-panels INTERFACE ${CMAKE_SOURCE_DIR}/plugins/obs-browser/panel)
 endif()
 
-set(OAUTH_BASE_URL
-    "https://auth.obsproject.com/"
-    CACHE STRING "Default OAuth base URL")
-
-mark_as_advanced(OAUTH_BASE_URL)
-
-if(NOT DEFINED TWITCH_CLIENTID
-   OR "${TWITCH_CLIENTID}" STREQUAL ""
-   OR NOT DEFINED TWITCH_HASH
-   OR "${TWITCH_HASH}" STREQUAL ""
-   OR NOT TARGET OBS::browser-panels)
-  set(TWITCH_ENABLED OFF)
-  set(TWITCH_CLIENTID "")
-  set(TWITCH_HASH "0")
-else()
-  set(TWITCH_ENABLED ON)
-endif()
-
-if(NOT DEFINED RESTREAM_CLIENTID
-   OR "${RESTREAM_CLIENTID}" STREQUAL ""
-   OR NOT DEFINED RESTREAM_HASH
-   OR "${RESTREAM_HASH}" STREQUAL ""
-   OR NOT TARGET OBS::browser-panels)
-  set(RESTREAM_ENABLED OFF)
-  set(RESTREAM_CLIENTID "")
-  set(RESTREAM_HASH "0")
-else()
-  set(RESTREAM_ENABLED ON)
-endif()
-
-if(NOT DEFINED YOUTUBE_CLIENTID
-   OR "${YOUTUBE_CLIENTID}" STREQUAL ""
-   OR NOT DEFINED YOUTUBE_SECRET
-   OR "${YOUTUBE_SECRET}" STREQUAL ""
-   OR NOT DEFINED YOUTUBE_CLIENTID_HASH
-   OR "${YOUTUBE_CLIENTID_HASH}" STREQUAL ""
-   OR NOT DEFINED YOUTUBE_SECRET_HASH
-   OR "${YOUTUBE_SECRET_HASH}" STREQUAL "")
-  set(YOUTUBE_SECRET_HASH "0")
-  set(YOUTUBE_CLIENTID_HASH "0")
-  set(YOUTUBE_ENABLED OFF)
-else()
-  set(YOUTUBE_ENABLED ON)
-endif()
-
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in ${CMAKE_CURRENT_BINARY_DIR}/ui-config.h)
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
@@ -115,7 +70,6 @@ target_sources(
           forms/OBSMissingFiles.ui
           forms/OBSRemux.ui
           forms/OBSUpdate.ui
-          forms/OBSYoutubeActions.ui
           forms/StatusBarWidget.ui
           forms/source-toolbar/browser-source-toolbar.ui
           forms/source-toolbar/color-source-toolbar.ui
@@ -127,19 +81,13 @@ target_sources(
 
 target_sources(
   obs
-  PRIVATE auth-oauth.cpp
-          auth-oauth.hpp
-          auth-listener.cpp
-          auth-listener.hpp
-          obf.c
-          obf.h
-          obs-app.cpp
+  PRIVATE obs-app.cpp
           obs-app.hpp
           obs-proxy-style.cpp
           obs-proxy-style.hpp
           api-interface.cpp
-          auth-base.cpp
-          auth-base.hpp
+          broadcast-flow.cpp
+          broadcast-flow.hpp
           display-helpers.hpp
           platform.hpp
           qt-display.cpp
@@ -201,6 +149,8 @@ target_sources(
           scene-tree.cpp
           scene-tree.hpp
           screenshot-obj.hpp
+          service-sort-filter.cpp
+          service-sort-filter.hpp
           slider-absoluteset-style.cpp
           slider-absoluteset-style.hpp
           slider-ignorewheel.cpp
@@ -247,6 +197,7 @@ target_sources(
           window-basic-main-profiles.cpp
           window-basic-main-scene-collections.cpp
           window-basic-main-screenshot.cpp
+          window-basic-main-service.cpp
           window-basic-main-transitions.cpp
           window-basic-preview.cpp
           window-basic-properties.cpp
@@ -290,8 +241,19 @@ target_compile_features(obs PRIVATE cxx_std_17)
 
 target_include_directories(obs PRIVATE ${CMAKE_SOURCE_DIR}/deps/json11)
 
-target_link_libraries(obs PRIVATE CURL::libcurl FFmpeg::avcodec FFmpeg::avutil FFmpeg::avformat OBS::libobs
-                                  OBS::frontend-api)
+if(NOT TARGET OBS::obf)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/deps/obf" "${CMAKE_BINARY_DIR}/deps/obf")
+endif()
+
+target_link_libraries(
+  obs
+  PRIVATE CURL::libcurl
+          FFmpeg::avcodec
+          FFmpeg::avutil
+          FFmpeg::avformat
+          OBS::libobs
+          OBS::frontend-api
+          OBS::obf)
 
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 
@@ -304,16 +266,6 @@ if(TARGET OBS::browser-panels)
   target_sources(obs PRIVATE window-dock-browser.cpp window-dock-browser.hpp window-extra-browsers.cpp
                              window-extra-browsers.hpp)
 
-  if(TWITCH_ENABLED)
-    target_compile_definitions(obs PRIVATE TWITCH_ENABLED)
-    target_sources(obs PRIVATE auth-twitch.cpp auth-twitch.hpp)
-  endif()
-
-  if(RESTREAM_ENABLED)
-    target_compile_definitions(obs PRIVATE RESTREAM_ENABLED)
-    target_sources(obs PRIVATE auth-restream.cpp auth-restream.hpp)
-  endif()
-
   if(OS_WINDOWS OR OS_MACOS)
     set(ENABLE_WHATSNEW
         ON
@@ -325,20 +277,6 @@ if(TARGET OBS::browser-panels)
   if(ENABLE_WHATSNEW)
     target_compile_definitions(obs PRIVATE WHATSNEW_ENABLED)
   endif()
-endif()
-
-if(YOUTUBE_ENABLED)
-  target_compile_definitions(obs PRIVATE YOUTUBE_ENABLED)
-  target_sources(
-    obs
-    PRIVATE auth-youtube.cpp
-            auth-youtube.hpp
-            window-dock-youtube-app.cpp
-            window-dock-youtube-app.hpp
-            window-youtube-actions.cpp
-            window-youtube-actions.hpp
-            youtube-api-wrappers.cpp
-            youtube-api-wrappers.hpp)
 endif()
 
 if(OS_WINDOWS)

@@ -123,6 +123,8 @@ Service Definition Structure
    :param video_encoder_settings: The audio encoder settings to change
    :param audio_encoder_settings: The video encoder settings to change
 
+   .. deprecated::Next-29.1.x
+
 .. member:: void *obs_service_info.type_data
             void (*obs_service_info.free_type_data)(void *type_data)
 
@@ -201,6 +203,83 @@ Service Definition Structure
    returns *true* by default.
 
    .. versionadded:: 29.1
+
+.. member:: enum obs_service_audio_track_cap (*get_audio_track_cap)(void *data)
+
+   Return the audio track capability of the service:
+
+   - **OBS_SERVICE_AUDIO_SINGLE_TRACK** - Only a single audio track is used by the service
+
+   - **OBS_SERVICE_AUDIO_ARCHIVE_TRACK** - A second audio track is accepted and
+     is meant to become the archive/VOD audio
+
+   - **OBS_SERVICE_AUDIO_MULTI_TRACK** - Supports multiple audio tracks
+
+.. member:: uint32_t obs_service_info.flags
+
+   Service feature flags (Optional).
+
+   A bitwise OR combination of one or more of the following values:
+
+   - **OBS_SERVICE_DEPRECATED** - Service is deprecrated.
+
+   - **OBS_SERVICE_INTERNAL** - Service is not user-facing in a UI context.
+
+   - **OBS_SERVICE_UNCOMMON** - Service can be hidden behind an option in a UI
+     context.
+
+.. member:: const char *obs_service_info.supported_protocols
+
+   This variable specifies which protocol are supported by the service,
+   separated by semicolon.
+
+.. member:: bool (*obs_service_info.can_bandwidth_test)(void *data)
+
+   (Optional)
+
+   :return: If the service can do bandwith test or not
+
+.. member:: void (*obs_service_info.enable_bandwidth_test)(void *data, bool enabled)
+
+   Enable/disable the bandwith test of the service.
+   (Optional)
+
+.. member:: bool (*obs_service_info.bandwidth_test_enabled)(void *data)
+
+   (Optional)
+
+   :return: If the bandwith test is enabled or not
+
+.. member:: void (*obs_service_info.get_supported_resolutions2)(void *data, struct obs_service_resolution **resolutions, size_t *count, bool *with_fps)
+
+   (Optional)
+
+   :return: Supported resolutions, number of those and if they provide a FPS value
+
+.. member:: int (*obs_service_info.get_max_video_bitrate)(void *data, const char *codec, struct obs_service_resolution resolution)
+
+   (Optional)
+
+   :return: Maximum video bitrate for a given codec and resolution
+
+.. member:: int (*obs_service_info.get_max_codec_bitrate)(void *data, const char *codec)
+
+   (Optional)
+
+   :return: Maximum bitrate for a given codec
+
+.. member:: void (*obs_service_info.apply_encoder_settings2)(void *data, const char *encoder_id, obs_data_t *encoder_settings)
+
+   This function is called to apply custom encoder settings specific to
+   this service.  For example, if a service requires a specific keyframe
+   interval, or has a bitrate limit, the settings for the video and
+   audio encoders can be optionally modified if the front-end optionally
+   calls :c:func:`obs_service_apply_encoder_settings2()`.
+
+   (Optional)
+
+   :param encoder_id: The id of the encoder settings to change
+   :param encoder_settings: The encoder settings to change
 
 General Service Functions
 -------------------------
@@ -362,6 +441,8 @@ General Service Functions
    :param  video_encoder_settings: Video encoder settings.  Can be *NULL*
    :param  audio_encoder_settings: Audio encoder settings.  Can be *NULL*
 
+   .. deprecated::Next-29.1.x
+
 ---------------------
 
 .. function:: const char **obs_service_get_supported_video_codecs(const obs_service_t *service)
@@ -415,6 +496,70 @@ General Service Functions
             :c:member:`obs_service_info.can_try_to_connect` is not set.
 
    .. versionadded:: 29.1
+
+---------------------
+
+.. function:: enum obs_service_audio_track_cap obs_service_get_audio_track_cap(const obs_service_t *service)
+
+   :return: The audio track capability of the service
+
+---------------------
+
+.. function:: uint32_t obs_get_service_flags(const char *id)
+              uint32_t obs_service_get_flags(const obs_service_t *service)
+
+   :return: The service feature flags
+
+---------------------
+
+.. function:: const char *obs_get_service_supported_protocols(const char *id)
+
+   :return: Supported protocol of the service, separated by semicolon
+
+---------------------
+
+.. function:: bool obs_service_can_bandwidth_test(const obs_service_t *service)
+
+   :return: If the service can do bandwidth test
+
+---------------------
+
+.. function:: void obs_service_enable_bandwidth_test(const obs_service_t *service, bool enabled)
+
+   Enable the bandwidth test has this capability
+
+---------------------
+
+.. function:: bool obs_service_bandwidth_test_enabled(const obs_service_t *service)
+
+   :return: If the service has bandwidth test enabled
+
+---------------------
+
+.. function:: void obs_service_get_supported_resolutions2(const obs_service_t *service, struct obs_service_resolution **resolutions, size_t *count, bool *with_fps)
+
+    :return: Supported resolutions, number of those and if they provide a FPS value
+
+---------------------
+
+.. function:: int obs_service_get_max_codec_bitrate(const obs_service_t *service, const char *codec)
+
+   :return: Maximum bitrate for a given codec
+
+---------------------
+
+.. function:: int obs_service_get_max_video_bitrate(const obs_service_t *service, const char *codec, struct obs_service_resolution resolution)
+
+   :return: Maximum video bitrate for a given codec and resolution
+
+---------------------
+
+.. function:: void obs_service_apply_encoder_settings2(obs_service_t *service, const char *encoder_id, obs_data_t *encoder_settings)
+
+   Applies service-specific encoder settings.
+
+   :param  encoder_id: Encoder id.
+   :param  encoder_settings: Encoder settings.
 
 .. ---------------------------------------------------------------------------
 
