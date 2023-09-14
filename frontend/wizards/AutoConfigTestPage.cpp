@@ -161,9 +161,6 @@ void AutoConfigTestPage::TestBandwidthThread()
 	const char *bind_ip = config_get_string(main->Config(), "Output", "BindIP");
 	obs_data_set_string(output_settings, "bind_ip", bind_ip);
 
-	const char *ip_family = config_get_string(main->Config(), "Output", "IPFamily");
-	obs_data_set_string(output_settings, "ip_family", ip_family);
-
 	/* -----------------------------------*/
 	/* determine which servers to test    */
 
