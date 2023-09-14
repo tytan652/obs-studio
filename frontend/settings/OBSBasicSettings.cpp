@@ -1,17 +1,17 @@
 /******************************************************************************
  Copyright (C) 2023 by Lain Bailey <lain@obsproject.com>
  Philippe Groarke <philippe.groarke@gmail.com>
- 
+
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
  the Free Software Foundation, either version 2 of the License, or
  (at your option) any later version.
- 
+
  This program is distributed in the hope that it will be useful,
  but WITHOUT ANY WARRANTY; without even the implied warranty of
  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  GNU General Public License for more details.
- 
+
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
@@ -571,7 +571,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->processPriority,      COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->confirmOnExit,        CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->bindToIP,             COMBO_CHANGED,  ADV_CHANGED);
-	HookWidget(ui->ipFamily,             COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->hotkeyFocusType,      COMBO_CHANGED,  ADV_CHANGED);
@@ -836,17 +835,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		const char *val = obs_property_list_item_string(p, i);
 
 		ui->bindToIP->addItem(QT_UTF8(name), val);
-	}
-
-	// Add IP Family options
-	p = obs_properties_get(ppts, "ip_family");
-
-	count = obs_property_list_item_count(p);
-	for (size_t i = 0; i < count; i++) {
-		const char *name = obs_property_list_item_name(p, i);
-		const char *val = obs_property_list_item_string(p, i);
-
-		ui->ipFamily->addItem(QT_UTF8(name), val);
 	}
 
 	ui->multitrackVideoNoticeBox->setVisible(false);
@@ -2618,7 +2606,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
 	const char *hotkeyFocusType = config_get_string(App()->GetUserConfig(), "General", "HotkeyFocusType");
 	bool dynBitrate = config_get_bool(main->Config(), "Output", "DynamicBitrate");
-	const char *ipFamily = config_get_string(main->Config(), "Output", "IPFamily");
 	bool confirmOnExit = config_get_bool(App()->GetUserConfig(), "General", "ConfirmOnExit");
 
 	loading = true;
@@ -2656,7 +2643,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->sdrWhiteLevel->setValue(sdrWhiteLevel);
 	ui->hdrNominalPeakLevel->setValue(hdrNominalPeakLevel);
 
-	SetComboByValue(ui->ipFamily, ipFamily);
 	if (!SetComboByValue(ui->bindToIP, bindIP)) {
 		SetInvalidValue(ui->bindToIP, bindIP, bindIP);
 	}
@@ -3340,7 +3326,6 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveSpinBox(ui->reconnectRetryDelay, "Output", "RetryDelay");
 	SaveSpinBox(ui->reconnectMaxRetries, "Output", "MaxRetries");
 	SaveComboData(ui->bindToIP, "Output", "BindIP");
-	SaveComboData(ui->ipFamily, "Output", "IPFamily");
 	SaveCheckBox(ui->autoRemux, "Video", "AutoRemux");
 	SaveCheckBox(ui->dynBitrate, "Output", "DynamicBitrate");
 
@@ -5845,8 +5830,6 @@ void OBSBasicSettings::UpdateAdvNetworkGroup()
 	ui->bindToIPLabel->setVisible(enabled);
 	ui->bindToIP->setVisible(enabled);
 	ui->dynBitrate->setVisible(enabled);
-	ui->ipFamilyLabel->setVisible(enabled);
-	ui->ipFamily->setVisible(enabled);
 #ifdef _WIN32
 	ui->enableNewSocketLoop->setVisible(enabled);
 	ui->enableLowLatencyMode->setVisible(enabled);
