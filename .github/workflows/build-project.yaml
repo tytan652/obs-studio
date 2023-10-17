@@ -273,6 +273,10 @@ jobs:
           gh extension install actions/gh-actions-cache
           echo '::endgroup::'
 
+          echo '::group::Install flatpak-builder-lint'
+          flatpak install flathub -y --noninteractive org.flatpak.Builder
+          echo '::endgroup::'
+
           cache_key='flatpak-builder-${{ hashFiles('build-aux/**/*.json') }}'
           cache_ref='master'
           read -r key size unit _ ref _ <<< \
@@ -295,6 +299,13 @@ jobs:
           cache: ${{ fromJSON(steps.setup.outputs.cacheHit) || (github.event_name == 'push' && github.ref_name == 'master')}}
           restore-cache: ${{ fromJSON(steps.setup.outputs.cacheHit) }}
           cache-key: ${{ steps.setup.outputs.cacheKey }}
+
+      - name: Flatpak Build Validation
+        run: |
+          ls -lA
+          ls -lA ..
+          flatpak run --command=flatpak-builder-lint org.flatpak.Builder ${{ github.workspace }}/repo
+
 
   windows-build:
     name: Windows 🪟
