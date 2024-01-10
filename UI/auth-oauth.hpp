@@ -6,12 +6,12 @@
 
 #include "auth-base.hpp"
 
-class QCefWidget;
+class OBSBrowserQCefWidget;
 
 class OAuthLogin : public QDialog {
 	Q_OBJECT
 
-	QCefWidget *cefWidget = nullptr;
+	OBSBrowserQCefWidget *cefWidget = nullptr;
 	QString code;
 	bool get_token = false;
 	bool fail = false;

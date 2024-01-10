@@ -139,7 +139,7 @@ void RestreamAuth::LoadUI()
 	OBSBasic::InitBrowserPanelSafeBlock();
 	OBSBasic *main = OBSBasic::Get();
 
-	QCefWidget *browser;
+	OBSBrowserQCefWidget *browser;
 	std::string url;
 	std::string script;
 
@@ -157,7 +157,7 @@ void RestreamAuth::LoadUI()
 	chat->setWindowTitle(QTStr("Auth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(chat, url, panel_cookies);
+	browser = cef->createWidget(chat, url.c_str(), panel_cookies.get());
 	chat->SetWidget(browser);
 
 	main->AddDockWidget(chat, Qt::RightDockWidgetArea);
@@ -173,7 +173,7 @@ void RestreamAuth::LoadUI()
 	info->setWindowTitle(QTStr("Auth.StreamInfo"));
 	info->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(info, url, panel_cookies);
+	browser = cef->createWidget(info, url.c_str(), panel_cookies.get());
 	info->SetWidget(browser);
 
 	main->AddDockWidget(info, Qt::LeftDockWidgetArea);
@@ -189,7 +189,7 @@ void RestreamAuth::LoadUI()
 	channels->setWindowTitle(QTStr("RestreamAuth.Channels"));
 	channels->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(channels, url, panel_cookies);
+	browser = cef->createWidget(channels, url.c_str(), panel_cookies.get());
 	channels->SetWidget(browser);
 
 	main->AddDockWidget(channels, Qt::LeftDockWidgetArea);
@@ -224,7 +224,7 @@ void RestreamAuth::LoadUI()
 bool RestreamAuth::RetryLogin()
 {
 	OAuthLogin login(OBSBasic::Get(), RESTREAM_AUTH_URL, false);
-	cef->add_popup_whitelist_url("about:blank", &login);
+	cef->addPopupWhitelistUrl("about:blank", &login);
 	if (login.exec() == QDialog::Rejected) {
 		return false;
 	}
@@ -242,7 +242,7 @@ bool RestreamAuth::RetryLogin()
 std::shared_ptr<Auth> RestreamAuth::Login(QWidget *parent, const std::string &)
 {
 	OAuthLogin login(parent, RESTREAM_AUTH_URL, false);
-	cef->add_popup_whitelist_url("about:blank", &login);
+	cef->addPopupWhitelistUrl("about:blank", &login);
 
 	if (login.exec() == QDialog::Rejected) {
 		return nullptr;
@@ -276,7 +276,7 @@ static std::shared_ptr<Auth> CreateRestreamAuth()
 static void DeleteCookies()
 {
 	if (panel_cookies) {
-		panel_cookies->DeleteCookies("restream.io", std::string());
+		panel_cookies->deleteCookies("restream.io", nullptr);
 	}
 }
 

@@ -2,7 +2,9 @@ include_guard(DIRECTORY)
 
 option(ENABLE_WHATSNEW "Enable WhatsNew dialog" ON)
 
-if(ENABLE_WHATSNEW AND TARGET OBS::browser-panels)
+if(ENABLE_WHATSNEW
+   AND TARGET OBS::browser-api
+   AND TARGET OBS::browser-panels)
   if(OS_MACOS)
     include(cmake/feature-macos-update.cmake)
   elseif(OS_LINUX)

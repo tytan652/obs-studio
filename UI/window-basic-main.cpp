@@ -108,16 +108,18 @@
 using namespace std;
 
 #ifdef BROWSER_AVAILABLE
-#include <browser-panel.hpp>
+#include <obs-browser-api.hpp>
 #endif
 
 #include "ui-config.h"
 
-struct QCef;
-struct QCefCookieManager;
+#ifndef BROWSER_AVAILABLE
+class OBSBrowserQCef;
+class OBSBrowserQCefCookieManager;
+#endif
 
-QCef *cef = nullptr;
-QCefCookieManager *panel_cookies = nullptr;
+std::shared_ptr<OBSBrowserQCef> cef = {};
+std::shared_ptr<OBSBrowserQCefCookieManager> panel_cookies = {};
 bool cef_js_avail = false;
 
 void DestroyPanelCookieManager();
@@ -2063,8 +2065,8 @@ void OBSBasic::OBSInit()
 	BPtr<char *> failed_modules = mfi.failed_modules;
 
 #ifdef BROWSER_AVAILABLE
-	cef = obs_browser_init_panel();
-	cef_js_avail = cef && obs_browser_qcef_version() >= 3;
+	cef = OBSBrowserQCef::createOBSBrowserQCef();
+	cef_js_avail = cef && obs_browser_get_gcef_version() >= 3;
 #endif
 
 	OBSDataAutoRelease obsData = obs_get_private_data();
@@ -2517,7 +2519,7 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		       info_increment);
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 
-	cef->init_browser();
+	cef->initBrowser();
 
 	WhatsNewBrowserInitThread *wnbit =
 		new WhatsNewBrowserInitThread(QT_UTF8(info_url.c_str()));
@@ -2550,7 +2552,8 @@ void OBSBasic::ShowWhatsNew(const QString &url)
 	Qt::WindowFlags helpFlag = Qt::WindowContextHelpButtonHint;
 	dlg->setWindowFlags(flags & (~helpFlag));
 
-	QCefWidget *cefWidget = cef->create_widget(nullptr, info_url);
+	OBSBrowserQCefWidget *cefWidget =
+		cef->createWidget(nullptr, info_url.c_str());
 	if (!cefWidget) {
 		return;
 	}
@@ -2567,7 +2570,7 @@ void OBSBasic::ShowWhatsNew(const QString &url)
 	bottomLayout->addStretch();
 
 	QVBoxLayout *topLayout = new QVBoxLayout(dlg);
-	topLayout->addWidget(cefWidget);
+	topLayout->addWidget(cefWidget->qwidget());
 	topLayout->addLayout(bottomLayout);
 
 	dlg->show();
@@ -3014,8 +3017,7 @@ OBSBasic::~OBSBasic()
 
 #ifdef BROWSER_AVAILABLE
 	DestroyPanelCookieManager();
-	delete cef;
-	cef = nullptr;
+	cef.reset();
 #endif
 }
 

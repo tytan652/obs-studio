@@ -36,7 +36,7 @@ YouTubeAppDock::YouTubeAppDock(const QString &title)
 	  dockBrowser(nullptr),
 	  cookieManager(nullptr)
 {
-	cef->init_browser();
+	cef->initBrowser();
 	OBSBasic::InitBrowserPanelSafeBlock();
 	AddYouTubeAppDock();
 }
@@ -44,8 +44,8 @@ YouTubeAppDock::YouTubeAppDock(const QString &title)
 YouTubeAppDock::~YouTubeAppDock()
 {
 	if (cookieManager) {
-		cookieManager->FlushStore();
-		delete cookieManager;
+		cookieManager->flushStore();
+		cookieManager.reset();
 	}
 }
 
@@ -79,7 +79,7 @@ void YouTubeAppDock::SettingsUpdated(bool cleanup)
 	// definitely cleanup if YT switched off
 	if (!ytservice || cleanup) {
 		if (cookieManager)
-			cookieManager->DeleteCookies("", "");
+			cookieManager->deleteCookies("", "");
 	}
 	if (ytservice)
 		Update();
@@ -138,17 +138,15 @@ void YouTubeAppDock::CreateBrowserWidget(const std::string &url)
 	std::string dir_name = std::string("obs_profile_cookies_youtube/") +
 			       config_get_string(OBSBasic::Get()->Config(),
 						 "Panels", "CookieId");
-	if (cookieManager)
-		delete cookieManager;
-	cookieManager = cef->create_cookie_manager(dir_name, true);
+	cookieManager = cef->createCookieManager(dir_name.c_str(), true);
 
 	if (dockBrowser)
 		delete dockBrowser;
-	dockBrowser = cef->create_widget(this, url, cookieManager);
+	dockBrowser = cef->createWidget(this, url.c_str(), cookieManager.get());
 	if (!dockBrowser)
 		return;
 
-	if (obs_browser_qcef_version() >= 1)
+	if (obs_browser_get_gcef_version() >= 1)
 		dockBrowser->allowAllPopups(true);
 
 	this->SetWidget(dockBrowser);
@@ -288,7 +286,7 @@ void YouTubeAppDock::DispatchYTEvent(const char *event, const char *video_id,
 				 .arg(stream_key)
 				 .toStdString();
 	}
-	dockBrowser->executeJavaScript(script);
+	dockBrowser->executeJavaScript(script.c_str());
 
 	// in case of user still not logged in in dock panel, remember last event
 	SetInitEvent(mode, event, video_id, channelId.toStdString().c_str());
@@ -301,7 +299,7 @@ void YouTubeAppDock::Update()
 	if (!dockBrowser) {
 		CreateBrowserWidget(url);
 	} else {
-		dockBrowser->setURL(url);
+		dockBrowser->setUrl(url.c_str());
 	}
 
 	// if streaming already run, let's notify YT about past event
@@ -400,7 +398,7 @@ void YouTubeAppDock::SetInitEvent(streaming_mode_t mode, const char *event,
 							       : "'STREAM_KEY'")
 				     .arg(api_event)
 				     .toStdString();
-	dockBrowser->setStartupScript(script);
+	dockBrowser->setStartupScript(script.c_str());
 }
 
 YoutubeApiWrappers *YouTubeAppDock::GetYTApi()

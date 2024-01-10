@@ -22,7 +22,7 @@ private:
 
 public:
 	inline YoutubeChatDock(const QString &title) : BrowserDock(title) {}
-	void SetWidget(QCefWidget *widget_);
+	void SetWidget(OBSBrowserQCefWidget *widget_);
 	void SetApiChatId(const std::string &id);
 
 private slots:

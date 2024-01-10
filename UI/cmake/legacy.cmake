@@ -8,16 +8,6 @@ endif()
 
 project(obs)
 
-# Legacy support
-if(TARGET obs-browser
-   AND NOT TARGET OBS::browser-panels
-   AND BROWSER_PANEL_SUPPORT_ENABLED)
-  add_library(obs-browser-panels INTERFACE)
-  add_library(OBS::browser-panels ALIAS obs-browser-panels)
-
-  target_include_directories(obs-browser-panels INTERFACE ${CMAKE_SOURCE_DIR}/plugins/obs-browser/panel)
-endif()
-
 set(OAUTH_BASE_URL
     "https://auth.obsproject.com/"
     CACHE STRING "Default OAuth base URL")
@@ -28,6 +18,7 @@ if(NOT DEFINED TWITCH_CLIENTID
    OR "${TWITCH_CLIENTID}" STREQUAL ""
    OR NOT DEFINED TWITCH_HASH
    OR "${TWITCH_HASH}" STREQUAL ""
+   OR NOT TARGET OBS::browser-api
    OR NOT TARGET OBS::browser-panels)
   set(TWITCH_ENABLED OFF)
   set(TWITCH_CLIENTID "")
@@ -40,6 +31,7 @@ if(NOT DEFINED RESTREAM_CLIENTID
    OR "${RESTREAM_CLIENTID}" STREQUAL ""
    OR NOT DEFINED RESTREAM_HASH
    OR "${RESTREAM_HASH}" STREQUAL ""
+   OR NOT TARGET OBS::browser-api
    OR NOT TARGET OBS::browser-panels)
   set(RESTREAM_ENABLED OFF)
   set(RESTREAM_CLIENTID "")
@@ -291,11 +283,10 @@ target_link_libraries(obs PRIVATE CURL::libcurl FFmpeg::avcodec FFmpeg::avutil F
 
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 
-if(TARGET OBS::browser-panels)
-  get_target_property(_PANEL_INCLUDE_DIRECTORY OBS::browser-panels INTERFACE_INCLUDE_DIRECTORIES)
-  target_include_directories(obs PRIVATE ${_PANEL_INCLUDE_DIRECTORY})
-
+if(TARGET OBS::browser-api AND TARGET OBS::browser-panels)
   target_compile_definitions(obs PRIVATE BROWSER_AVAILABLE)
+
+  target_link_libraries(obs PRIVATE OBS::browser-api)
 
   target_sources(obs PRIVATE window-dock-browser.cpp window-dock-browser.hpp window-extra-browsers.cpp
                              window-extra-browsers.hpp)

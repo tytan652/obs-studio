@@ -150,7 +150,7 @@ void YoutubeAuth::LoadUI()
 	OBSBasic::InitBrowserPanelSafeBlock();
 	OBSBasic *main = OBSBasic::Get();
 
-	QCefWidget *browser;
+	OBSBrowserQCefWidget *browser;
 
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
@@ -161,8 +161,8 @@ void YoutubeAuth::LoadUI()
 	chat->setMinimumSize(200, 300);
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(chat, YOUTUBE_CHAT_PLACEHOLDER_URL,
-				     panel_cookies);
+	browser = cef->createWidget(chat, YOUTUBE_CHAT_PLACEHOLDER_URL,
+				    panel_cookies.get());
 	browser->setStartupScript(ytchat_script);
 
 	chat->SetWidget(browser);
@@ -198,7 +198,7 @@ void YoutubeAuth::SetChatId(const QString &chat_id,
 	QString chat_url = QString(YOUTUBE_CHAT_POPOUT_URL).arg(chat_id);
 
 	if (chat && chat->cefWidget) {
-		chat->cefWidget->setURL(chat_url.toStdString());
+		chat->cefWidget->setUrl(QT_TO_UTF8(chat_url));
 		chat->SetApiChatId(api_chat_id);
 	}
 #else
@@ -211,7 +211,7 @@ void YoutubeAuth::ResetChat()
 {
 #ifdef BROWSER_AVAILABLE
 	if (chat && chat->cefWidget) {
-		chat->cefWidget->setURL(YOUTUBE_CHAT_PLACEHOLDER_URL);
+		chat->cefWidget->setUrl(YOUTUBE_CHAT_PLACEHOLDER_URL);
 	}
 #endif
 }
@@ -350,7 +350,7 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 }
 
 #ifdef BROWSER_AVAILABLE
-void YoutubeChatDock::SetWidget(QCefWidget *widget_)
+void YoutubeChatDock::SetWidget(OBSBrowserQCefWidget *widget_)
 {
 	lineEdit = new LineEditAutoResize();
 	lineEdit->setVisible(false);
@@ -366,7 +366,7 @@ void YoutubeChatDock::SetWidget(QCefWidget *widget_)
 
 	QVBoxLayout *layout = new QVBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);
-	layout->addWidget(widget_, 1);
+	layout->addWidget(widget_->qwidget(), 1);
 	layout->addLayout(chatLayout);
 
 	QWidget *widget = new QWidget();
