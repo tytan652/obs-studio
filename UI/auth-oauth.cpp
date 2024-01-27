@@ -19,9 +19,9 @@
 using namespace json11;
 
 #ifdef BROWSER_AVAILABLE
-#include <browser-panel.hpp>
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
+#include <obs-browser-api.hpp>
+extern std::shared_ptr<OBSBrowserQCef> cef;
+extern std::shared_ptr<OBSBrowserQCefCookieManager> panel_cookies;
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -45,7 +45,8 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 
 	OBSBasic::InitBrowserPanelSafeBlock();
 
-	cefWidget = cef->create_widget(nullptr, url, panel_cookies);
+	cefWidget =
+		cef->createWidget(nullptr, url.c_str(), panel_cookies.get());
 	if (!cefWidget) {
 		fail = true;
 		return;
@@ -65,7 +66,7 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 	bottomLayout->addStretch();
 
 	QVBoxLayout *topLayout = new QVBoxLayout(this);
-	topLayout->addWidget(cefWidget);
+	topLayout->addWidget(cefWidget->qwidget());
 	topLayout->addLayout(bottomLayout);
 #else
 	UNUSED_PARAMETER(url);

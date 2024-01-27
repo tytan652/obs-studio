@@ -24,14 +24,14 @@
 #include <random>
 
 #ifdef BROWSER_AVAILABLE
-#include <browser-panel.hpp>
+#include <obs-browser-api.hpp>
+#else
+class OBSBrowserQCef;
+class OBSBrowserQCefCookieManager;
 #endif
 
-struct QCef;
-struct QCefCookieManager;
-
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
+extern std::shared_ptr<OBSBrowserQCef> cef;
+extern std::shared_ptr<OBSBrowserQCefCookieManager> panel_cookies;
 
 static std::string GenId()
 {
@@ -74,7 +74,7 @@ static void InitPanelCookieManager()
 	sub_path += "obs_profile_cookies/";
 	sub_path += cookie_id;
 
-	panel_cookies = cef->create_cookie_manager(sub_path);
+	panel_cookies = cef->createCookieManager(sub_path.c_str());
 }
 #endif
 
@@ -82,9 +82,8 @@ void DestroyPanelCookieManager()
 {
 #ifdef BROWSER_AVAILABLE
 	if (panel_cookies) {
-		panel_cookies->FlushStore();
-		delete panel_cookies;
-		panel_cookies = nullptr;
+		panel_cookies->flushStore();
+		panel_cookies.reset();
 	}
 #endif
 }
@@ -93,7 +92,7 @@ void DeleteCookies()
 {
 #ifdef BROWSER_AVAILABLE
 	if (panel_cookies) {
-		panel_cookies->DeleteCookies("", "");
+		panel_cookies->deleteCookies("", "");
 	}
 #endif
 }
@@ -116,8 +115,8 @@ void DuplicateCurrentCookieProfile(ConfigFile &config)
 		dst_path += "obs_profile_cookies/";
 		dst_path += new_id;
 
-		BPtr<char> src_path_full = cef->get_cookie_path(src_path);
-		BPtr<char> dst_path_full = cef->get_cookie_path(dst_path);
+		BPtr<char> src_path_full = cef->getCookiePath(src_path.c_str());
+		BPtr<char> dst_path_full = cef->getCookiePath(dst_path.c_str());
 
 		QDir srcDir(src_path_full.Get());
 		QDir dstDir(dst_path_full.Get());
@@ -151,12 +150,12 @@ void OBSBasic::InitBrowserPanelSafeBlock()
 #ifdef BROWSER_AVAILABLE
 	if (!cef)
 		return;
-	if (cef->init_browser()) {
+	if (cef->initBrowser()) {
 		InitPanelCookieManager();
 		return;
 	}
 
-	ExecThreadedWithoutBlocking([] { cef->wait_for_browser_init(); },
+	ExecThreadedWithoutBlocking([] { cef->waitForBrowserInit(); },
 				    QTStr("BrowserPanelInit.Title"),
 				    QTStr("BrowserPanelInit.Text"));
 	InitPanelCookieManager();

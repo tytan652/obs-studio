@@ -41,12 +41,12 @@ TwitchAuth::TwitchAuth(const Def &d) : OAuthStreamKey(d)
 	if (!cef)
 		return;
 
-	cef->add_popup_whitelist_url(
+	cef->addPopupWhitelistUrl(
 		"https://twitch.tv/popout/frankerfacez/chat?ffz-settings",
 		this);
 
 	/* enables javascript-based popups.  basically bttv popups */
-	cef->add_popup_whitelist_url("about:blank#blocked", this);
+	cef->addPopupWhitelistUrl("about:blank#blocked", this);
 
 	uiLoadTimer.setSingleShot(true);
 	uiLoadTimer.setInterval(500);
@@ -224,7 +224,7 @@ void TwitchAuth::LoadUI()
 	OBSBasic::InitBrowserPanelSafeBlock();
 	OBSBasic *main = OBSBasic::Get();
 
-	QCefWidget *browser;
+	OBSBrowserQCefWidget *browser;
 	std::string url;
 	std::string script;
 
@@ -258,9 +258,9 @@ void TwitchAuth::LoadUI()
 	chat->setWindowTitle(QTStr("Auth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(chat, url, panel_cookies);
+	browser = cef->createWidget(chat, url.c_str(), panel_cookies.get());
 	chat->SetWidget(browser);
-	cef->add_force_popup_url(moderation_tools_url, chat);
+	cef->addForcePopupUrl(moderation_tools_url.c_str(), chat);
 
 	if (App()->IsThemeDark()) {
 		script = "localStorage.setItem('twilight.theme', 1);";
@@ -277,7 +277,7 @@ void TwitchAuth::LoadUI()
 			script += ffz_script;
 	}
 
-	browser->setStartupScript(script);
+	browser->setStartupScript(script.c_str());
 
 	main->AddDockWidget(chat, Qt::RightDockWidgetArea);
 
@@ -307,7 +307,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 {
 	OBSBasic *main = OBSBasic::Get();
 
-	QCefWidget *browser;
+	OBSBrowserQCefWidget *browser;
 	std::string url;
 	std::string script;
 
@@ -347,9 +347,9 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	info->setWindowTitle(QTStr("Auth.StreamInfo"));
 	info->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(info, url, panel_cookies);
+	browser = cef->createWidget(info, url.c_str(), panel_cookies.get());
 	info->SetWidget(browser);
-	browser->setStartupScript(script);
+	browser->setStartupScript(script.c_str());
 
 	main->AddDockWidget(info, Qt::RightDockWidgetArea);
 
@@ -366,9 +366,9 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	stats->setWindowTitle(QTStr("TwitchAuth.Stats"));
 	stats->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(stats, url, panel_cookies);
+	browser = cef->createWidget(stats, url.c_str(), panel_cookies.get());
 	stats->SetWidget(browser);
-	browser->setStartupScript(script);
+	browser->setStartupScript(script.c_str());
 
 	main->AddDockWidget(stats, Qt::RightDockWidgetArea);
 
@@ -386,9 +386,9 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	feed->setWindowTitle(QTStr("TwitchAuth.Feed"));
 	feed->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(feed, url, panel_cookies);
+	browser = cef->createWidget(feed, url.c_str(), panel_cookies.get());
 	feed->SetWidget(browser);
-	browser->setStartupScript(script);
+	browser->setStartupScript(script.c_str());
 
 	main->AddDockWidget(feed, Qt::RightDockWidgetArea);
 
@@ -454,7 +454,7 @@ void TwitchAuth::TryLoadSecondaryUIPanes()
 		}
 	};
 
-	panel_cookies->CheckForCookie("https://www.twitch.tv", "auth-token",
+	panel_cookies->checkForCookie("https://www.twitch.tv", "auth-token",
 				      cb);
 }
 
@@ -507,7 +507,7 @@ static std::shared_ptr<Auth> CreateTwitchAuth()
 static void DeleteCookies()
 {
 	if (panel_cookies)
-		panel_cookies->DeleteCookies("twitch.tv", std::string());
+		panel_cookies->deleteCookies("twitch.tv", nullptr);
 }
 
 void RegisterTwitchAuth()

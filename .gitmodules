@@ -3,7 +3,7 @@
 	url = https://github.com/obsproject/libdshowcapture.git
 [submodule "plugins/obs-browser"]
 	path = plugins/obs-browser
-	url = https://github.com/obsproject/obs-browser.git
+	url = https://github.com/tytan652/obs-browser.git
 [submodule "plugins/obs-outputs/ftl-sdk"]
 	path = plugins/obs-outputs/ftl-sdk
 	url = https://github.com/Mixer/ftl-sdk.git

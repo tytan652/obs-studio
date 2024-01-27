@@ -185,7 +185,7 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 	}
 
 	if (main->extraBrowserDockTargets[idx] != item.url) {
-		dock->cefWidget->setURL(QT_TO_UTF8(item.url));
+		dock->cefWidget->setUrl(QT_TO_UTF8(item.url));
 		main->extraBrowserDockTargets[idx] = item.url;
 	}
 }
@@ -532,7 +532,7 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 {
 	static int panel_version = -1;
 	if (panel_version == -1) {
-		panel_version = obs_browser_qcef_version();
+		panel_version = obs_browser_get_gcef_version();
 	}
 
 	BrowserDock *dock = new BrowserDock(title);
@@ -545,8 +545,8 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	dock->setWindowTitle(title);
 	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	QCefWidget *browser =
-		cef->create_widget(dock, QT_TO_UTF8(url), nullptr);
+	OBSBrowserQCefWidget *browser =
+		cef->createWidget(dock, QT_TO_UTF8(url), nullptr);
 	if (browser && panel_version >= 1)
 		browser->allowAllPopups(true);
 
@@ -566,7 +566,7 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 			script += QT_TO_UTF8(username);
 			script += "/dashboard/live";
 			script += "'});";
-			browser->setStartupScript(script);
+			browser->setStartupScript(script.c_str());
 		}
 	}
 

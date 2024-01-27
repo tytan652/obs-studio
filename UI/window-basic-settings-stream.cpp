@@ -9,7 +9,7 @@
 #include "url-push-button.hpp"
 
 #ifdef BROWSER_AVAILABLE
-#include <browser-panel.hpp>
+#include <obs-browser-api.hpp>
 #endif
 
 #include "auth-oauth.hpp"
@@ -20,11 +20,13 @@
 #include "youtube-api-wrappers.hpp"
 #endif
 
-struct QCef;
-struct QCefCookieManager;
+#ifndef BROWSER_AVAILABLE
+class OBSBrowserQCef;
+class OBSBrowserQCefCookieManager;
+#endif
 
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
+extern std::shared_ptr<OBSBrowserQCef> cef;
+extern std::shared_ptr<OBSBrowserQCefCookieManager> panel_cookies;
 
 enum class ListOpt : int {
 	ShowAll = 1,

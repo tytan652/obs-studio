@@ -19,10 +19,6 @@
 #include <util/windows/WinHandle.hpp>
 #include <util/util.hpp>
 
-#ifdef BROWSER_AVAILABLE
-#include <browser-panel.hpp>
-#endif
-
 using namespace std;
 using namespace updater;
 

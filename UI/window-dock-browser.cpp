@@ -11,7 +11,7 @@ void BrowserDock::closeEvent(QCloseEvent *event)
 
 	static int panel_version = -1;
 	if (panel_version == -1) {
-		panel_version = obs_browser_qcef_version();
+		panel_version = obs_browser_get_gcef_version();
 	}
 
 	if (panel_version >= 2 && !!cefWidget) {

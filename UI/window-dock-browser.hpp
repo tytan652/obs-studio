@@ -3,9 +3,10 @@
 #include "window-dock.hpp"
 #include <QScopedPointer>
 
-#include <browser-panel.hpp>
-extern QCef *cef;
-extern QCefCookieManager *panel_cookies;
+#include <obs-browser-api.hpp>
+
+extern std::shared_ptr<OBSBrowserQCef> cef;
+extern std::shared_ptr<OBSBrowserQCefCookieManager> panel_cookies;
 
 class BrowserDock : public OBSDock {
 private:
@@ -19,11 +20,11 @@ public:
 		setAttribute(Qt::WA_NativeWindow);
 	}
 
-	QScopedPointer<QCefWidget> cefWidget;
+	QScopedPointer<OBSBrowserQCefWidget> cefWidget;
 
-	inline void SetWidget(QCefWidget *widget_)
+	inline void SetWidget(OBSBrowserQCefWidget *widget_)
 	{
-		setWidget(widget_);
+		setWidget(widget_->qwidget());
 		cefWidget.reset(widget_);
 	}
 

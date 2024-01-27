@@ -4,7 +4,6 @@
 #include "youtube-api-wrappers.hpp"
 
 class QAction;
-class QCefWidget;
 
 class YouTubeAppDock : public BrowserDock {
 	Q_OBJECT
@@ -48,6 +47,7 @@ private:
 			  const char *channelId = nullptr);
 
 	QString channelId;
-	QPointer<QCefWidget> dockBrowser;
-	QCefCookieManager *cookieManager; // is not a Qt object
+	QPointer<OBSBrowserQCefWidget> dockBrowser;
+	std::shared_ptr<OBSBrowserQCefCookieManager>
+		cookieManager; // is not a Qt object
 };

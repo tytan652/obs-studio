@@ -17,10 +17,9 @@
 #include <QString>
 
 #ifdef BROWSER_AVAILABLE
-#include <browser-panel.hpp>
+#include <obs-browser-api.hpp>
 
-struct QCef;
-extern QCef *cef;
+extern std::shared_ptr<OBSBrowserQCef> cef;
 #endif
 
 #ifndef MAC_WHATSNEW_URL
@@ -309,7 +308,7 @@ try {
 void WhatsNewBrowserInitThread::run()
 {
 #ifdef BROWSER_AVAILABLE
-	cef->wait_for_browser_init();
+	cef->waitForBrowserInit();
 #endif
 	emit Result(url);
 }
