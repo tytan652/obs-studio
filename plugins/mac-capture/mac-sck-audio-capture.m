@@ -1,5 +1,8 @@
 #include "mac-sck-common.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic warning "-Wunguarded-availability-new"
+
 const char *sck_audio_capture_getname(void *unused __unused)
 {
     return obs_module_text("SCK.Audio.Name");
@@ -315,3 +318,5 @@ struct obs_source_info sck_audio_capture_info = {
     .update = sck_audio_capture_update,
     .icon_type = OBS_ICON_TYPE_AUDIO_OUTPUT,
 };
+
+#pragma clang diagnostic pop
