@@ -1,6 +1,9 @@
 #include "mac-sck-common.h"
 #include "window-utils.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic warning "-Wunguarded-availability-new"
+
 static void destroy_screen_stream(struct screen_capture *sc)
 {
     if (sc->disp && !sc->capture_failed) {
@@ -715,3 +718,5 @@ struct obs_source_info sck_video_capture_info = {
     .icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
     .video_get_color_space = sck_video_capture_get_color_space,
 };
+
+#pragma clang diagnostic pop
