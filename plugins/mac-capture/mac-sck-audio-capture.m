@@ -1,14 +1,11 @@
 #include "mac-sck-common.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic warning "-Wunguarded-availability-new"
-
 const char *sck_audio_capture_getname(void *unused __unused)
 {
     return obs_module_text("SCK.Audio.Name");
 }
 
-static void destroy_audio_screen_stream(struct screen_capture *sc)
+static void destroy_audio_screen_stream(struct screen_capture *sc) API_AVAILABLE(macos(13.0))
 {
     if (sc->disp && !sc->capture_failed) {
         [sc->disp stopCaptureWithCompletionHandler:^(NSError *_Nullable error) {
@@ -35,7 +32,7 @@ static void destroy_audio_screen_stream(struct screen_capture *sc)
     os_event_destroy(sc->stream_start_completed);
 }
 
-static void sck_audio_capture_destroy(void *data)
+static void sck_audio_capture_destroy(void *data) API_AVAILABLE(macos(13.0))
 {
     struct screen_capture *sc = data;
 
@@ -60,7 +57,7 @@ static void sck_audio_capture_destroy(void *data)
     bfree(sc);
 }
 
-static bool init_audio_screen_stream(struct screen_capture *sc)
+static bool init_audio_screen_stream(struct screen_capture *sc) API_AVAILABLE(macos(13.0))
 {
     SCContentFilter *content_filter;
     if (sc->capture_failed) {
@@ -181,7 +178,7 @@ static void sck_audio_capture_defaults(obs_data_t *settings)
     obs_data_set_default_int(settings, "type", ScreenCaptureAudioDesktopStream);
 }
 
-static void *sck_audio_capture_create(obs_data_t *settings, obs_source_t *source)
+static void *sck_audio_capture_create(obs_data_t *settings, obs_source_t *source) API_AVAILABLE(macos(13.0))
 {
     struct screen_capture *sc = bzalloc(sizeof(struct screen_capture));
 
@@ -213,7 +210,7 @@ fail:
 #pragma mark - obs_properties
 
 static bool audio_capture_method_changed(void *data, obs_properties_t *props, obs_property_t *list __unused,
-                                         obs_data_t *settings)
+                                         obs_data_t *settings) API_AVAILABLE(macos(13.0))
 {
     struct screen_capture *sc = data;
 
@@ -237,6 +234,7 @@ static bool audio_capture_method_changed(void *data, obs_properties_t *props, ob
 }
 
 static bool reactivate_capture(obs_properties_t *props __unused, obs_property_t *property, void *data)
+    API_AVAILABLE(macos(13.0))
 {
     struct screen_capture *sc = data;
     if (!sc->capture_failed) {
@@ -251,7 +249,7 @@ static bool reactivate_capture(obs_properties_t *props __unused, obs_property_t 
     return true;
 }
 
-static obs_properties_t *sck_audio_capture_properties(void *data)
+static obs_properties_t *sck_audio_capture_properties(void *data) API_AVAILABLE(macos(13.0))
 {
     struct screen_capture *sc = data;
 
@@ -287,7 +285,7 @@ static obs_properties_t *sck_audio_capture_properties(void *data)
     return props;
 }
 
-static void sck_audio_capture_update(void *data, obs_data_t *settings)
+static void sck_audio_capture_update(void *data, obs_data_t *settings) API_AVAILABLE(macos(13.0))
 {
     struct screen_capture *sc = data;
 
@@ -303,6 +301,7 @@ static void sck_audio_capture_update(void *data, obs_data_t *settings)
 
 #pragma mark - obs_source_info
 
+API_AVAILABLE(macos(13.0))
 struct obs_source_info sck_audio_capture_info = {
     .id = "sck_audio_capture",
     .type = OBS_SOURCE_TYPE_INPUT,
@@ -318,5 +317,3 @@ struct obs_source_info sck_audio_capture_info = {
     .update = sck_audio_capture_update,
     .icon_type = OBS_ICON_TYPE_AUDIO_OUTPUT,
 };
-
-#pragma clang diagnostic pop

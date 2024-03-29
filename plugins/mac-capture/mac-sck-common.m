@@ -1,8 +1,5 @@
 #include "mac-sck-common.h"
 
-#pragma clang diagnostic push
-#pragma clang diagnostic warning "-Wunguarded-availability-new"
-
 bool is_screen_capture_available(void)
 {
     if (@available(macOS 12.5, *)) {
@@ -201,7 +198,7 @@ bool build_application_list(struct screen_capture *sc, obs_properties_t *props)
 
 #pragma mark - audio/video
 
-void screen_stream_video_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer)
+void screen_stream_video_update(struct screen_capture *sc, CMSampleBufferRef sample_buffer) API_AVAILABLE(macos(12.5))
 {
     bool frame_detail_errored = false;
     float scale_factor = 1.0f;
@@ -338,5 +335,3 @@ void screen_stream_audio_update(struct screen_capture *sc, CMSampleBufferRef sam
     audio_data.format = AUDIO_FORMAT_FLOAT_PLANAR;
     obs_source_output_audio(sc->source, &audio_data);
 }
-
-#pragma clang diagnostic pop
