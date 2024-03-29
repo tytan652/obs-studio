@@ -54,16 +54,16 @@ if(PC_Simde_VERSION VERSION_GREATER 0)
   set(Simde_VERSION ${PC_Simde_VERSION})
 elseif(EXISTS "${Simde_INCLUDE_DIR}/simde/simde-common.h")
   file(STRINGS "${Simde_INCLUDE_DIR}/simde/simde-common.h" _version_string
-REGEX "^.*VERSION_(MAJOR|MINOR|MICRO)[ \t]+[0-9]+[ \t]*$")
+       REGEX "^.*VERSION_(MAJOR|MINOR|MICRO)[ \t]+[0-9]+[ \t]*$")
 
   string(REGEX REPLACE ".*VERSION_MAJOR[ \t]+([0-9]+).*" "\\1" _version_major "${_version_string}")
   string(REGEX REPLACE ".*VERSION_MINOR[ \t]+([0-9]+).*" "\\1" _version_minor "${_version_string}")
   string(REGEX REPLACE ".*VERSION_MICRO[ \t]+([0-9]+).*" "\\1" _version_micro "${_version_string}")
 
-set(Simde_VERSION "${_version_major}.${_version_minor}.${_version_micro}")
-unset(_version_major)
-unset(_version_minor)
-unset(_version_micro)
+  set(Simde_VERSION "${_version_major}.${_version_minor}.${_version_micro}")
+  unset(_version_major)
+  unset(_version_minor)
+  unset(_version_micro)
 else()
   if(NOT Simde_FIND_QUIETLY)
     message(AUTHOR_WARNING "Failed to find simde version.")
@@ -95,6 +95,4 @@ include(FeatureSummary)
 set_package_properties(
   Simde PROPERTIES
   URL "https://simd-everywhere.github.io/blog/"
-  DESCRIPTION
-    "Implementations of SIMD instruction sets for systems which don't natively support them."
-)
+  DESCRIPTION "Implementations of SIMD instruction sets for systems which don't natively support them.")
