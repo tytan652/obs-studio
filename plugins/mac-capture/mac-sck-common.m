@@ -1,5 +1,8 @@
 #include "mac-sck-common.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic warning "-Wunguarded-availability-new"
+
 bool is_screen_capture_available(void)
 {
     if (@available(macOS 12.5, *)) {
@@ -335,3 +338,5 @@ void screen_stream_audio_update(struct screen_capture *sc, CMSampleBufferRef sam
     audio_data.format = AUDIO_FORMAT_FLOAT_PLANAR;
     obs_source_output_audio(sc->source, &audio_data);
 }
+
+#pragma clang diagnostic pop
