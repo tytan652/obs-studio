@@ -28,6 +28,6 @@
 #endif
 #define SIMDE_ENABLE_NATIVE_ALIASES
 PRAGMA_WARN_PUSH
-#include "simde/x86/sse2.h"
+#include <simde/x86/sse2.h>
 PRAGMA_WARN_POP
 #endif

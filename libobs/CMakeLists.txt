@@ -22,6 +22,8 @@ find_package(
   OPTIONAL_COMPONENTS avcodec)
 # cmake-format: on
 
+find_package(Simde REQUIRED)
+
 find_package(ZLIB REQUIRED)
 
 if(ENABLE_UI)
@@ -144,24 +146,6 @@ target_sources(
 target_sources(
   libobs
   PRIVATE # cmake-format: sortable
-          util/simde/check.h
-          util/simde/debug-trap.h
-          util/simde/hedley.h
-          util/simde/simde-align.h
-          util/simde/simde-arch.h
-          util/simde/simde-common.h
-          util/simde/simde-constify.h
-          util/simde/simde-detect-clang.h
-          util/simde/simde-diagnostic.h
-          util/simde/simde-features.h
-          util/simde/simde-math.h
-          util/simde/x86/mmx.h
-          util/simde/x86/sse.h
-          util/simde/x86/sse2.h)
-
-target_sources(
-  libobs
-  PRIVATE # cmake-format: sortable
           callback/calldata.c
           callback/calldata.h
           callback/decl.c
@@ -259,7 +243,7 @@ target_link_libraries(
           FFmpeg::swresample
           jansson::jansson
           ZLIB::ZLIB
-  PUBLIC Threads::Threads)
+  PUBLIC Simde::Simde Threads::Threads)
 
 if(OS_WINDOWS)
   include(cmake/os-windows.cmake)
@@ -354,20 +338,6 @@ set(public_headers
     util/profiler.h
     util/profiler.hpp
     util/serializer.h
-    util/simde/check.h
-    util/simde/debug-trap.h
-    util/simde/hedley.h
-    util/simde/simde-align.h
-    util/simde/simde-arch.h
-    util/simde/simde-common.h
-    util/simde/simde-constify.h
-    util/simde/simde-detect-clang.h
-    util/simde/simde-diagnostic.h
-    util/simde/simde-features.h
-    util/simde/simde-math.h
-    util/simde/x86/mmx.h
-    util/simde/x86/sse.h
-    util/simde/x86/sse2.h
     util/sse-intrin.h
     util/task.h
     util/text-lookup.h

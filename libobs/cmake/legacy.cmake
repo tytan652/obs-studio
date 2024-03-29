@@ -20,6 +20,7 @@ find_package(
   COMPONENTS avformat avutil swscale swresample
   OPTIONAL_COMPONENTS avcodec)
 find_package(ZLIB REQUIRED)
+find_package(Simde REQUIRED)
 
 add_library(libobs SHARED)
 add_library(OBS::libobs ALIAS libobs)
@@ -72,23 +73,6 @@ target_sources(
           obs-video-gpu-encode.c
           obs-view.c
           obs-config.h)
-
-target_sources(
-  libobs
-  PRIVATE util/simde/check.h
-          util/simde/debug-trap.h
-          util/simde/hedley.h
-          util/simde/simde-align.h
-          util/simde/simde-arch.h
-          util/simde/simde-common.h
-          util/simde/simde-constify.h
-          util/simde/simde-detect-clang.h
-          util/simde/simde-diagnostic.h
-          util/simde/simde-features.h
-          util/simde/simde-math.h
-          util/simde/x86/mmx.h
-          util/simde/x86/sse2.h
-          util/simde/x86/sse.h)
 
 target_sources(
   libobs
@@ -257,7 +241,7 @@ target_link_libraries(
           OBS::uthash
           OBS::libobs-version
           ZLIB::ZLIB
-  PUBLIC Threads::Threads)
+  PUBLIC Simde::Simde Threads::Threads)
 
 set_target_properties(
   libobs
