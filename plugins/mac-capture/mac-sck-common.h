@@ -1,9 +1,6 @@
 #include <AvailabilityMacros.h>
 #include <Cocoa/Cocoa.h>
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunguarded-availability-new"
-
 #include <stdlib.h>
 #include <obs-module.h>
 #include <util/threading.h>
@@ -13,6 +10,9 @@
 #include <ScreenCaptureKit/ScreenCaptureKit.h>
 #include <CoreMedia/CMSampleBuffer.h>
 #include <CoreVideo/CVPixelBuffer.h>
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
 
 #define MACCAP_LOG(level, msg, ...) blog(level, "[ mac-screencapture ]: " msg, ##__VA_ARGS__)
 #define MACCAP_ERR(msg, ...)        MACCAP_LOG(LOG_ERROR, msg, ##__VA_ARGS__)
