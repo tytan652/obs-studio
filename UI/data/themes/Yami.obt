@@ -137,16 +137,16 @@
     --input_height: calc(var(--input_height_base) - calc(var(--input_padding) * 2));
     --input_height_half: calc(var(--input_height_base) / 2);
 
-    --bg_input: var(--grey4);
-    --bg_input_hover: var(--grey3);
-    --bg_input_focus: var(--grey7);
+    --input_bg: var(--grey4);
+    --input_bg_hover: var(--grey7);
+    --input_bg_focus: var(--grey7);
 
     --spacing_input: var(--spacing_base);
 
-    --bg_button: var(--bg_input);
-    --bg_button_hover: var(--grey3);
-    --bg_button_down: var(--grey7);
-    --bg_button_disabled: var(--grey6);
+    --button_bg: var(--input_bg);
+    --button_bg_hover: var(--grey3);
+    --button_bg_down: var(--grey7);
+    --button_bg_disabled: var(--grey6);
 
     --border_color: var(--grey4);
     --border_radius: 4px;
@@ -174,7 +174,7 @@
     --palette_link: var(--blue2);
     --palette_linkVisited: var(--blue2);
 
-    --palette_button: var(--bg_button);
+    --palette_button: var(--button_bg);
     --palette_buttonText: var(--text);
 
     /* They can be selectively set for palette groups by appending those as well */
@@ -281,7 +281,7 @@ QMenu::icon {
 }
 
 QMenu::separator {
-    background: var(--bg_button);
+    background: var(--button_bg);
     height: 1px;
     margin: var(--spacing_base) var(--spacing_large);
 }
@@ -452,7 +452,7 @@ QDockWidget {
 
 QDockWidget::title {
     text-align: left;
-    background-color: var(--bg_button);
+    background-color: var(--button_bg);
     padding: var(--padding_large);
     border-top-left-radius: var(--border_radius);
     border-top-right-radius: var(--border_radius);
@@ -468,7 +468,7 @@ QDockWidget::float-button {
 
 QDockWidget::close-button:hover,
 QDockWidget::float-button:hover {
-    background: var(--bg_button_hover);
+    background: var(--button_bg_hover);
 }
 
 QDockWidget::close-button:pressed,
@@ -676,7 +676,7 @@ QToolBar {
 }
 
 QToolBarExtension {
-    background: var(--bg_button);
+    background: var(--button_bg);
     min-width: 12px;
     max-width: 12px;
     padding: 4px 0px;
@@ -697,7 +697,7 @@ QTabWidget::tab-bar {
 }
 
 QTabBar QToolButton {
-    background: var(--bg_button);
+    background: var(--button_bg);
     border: none;
 }
 
@@ -712,7 +712,7 @@ QTabBar::tab:bottom {
 }
 
 QTabBar::tab {
-    background: var(--bg_button);
+    background: var(--button_bg);
     color: var(--text);
     border: none;
     padding: 8px 12px;
@@ -723,16 +723,16 @@ QTabBar::tab {
 }
 
 QTabBar::tab:pressed {
-    background: var(--bg_button_down);
+    background: var(--button_bg_down);
 }
 
 QTabBar::tab:hover {
-    background: var(--bg_button_hover);
+    background: var(--button_bg_hover);
     color: var(--text);
 }
 
 QTabBar::tab:selected {
-    background: var(--bg_button_down);
+    background: var(--button_bg_down);
     color: var(--text);
 }
 
@@ -752,7 +752,7 @@ QTabBar::tab:bottom:selected {
 }
 
 QTabBar QToolButton {
-    background: var(--bg_button);
+    background: var(--button_bg);
     min-width: 16px;
     padding: 0px;
 }
@@ -761,9 +761,9 @@ QTabBar QToolButton {
 
 QComboBox,
 QDateTimeEdit {
-    background-color: var(--bg_input);
+    background-color: var(--input_bg);
     border-style: solid;
-    border: 1px solid var(--bg_input);
+    border: 1px solid var(--input_bg);
     border-radius: var(--border_radius);
     padding: var(--padding_large) var(--padding_large);
     padding-left: 10px;
@@ -797,14 +797,14 @@ QDateTimeEdit::down-arrow {
 }
 
 QComboBox:editable:hover {
-    background-color: var(--bg_input_focus);
+    background-color: var(--input_bg_hover);
     border-color: var(--grey1);
 }
 
 QComboBox:on,
 QDateTimeEdit:on,
 QComboBox:editable:focus {
-    background-color: var(--bg_input_focus);
+    background-color: var(--input_bg_focus);
     border-color: var(--primary);
 }
 
@@ -826,38 +826,38 @@ QDateTimeEdit::down-arrow:editable {
 QLineEdit,
 QTextEdit,
 QPlainTextEdit {
-    background-color: var(--bg_input);
+    background-color: var(--input_bg);
     border: none;
     border-radius: var(--border_radius);
     padding: var(--input_padding) var(--padding_small) var(--input_padding) var(--input_padding);
-    border: 1px solid var(--bg_input);
+    border: 1px solid var(--input_bg);
     height: var(--input_height);
 }
 
 QLineEdit:hover,
 QTextEdit:hover,
 QPlainTextEdit:hover {
-    background-color: var(--bg_input_focus);
+    background-color: var(--input_bg_hover);
     border-color: var(--grey1);
 }
 
 QLineEdit:focus,
 QTextEdit:focus,
 QPlainTextEdit:focus {
-    background-color: var(--bg_input_focus);
+    background-color: var(--input_bg_focus);
     border-color: var(--primary);
 }
 
 QTextEdit:!editable {
-    background-color: var(--bg_input);
+    background-color: var(--input_bg);
 }
 
 /* Spinbox and doubleSpinbox */
 
 QSpinBox,
 QDoubleSpinBox {
-    background-color: var(--bg_button);
-    border: 1px solid var(--bg_button);
+    background-color: var(--input_bg);
+    border: 1px solid var(--input_bg);
     border-radius: var(--border_radius);
     margin-right: var(--spacing_base);
     padding: var(--input_padding) 0px var(--input_padding) var(--input_padding);
@@ -867,12 +867,13 @@ QDoubleSpinBox {
 
 QSpinBox:hover,
 QDoubleSpinBox:hover {
+    background-color: var(--input_bg_hover);
     border-color: var(--grey1);
 }
 
 QSpinBox:focus,
 QDoubleSpinBox:focus {
-    background-color: var(--bg_input_focus);
+    background-color: var(--input_bg_focus);
     border-color: var(--primary);
 }
 
@@ -904,28 +905,28 @@ QSpinBox::up-button:hover,
 QSpinBox::down-button:hover,
 QDoubleSpinBox::up-button:hover,
 QDoubleSpinBox::down-button:hover {
-    background-color: var(--bg_button_hover);
+    background-color: var(--button_bg_hover);
 }
 
 QSpinBox::up-button:pressed,
 QSpinBox::down-button:pressed,
 QDoubleSpinBox::up-button:pressed,
 QDoubleSpinBox::down-button:pressed {
-    background-color: var(--bg_button_down);
+    background-color: var(--button_bg_down);
 }
 
 QSpinBox::up-button:disabled,
 QSpinBox::up-button:off,
 QSpinBox::down-button:disabled,
 QSpinBox::down-button:off {
-    background-color: var(--bg_button_disabled);
+    background-color: var(--button_bg_disabled);
 }
 
 QDoubleSpinBox::up-button:disabled,
 QDoubleSpinBox::up-button:off,
 QDoubleSpinBox::down-button:disabled,
 QDoubleSpinBox::down-button:off {
-    background-color: var(--bg_button_disabled);
+    background-color: var(--button_bg_disabled);
 }
 
 QSpinBox::up-arrow,
@@ -980,7 +981,7 @@ QPushButton[themeID="vcamButton"]:!pressed:checked,
 
 QPushButton {
     color: var(--text);
-    background-color: var(--bg_button);
+    background-color: var(--button_bg);
     border-radius: var(--border_radius);
     height: var(--input_height);
     max-height: var(--input_height);
@@ -998,7 +999,7 @@ QToolButton {
 
 QToolButton,
 QPushButton[toolButton="true"] {
-    background-color: var(--bg_button);
+    background-color: var(--button_bg);
     padding: var(--padding_base) var(--padding_base);
     margin: 0px var(--spacing_base);
     border: 1px solid var(--border_color);
@@ -1017,7 +1018,7 @@ QPushButton:focus {
 }
 
 QPushButton:hover {
-    background-color: var(--bg_button_hover);
+    background-color: var(--button_bg_hover);
 }
 
 QToolButton:hover,
@@ -1025,11 +1026,11 @@ QToolButton:focus,
 MuteCheckBox::indicator:hover,
 MuteCheckBox::indicator:focus {
     border-color: var(--button_border);
-    background-color: var(--bg_button_hover);
+    background-color: var(--button_bg_hover);
 }
 
 QPushButton::flat {
-    background-color: var(--bg_button);
+    background-color: var(--button_bg);
 }
 
 QPushButton:checked {
@@ -1043,24 +1044,24 @@ QPushButton:checked:focus {
 
 QPushButton:pressed,
 QPushButton:pressed:hover {
-    background-color: var(--bg_button_down);
+    background-color: var(--button_bg_down);
     border-color: var(--grey4);
 }
 
 QToolButton:pressed,
 QToolButton:pressed:hover {
-    background-color: var(--bg_button_down);
+    background-color: var(--button_bg_down);
     border-color: var(--grey4);
 }
 
 QPushButton:disabled {
-    background-color: var(--bg_button_disabled);
+    background-color: var(--button_bg_disabled);
     border-color: var(--grey4);
 }
 
 QToolButton:disabled,
 QPushButton[toolButton="true"]:disabled {
-    background-color: var(--bg_button_disabled);
+    background-color: var(--button_bg_disabled);
     border-color: transparent;
 }
 
@@ -1149,7 +1150,7 @@ QSlider::handle:disabled {
 /* Volume Control */
 
 #stackedMixerArea QPushButton {
-    background-color: var(--bg_button);
+    background-color: var(--button_bg);
     min-width: var(--icon_base);
     padding: var(--padding_small) var(--padding_base);
     margin: 0px var(--spacing_base);
@@ -1160,16 +1161,16 @@ QSlider::handle:disabled {
 
 /* This is an incredibly cursed but necessary fix */
 #stackedMixerArea QPushButton:!hover {
-    background-color: var(--bg_button);
+    background-color: var(--button_bg);
 }
 
 #stackedMixerArea QPushButton:hover {
-    background-color: var(--bg_button_hover);
+    background-color: var(--button_bg_hover);
     border-color: var(--grey1);
 }
 
 #stackedMixerArea QPushButton:pressed {
-    background-color: var(--bg_button_down);
+    background-color: var(--button_bg_down);
 }
 
 VolumeMeter {
@@ -1203,7 +1204,7 @@ QTableView::item {
 }
 
 QTableView QLineEdit {
-    background: var(--bg_input_focus);
+    background: var(--input_bg_focus);
     padding: 0;
     margin: 0;
 }
@@ -1216,7 +1217,7 @@ QTableView QToolButton {
 }
 
 QHeaderView::section {
-    background-color: var(--bg_button);
+    background-color: var(--button_bg);
     color: var(--text);
     border: none;
     border-left: 1px solid var(--bg_window);
@@ -1451,7 +1452,7 @@ MuteCheckBox::indicator,
 MuteCheckBox::indicator:unchecked {
     width: var(--icon_base);
     height: var(--icon_base);
-    background-color: var(--bg_button);
+    background-color: var(--button_bg);
     padding: var(--padding_base_border) var(--padding_base_border);
     margin: 0px var(--spacing_base);
     border: 1px solid var(--border_color);
@@ -1461,7 +1462,7 @@ MuteCheckBox::indicator:unchecked {
 
 MuteCheckBox::indicator:hover, 
 MuteCheckBox::indicator:unchecked:hover {
-    background-color: var(--bg_button_hover);
+    background-color: var(--button_bg_hover);
     padding: var(--padding_base_border) var(--padding_base_border);
     margin: 0px var(--spacing_base);
     border: 1px solid var(--grey1);
@@ -1470,7 +1471,7 @@ MuteCheckBox::indicator:unchecked:hover {
 
 MuteCheckBox::indicator:pressed,
 MuteCheckBox::indicator:pressed:hover {
-    background-color: var(--bg_button_down);
+    background-color: var(--button_bg_down);
     border-color: var(--grey4);
 }
 
@@ -1595,7 +1596,7 @@ SceneTree {
 
 *[gridMode="true"] SceneTree::item {
     color: var(--text);
-    background-color: var(--bg_button);
+    background-color: var(--button_bg);
     border-radius: var(--border_radius);
     margin: var(--spacing_base);
 }
@@ -1675,14 +1676,14 @@ OBSYoutubeActions {
 
 #ytEventList QLabel {
     color: var(--text);
-    background-color: var(--bg_button);
+    background-color: var(--button_bg);
     border: none;
     border-radius: var(--border_radius);
     padding: 4px 20px;
 }
 
 #ytEventList QLabel:hover {
-    background-color: var(--bg_button_hover);
+    background-color: var(--button_bg_hover);
 }
 
 #ytEventList QLabel[isSelectedEvent=true] {
@@ -1714,7 +1715,7 @@ QCalendarWidget QWidget#qt_calendar_navigationbar {
 
 /* Calendar Top Bar Buttons */
 QCalendarWidget QToolButton {
-    background-color: var(--bg_button);
+    background-color: var(--button_bg);
     padding: 2px 16px;
     border-radius: var(--border_radius);
     margin: var(--spacing_base);
@@ -1742,12 +1743,12 @@ QCalendarWidget #qt_calendar_nextmonth {
 }
 
 QCalendarWidget QToolButton:hover {
-    background-color: var(--bg_button_hover);
+    background-color: var(--button_bg_hover);
     border-radius: var(--border_radius);
 }
 
 QCalendarWidget QToolButton:pressed {
-    background-color: var(--bg_button_down);
+    background-color: var(--button_bg_down);
 }
 
 /* Month Dropdown Menu */
@@ -1756,7 +1757,7 @@ QCalendarWidget QMenu {
 }
 /* Year spinbox */
 QCalendarWidget QSpinBox {
-    background-color: var(--bg_input);
+    background-color: var(--input_bg);
     border: none;
     border-radius: var(--border_radius);
     margin: 0px var(--spacing_base) 0px 0px;
