@@ -259,6 +259,6 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus) {}
 
 bool HighContrastEnabled()
 {
-	// Note implemented yet
+	// Not implemented yet
 	return false;
 }

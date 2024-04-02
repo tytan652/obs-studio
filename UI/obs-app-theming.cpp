@@ -59,7 +59,6 @@ static OBSTheme *ParseThemeMeta(const QString &path)
 		return nullptr;
 
 	if (cf_token_is(cfp, "@") || cf_go_to_token(cfp, "@", nullptr)) {
-
 		while (cf_next_token(cfp)) {
 			if (cf_token_is(cfp, "OBSThemeMeta"))
 				break;
@@ -230,8 +229,8 @@ static bool ParseCalc(CFParser &cfp, QStringList &calc,
 			break;
 
 		if (cf_token_is(cfp, "calc")) {
-			/* Internal calc's do not have proper names,
-			 * they are anonymous variables */
+			/* Internal calc's do not have proper names.
+			 * They are anonymous variables */
 			OBSThemeVariable var;
 			QStringList subcalc;
 
