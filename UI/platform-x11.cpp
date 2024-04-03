@@ -21,6 +21,9 @@
 
 #include <QGuiApplication>
 #include <QScreen>
+#include <QDBusConnection>
+#include <QDBusMessage>
+#include <QDBusReply>
 
 #include <unistd.h>
 #include <sstream>
@@ -259,6 +262,47 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus) {}
 
 bool HighContrastEnabled()
 {
-	// Not implemented yet
-	return false;
+	QDBusReply<QVariant> reply;
+	QDBusMessage msgXdpSettingsVersion = QDBusMessage::createMethodCall(
+		"org.freedesktop.portal.Desktop",
+		"/org/freedesktop/portal/desktop",
+		"org.freedesktop.DBus.Properties", "Get");
+	msgXdpSettingsVersion << "org.freedesktop.portal.Settings"
+			      << "version";
+
+	reply = QDBusConnection::sessionBus().call(msgXdpSettingsVersion);
+
+	if (!reply.isValid()) {
+		blog(LOG_WARNING,
+		     "Get on org.freedesktop.portal.Setttings returned an invalid reply");
+		return false;
+	}
+
+	/* NOTE: org.freedesktop.portal.Settings got its constast settings after the ReadOne method.
+	 * So assumes that if ReadOne is not availlable, constrast isn't present availlable either.*/
+	if (uint32_t version = reply.value().toUInt() < 2) {
+		blog(LOG_WARNING,
+		     "org.freedesktop.portal.Setttings version %u does not support ReadOne",
+		     version);
+		return false;
+	}
+
+	/* NOTE: If constrast is not availlable if will return 0 (false). */
+	QDBusMessage msgXdpSettingsContrast = QDBusMessage::createMethodCall(
+		"org.freedesktop.portal.Desktop",
+		"/org/freedesktop/portal/desktop",
+		"org.freedesktop.portal.Settings", "ReadOne");
+
+	msgXdpSettingsContrast << "org.freedesktop.appearance"
+			       << "contrast";
+
+	reply = QDBusConnection::sessionBus().call(msgXdpSettingsContrast);
+
+	if (!reply.isValid()) {
+		blog(LOG_WARNING,
+		     "ReadOne on org.freedesktop.portal.Setttings returned an invalid reply");
+		return false;
+	}
+
+	return reply.value().toUInt() != 0;
 }
