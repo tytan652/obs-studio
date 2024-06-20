@@ -332,6 +332,9 @@ static void start(struct screencast_portal_capture *capture)
 	g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add(&builder, "{sv}", "handle_token",
 			      g_variant_new_string(request_token));
+	g_variant_builder_add(
+		&builder, "{sv}", "context_hint",
+		g_variant_new_string(obs_source_get_name(capture->source)));
 
 	g_dbus_proxy_call(get_screencast_portal_proxy(), "Start",
 			  g_variant_new("(osa{sv})", capture->session_handle,
