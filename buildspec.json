@@ -5,9 +5,9 @@
             "baseUrl": "https://github.com/tytan652/obs-deps/releases/download",
             "label": "Pre-Built obs-deps",
             "hashes": {
-                "macos-universal": "318aa0f4c2cc1a6075c12e87a89937a5e622d5758315a3e06bcce80b4703641e",
-                "windows-x64": "8ca11f9659c114c85c864b753a951dc749c97d182cc8e42f419721a08c7d229c",
-                "windows-x86": "f7344dec726ba1e80809dff74f83c557776d3fa2e732f930adc25239f223b234"
+                "macos-universal": "995cf28386c3c7fa9c23ccfc1aa57d13bea26e7701e1f4c98d46026e59384b60",
+                "windows-x64": "7b6d06101e034ff123f0845c7668ca39e86ff0405569bb74e747dc90fc8f7e77",
+                "windows-x86": "d19629f8ccdff8c400a70dec1fa68f161275b56d3f8d94696a404fa753d6fe48"
             }
         },
         "qt6": {
@@ -15,11 +15,11 @@
             "baseUrl": "https://github.com/tytan652/obs-deps/releases/download",
             "label": "Pre-Built Qt6",
             "hashes": {
-                "macos-universal": "c6626b25b6f2dc33faaf923527ad6069ebb14e472275ce539d5d689169ff9b61",
-                "windows-x64": "c444f41fad7c5bd8ccd25dc54663dcfa0ebe3233427b6ee675ac6047c0d211a2"
+                "macos-universal": "2e388bfc74671e3080fd82f7476d0b9f4e0926a3f6337983666f42407914a782",
+                "windows-x64": "a47a22a1d1fa962d55d4a4642c407491760d688961e34b44840b50d332fa77ca"
             },
             "debugSymbols": {
-                "windows-x64": "64053bbc38a8df6a7dd6c35f96256ea63b2f19be9b9808b97a0bbae84e5360a0"
+                "windows-x64": "91263bd2a372cc8143b3fabb9a774d22fa433428c0b77be1f0e00eec8fd8bd40"
             }
         },
         "cef": {
