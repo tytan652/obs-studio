@@ -296,19 +296,27 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 			if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, NULL, SPA_FORMAT_VIDEO_format,
 						 SPA_POD_Id(&format)) < 0)
 				continue;
-		} else {
+
+			if (!obs_pw_video_format_from_spa_format(format, &obs_pw_video_format))
+				continue;
+
+			if (obs_pw_video_format.video_format == last_format)
+				continue;
+
+			last_format = obs_pw_video_format.video_format;
+
+			obs_property_list_add_int(prop, obs_pw_video_format.pretty_name, format);
+		} else if (media_subtype == SPA_MEDIA_SUBTYPE_mjpg || media_subtype == SPA_MEDIA_SUBTYPE_h264) {
 			format = SPA_VIDEO_FORMAT_ENCODED;
+
+			if (last_format == VIDEO_FORMAT_NONE)
+				continue;
+
+			last_format = VIDEO_FORMAT_NONE;
+
+			// FIXME: Make it translatable
+			obs_property_list_add_int(prop, "Encoded", format);
 		}
-
-		if (!obs_pw_video_format_from_spa_format(format, &obs_pw_video_format))
-			continue;
-
-		if (obs_pw_video_format.video_format == last_format)
-			continue;
-
-		last_format = obs_pw_video_format.video_format;
-
-		obs_property_list_add_int(prop, obs_pw_video_format.pretty_name, format);
 	}
 }
 

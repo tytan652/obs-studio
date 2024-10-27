@@ -261,7 +261,6 @@ static bool push_rotation(obs_pipewire_stream *obs_pw_stream)
 static const uint32_t supported_formats_async[] = {
 	SPA_VIDEO_FORMAT_RGBA,
 	SPA_VIDEO_FORMAT_YUY2,
-	SPA_VIDEO_FORMAT_ENCODED,
 };
 
 #define N_SUPPORTED_FORMATS_ASYNC (sizeof(supported_formats_async) / sizeof(supported_formats_async[0]))
@@ -419,10 +418,15 @@ static bool drm_format_available(uint32_t drm_format, uint32_t *drm_formats, siz
 static void init_format_info_async(obs_pipewire_stream *obs_pw_stream)
 {
 	da_init(obs_pw_stream->format_info);
+	struct format_info *info;
+
+	info = da_push_back_new(obs_pw_stream->format_info);
+	da_init(info->modifiers);
+	info->spa_format = SPA_VIDEO_FORMAT_ENCODED;
+	info->drm_format = DRM_FORMAT_INVALID;
 
 	for (size_t i = 0; i < N_SUPPORTED_FORMATS_ASYNC; i++) {
 		struct obs_pw_video_format obs_pw_video_format;
-		struct format_info *info;
 		if (!obs_pw_video_format_from_spa_format(supported_formats_async[i], &obs_pw_video_format))
 			continue;
 
