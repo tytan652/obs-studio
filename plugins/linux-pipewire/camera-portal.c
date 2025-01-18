@@ -248,6 +248,7 @@ static bool update_device_id(struct camera_portal_source *camera_source, const c
 static void stream_camera(struct camera_portal_source *camera_source)
 {
 	struct obs_pipewire_connect_stream_info connect_info;
+	const struct obs_pw_video_format *format = NULL;
 	const struct spa_rectangle *resolution = NULL;
 	const struct spa_fraction *framerate = NULL;
 	struct camera_device *device;
@@ -261,6 +262,9 @@ static void stream_camera(struct camera_portal_source *camera_source)
 
 	blog(LOG_INFO, "[camera-portal] streaming camera '%s'", camera_source->device_id);
 
+	if (camera_source->subtype == SPA_MEDIA_SUBTYPE_raw)
+		format = &camera_source->format;
+
 	if (camera_source->resolution.set)
 		resolution = &camera_source->resolution.rect;
 	if (camera_source->framerate.set)
@@ -272,7 +276,7 @@ static void stream_camera(struct camera_portal_source *camera_source)
 						       PW_KEY_MEDIA_ROLE, "Camera", NULL),
 		.video = {
 			.subtype = &camera_source->subtype,
-			.format = &camera_source->format,
+			.format = format,
 			.resolution = resolution,
 			.framerate = framerate,
 		}};
@@ -322,6 +326,11 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 			obs_data_set_int(data, "video_format", format);
 
 			format_name = obs_pw_video_format.pretty_name;
+		} else if (media_subtype == SPA_MEDIA_SUBTYPE_mjpg) {
+			obs_data_set_bool(data, "encoded", true);
+			obs_data_set_int(data, "video_format", media_subtype);
+
+			format_name = "M-JPEG";
 		} else {
 			continue;
 		}
@@ -536,8 +545,8 @@ static int compare_framerates(gconstpointer a, gconstpointer b)
 	return da - db;
 }
 
-static void framerate_list(struct camera_device *dev, uint32_t pixelformat, const struct spa_rectangle *resolution,
-			   obs_property_t *prop)
+static void framerate_list(struct camera_device *dev, enum spa_media_subtype subtype, uint32_t pixelformat,
+			   const struct spa_rectangle *resolution, obs_property_t *prop)
 {
 	g_autoptr(GArray) framerates = NULL;
 	struct param *p;
@@ -564,16 +573,16 @@ static void framerate_list(struct camera_device *dev, uint32_t pixelformat, cons
 			continue;
 		if (media_type != SPA_MEDIA_TYPE_video)
 			continue;
+		if (media_subtype != subtype)
+			continue;
 		if (media_subtype == SPA_MEDIA_SUBTYPE_raw) {
 			if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, NULL, SPA_FORMAT_VIDEO_format,
 						 SPA_POD_Id(&format)) < 0)
 				continue;
-		} else {
-			format = SPA_VIDEO_FORMAT_ENCODED;
-		}
 
-		if (format != pixelformat)
-			continue;
+			if (format != pixelformat)
+				continue;
+		}
 
 		if (spa_pod_parse_object(p->param, SPA_TYPE_OBJECT_Format, NULL, SPA_FORMAT_VIDEO_size,
 					 SPA_POD_OPT_Rectangle(&this_resolution)) < 0)
@@ -742,7 +751,8 @@ static bool format_selected(void *data, obs_properties_t *properties, obs_proper
 	}
 
 	property = obs_properties_get(properties, "framerate");
-	framerate_list(device, camera_source->format.spa_format, &camera_source->resolution.rect, property);
+	framerate_list(device, camera_source->subtype, camera_source->format.spa_format,
+		       &camera_source->resolution.rect, property);
 
 	return true;
 }

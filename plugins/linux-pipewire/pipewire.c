@@ -266,7 +266,6 @@ static bool push_rotation(obs_pipewire_stream *obs_pw_stream)
 static const uint32_t supported_formats_async[] = {
 	SPA_VIDEO_FORMAT_RGBA,
 	SPA_VIDEO_FORMAT_YUY2,
-	SPA_VIDEO_FORMAT_ENCODED,
 };
 
 #define N_SUPPORTED_FORMATS_ASYNC (sizeof(supported_formats_async) / sizeof(supported_formats_async[0]))
@@ -291,7 +290,8 @@ static void swap_texture_red_blue(gs_texture_t *texture)
 }
 
 static inline struct spa_pod *build_format(obs_pipewire_stream *obs_pw_stream, struct spa_pod_builder *b,
-					   uint32_t format, uint64_t *modifiers, size_t modifier_count)
+					   enum spa_media_subtype subtype, uint32_t format, uint64_t *modifiers,
+					   size_t modifier_count)
 {
 	struct spa_rectangle max_resolution = SPA_RECTANGLE(8192, 4320);
 	struct spa_rectangle min_resolution = SPA_RECTANGLE(1, 1);
@@ -329,37 +329,35 @@ static inline struct spa_pod *build_format(obs_pipewire_stream *obs_pw_stream, s
 	spa_pod_builder_push_object(b, &format_frame, SPA_TYPE_OBJECT_Format, SPA_PARAM_EnumFormat);
 	/* add media type and media subtype properties */
 	spa_pod_builder_add(b, SPA_FORMAT_mediaType, SPA_POD_Id(SPA_MEDIA_TYPE_video), 0);
-	if (format != SPA_VIDEO_FORMAT_ENCODED) {
-		spa_pod_builder_add(b, SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw), 0);
-	} else {
-		// TODO: Add EnumFormat for H264
-		spa_pod_builder_add(b, SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_mjpg), 0);
+	spa_pod_builder_add(b, SPA_FORMAT_mediaSubtype, SPA_POD_Id(subtype), 0);
+
+	if (subtype == SPA_MEDIA_SUBTYPE_raw) {
+		/* formats */
+		spa_pod_builder_add(b, SPA_FORMAT_VIDEO_format, SPA_POD_Id(format), 0);
+
+		/* modifier */
+		if (modifier_count > 0) {
+			struct spa_pod_frame modifier_frame;
+
+			/* build an enumeration of modifiers */
+			spa_pod_builder_prop(b, SPA_FORMAT_VIDEO_modifier,
+					     SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
+
+			spa_pod_builder_push_choice(b, &modifier_frame, SPA_CHOICE_Enum, 0);
+
+			/* The first element of choice pods is the preferred value. Here
+			 * we arbitrarily pick the first modifier as the preferred one.
+			 */
+			spa_pod_builder_long(b, modifiers[0]);
+
+			/* modifiers from  an array */
+			for (uint32_t i = 0; i < modifier_count; i++)
+				spa_pod_builder_long(b, modifiers[i]);
+
+			spa_pod_builder_pop(b, &modifier_frame);
+		}
 	}
 
-	/* formats */
-	spa_pod_builder_add(b, SPA_FORMAT_VIDEO_format, SPA_POD_Id(format), 0);
-
-	/* modifier */
-	if (modifier_count > 0) {
-		struct spa_pod_frame modifier_frame;
-
-		/* build an enumeration of modifiers */
-		spa_pod_builder_prop(b, SPA_FORMAT_VIDEO_modifier,
-				     SPA_POD_PROP_FLAG_MANDATORY | SPA_POD_PROP_FLAG_DONT_FIXATE);
-
-		spa_pod_builder_push_choice(b, &modifier_frame, SPA_CHOICE_Enum, 0);
-
-		/* The first element of choice pods is the preferred value. Here
-		 * we arbitrarily pick the first modifier as the preferred one.
-		 */
-		spa_pod_builder_long(b, modifiers[0]);
-
-		/* modifiers from  an array */
-		for (uint32_t i = 0; i < modifier_count; i++)
-			spa_pod_builder_long(b, modifiers[i]);
-
-		spa_pod_builder_pop(b, &modifier_frame);
-	}
 	/* add size and framerate ranges */
 	spa_pod_builder_add(b, SPA_FORMAT_VIDEO_size,
 			    SPA_POD_CHOICE_RANGE_Rectangle(&resolution, &min_resolution, &max_resolution),
@@ -395,7 +393,7 @@ static bool build_format_params(obs_pipewire_stream *obs_pw_stream, struct spa_p
 		if (obs_pw_stream->format_info.array[i].modifiers.num == 0) {
 			continue;
 		}
-		params[params_count++] = build_format(obs_pw_stream, pod_builder,
+		params[params_count++] = build_format(obs_pw_stream, pod_builder, SPA_MEDIA_SUBTYPE_raw,
 						      obs_pw_stream->format_info.array[i].spa_format,
 						      obs_pw_stream->format_info.array[i].modifiers.array,
 						      obs_pw_stream->format_info.array[i].modifiers.num);
@@ -403,7 +401,7 @@ static bool build_format_params(obs_pipewire_stream *obs_pw_stream, struct spa_p
 
 build_shm:
 	for (size_t i = 0; i < obs_pw_stream->format_info.num; i++) {
-		params[params_count++] = build_format(obs_pw_stream, pod_builder,
+		params[params_count++] = build_format(obs_pw_stream, pod_builder, SPA_MEDIA_SUBTYPE_raw,
 						      obs_pw_stream->format_info.array[i].spa_format, NULL, 0);
 	}
 	*param_list = params;
@@ -551,8 +549,28 @@ static void renegotiate_format(void *data, uint64_t expirations)
 
 	uint8_t params_buffer[4096];
 	struct spa_pod_builder pod_builder = SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
-	uint32_t n_params;
-	if (!build_format_params(obs_pw_stream, &pod_builder, &params, &n_params)) {
+	uint32_t n_params = 0;
+
+	switch (obs_pw_stream->format.media_subtype) {
+	case SPA_MEDIA_SUBTYPE_raw:
+		build_format_params(obs_pw_stream, &pod_builder, &params, &n_params);
+		break;
+
+	case SPA_MEDIA_SUBTYPE_mjpg:
+		params = bzalloc(sizeof(struct spa_pod *));
+
+		if (!params) {
+			blog(LOG_ERROR, "[pipewire] Failed to allocate memory for param pointers");
+			break;
+		}
+
+		params[0] = build_format(obs_pw_stream, &pod_builder, obs_pw_stream->format.media_subtype, 0, NULL, 0);
+		n_params = 1;
+		break;
+	}
+
+	if (!params || n_params == 0)
+	{
 		teardown_pipewire(obs_pw);
 		pw_thread_loop_unlock(obs_pw->thread_loop);
 		return;
@@ -1148,10 +1166,11 @@ void obs_pipewire_destroy(obs_pipewire *obs_pw)
 obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source, int pipewire_node,
 						 const struct obs_pipewire_connect_stream_info *connect_info)
 {
+	uint32_t subtype = connect_info->video.subtype ? *connect_info->video.subtype : SPA_MEDIA_SUBTYPE_raw;
 	struct spa_pod_builder pod_builder;
 	const struct spa_pod **params = NULL;
 	obs_pipewire_stream *obs_pw_stream;
-	uint32_t n_params;
+	uint32_t n_params = 0;
 	uint8_t params_buffer[4096];
 
 	assert(connect_info != NULL);
@@ -1169,7 +1188,17 @@ obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_sourc
 	if (obs_pw_stream->resolution.set)
 		obs_pw_stream->resolution.rect = *connect_info->video.resolution;
 
-	init_format_info(obs_pw_stream, connect_info->video.format);
+	switch (subtype) {
+	case SPA_MEDIA_SUBTYPE_raw:
+		init_format_info(obs_pw_stream, connect_info->video.format);
+		break;
+
+	case SPA_MEDIA_SUBTYPE_mjpg:
+		break;
+
+	default:
+		return NULL;
+	}
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
@@ -1188,7 +1217,41 @@ obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_sourc
 
 	obs_get_video_info(&obs_pw_stream->video_info);
 
-	if (!build_format_params(obs_pw_stream, &pod_builder, &params, &n_params)) {
+	if (connect_info->video.subtype == NULL || *connect_info->video.subtype == SPA_MEDIA_SUBTYPE_raw) {
+		build_format_params(obs_pw_stream, &pod_builder, &params, &n_params);
+	} else if (*connect_info->video.subtype == SPA_MEDIA_SUBTYPE_mjpg) {
+		const struct spa_pod **mjpg_param;
+		mjpg_param = bzalloc(sizeof(struct spa_pod *));
+
+		if (!mjpg_param) {
+			blog(LOG_ERROR, "[pipewire] Failed to allocate memory for param pointers");
+		} else {
+			mjpg_param[0] =
+				build_format(obs_pw_stream, &pod_builder, *connect_info->video.subtype, 0, NULL, 0);
+			params = mjpg_param;
+			n_params = 1;
+		}
+	}
+
+	switch (subtype) {
+	case SPA_MEDIA_SUBTYPE_raw:
+		build_format_params(obs_pw_stream, &pod_builder, &params, &n_params);
+		break;
+
+	case SPA_MEDIA_SUBTYPE_mjpg:
+		params = bzalloc(sizeof(struct spa_pod *));
+
+		if (!params) {
+			blog(LOG_ERROR, "[pipewire] Failed to allocate memory for param pointers");
+			break;
+		}
+
+		params[0] = build_format(obs_pw_stream, &pod_builder, subtype, 0, NULL, 0);
+		n_params = 1;
+		break;
+	}
+
+	if (!params || n_params == 0) {
 		pw_thread_loop_unlock(obs_pw->thread_loop);
 		bfree(obs_pw_stream);
 		return NULL;
