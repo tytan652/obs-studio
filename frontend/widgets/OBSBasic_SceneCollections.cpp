@@ -1440,7 +1440,12 @@ void OBSBasic::ClearSceneData()
 	ClearListItems(ui->scenes);
 	ui->sources->Clear();
 	ClearQuickTransitions();
-	ui->transitions->clear();
+
+	currentTransitionUuid.clear();
+	transitions.clear();
+	trsNameUuid.clear();
+	trUuids.clear();
+	emit TransitionsCleared();
 
 	ClearProjectors();
 
