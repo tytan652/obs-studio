@@ -1444,7 +1444,6 @@ void OBSBasic::ClearSceneData()
 	currentTransitionUuid.clear();
 	transitions.clear();
 	trsNameUuid.clear();
-	trUuids.clear();
 	emit TransitionsCleared();
 
 	ClearProjectors();

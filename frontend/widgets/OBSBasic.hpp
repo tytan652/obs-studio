@@ -1457,9 +1457,8 @@ private:
 	QPointer<QPushButton> transitionButton;
 	QPointer<QMenu> perSceneTransitionMenu;
 
-	std::unordered_map<std::string, OBSSource> transitions;
-	/* FIXME: Replace usages of an index to identify a transition */
-	std::vector<std::string> trUuids;
+	/* NOTE: There is a reliance on the order of insertion */
+	std::map<std::string, OBSSource> transitions;
 	/* FIXME: Replace usages of a name to identify a transition */
 	std::unordered_map<std::string, std::string> trsNameUuid;
 	std::string currentTransitionUuid;

@@ -447,7 +447,6 @@ void OBSBasic::AddTransition(const char *id)
 		uuid = obs_source_get_uuid(source);
 		transitions.insert({uuid, source});
 		trsNameUuid.insert({name, uuid});
-		trUuids.push_back(uuid);
 
 		emit TransitionAdded(QString::fromStdString(name), QString::fromStdString(uuid));
 
@@ -508,10 +507,9 @@ void OBSBasic::on_transitionRemove_clicked()
 		}
 	}
 
-	trUuids.erase(std::find(trUuids.begin(), trUuids.end(), currentTransitionUuid));
 	trsNameUuid.erase(obs_source_get_name(tr));
 	transitions.erase(currentTransitionUuid);
-	SetCurrentTransition(trUuids.back());
+	SetCurrentTransition(std::prev(transitions.end())->first);
 
 	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
 
@@ -764,7 +762,6 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 {
 	OBSSource scene = GetCurrentSceneSource();
 	QMenu *menu = new QMenu(QTStr("TransitionOverride"));
-	QAction *action;
 
 	OBSDataAutoRelease data = obs_source_get_private_settings(scene);
 
@@ -781,22 +778,23 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 	duration->setValue(curDuration);
 
 	auto setTransition = [this](QAction *action) {
-		int idx = action->property("transition_index").toInt();
+		std::string uuid = action->property("transition_uuid").toString().toStdString();
 		OBSSource scene = GetCurrentSceneSource();
 		OBSDataAutoRelease data = obs_source_get_private_settings(scene);
+		OBSSource transition;
 
-		if (idx == -1) {
+		if (uuid.empty() || transitions.find(uuid) == transitions.end()) {
 			obs_data_set_string(data, "transition", "");
 			return;
 		}
 
-		if (transitions.find(trUuids[idx]) == transitions.end())
+		if (transitions.find(uuid) == transitions.end())
 			return;
 
-		OBSSource tr = transitions[trUuids[idx]];
+		transition = transitions[uuid];
 
-		if (tr) {
-			const char *name = obs_source_get_name(tr);
+		if (transition) {
+			const char *name = obs_source_get_name(transition);
 			obs_data_set_string(data, "transition", name);
 		}
 	};
@@ -810,19 +808,14 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 
 	connect(duration, (void(QSpinBox::*)(int)) & QSpinBox::valueChanged, setDuration);
 
-	for (int i = -1; i < (int)trUuids.size(); i++) {
+	auto addAction = [&](const std::string &uuid = "") {
 		const char *name = "";
+		QAction *action;
 
-		if (i >= 0) {
-			OBSSource tr;
-
-			if (transitions.find(trUuids[i]) == transitions.end())
-				continue;
-
-			tr = transitions[trUuids[i]];
-			if (!tr)
-				continue;
-			name = obs_source_get_name(tr);
+		if (!uuid.empty()) {
+			if (transitions.find(uuid) == transitions.end())
+				return;
+			name = obs_source_get_name(transitions[uuid]);
 		}
 
 		bool match = (name && strcmp(name, curTransition) == 0);
@@ -831,12 +824,16 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 			name = Str("None");
 
 		action = menu->addAction(QT_UTF8(name));
-		action->setProperty("transition_index", i);
+		action->setProperty("transition_uuid", QString::fromStdString(uuid));
 		action->setCheckable(true);
 		action->setChecked(match);
 
 		connect(action, &QAction::triggered, std::bind(setTransition, action));
-	}
+	};
+
+	addAction();
+	for (const auto &pair : transitions)
+		addAction(pair.first);
 
 	QWidgetAction *durationAction = new QWidgetAction(menu);
 	durationAction->setDefaultWidget(duration);
@@ -1042,7 +1039,6 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 {
 	QMenu *menu = new QMenu(parent);
 	QAction *action;
-	OBSSource tr;
 
 	if (qt) {
 		action = menu->addAction(QTStr("Remove"));
@@ -1066,8 +1062,6 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 			&OBSBasic::QuickTransitionChangeDuration);
 	}
 
-	tr = fadeTransition;
-
 	action = menu->addAction(QTStr("FadeToBlack"));
 	action->setProperty("fadeToBlack", true);
 
@@ -1079,17 +1073,12 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 		connect(action, &QAction::triggered, this, &OBSBasic::AddQuickTransition);
 	}
 
-	for (int i = 0; i < (int)trUuids.size(); i++) {
-		if (transitions.find(trUuids[i]) == transitions.end())
+	for (const auto &pair : transitions) {
+		if (!pair.second)
 			continue;
 
-		tr = transitions[trUuids[i]];
-
-		if (!tr)
-			continue;
-
-		action = menu->addAction(obs_source_get_name(tr));
-		action->setProperty("transition_index", i);
+		action = menu->addAction(obs_source_get_name(pair.second));
+		action->setProperty("transition_uuid", QString::fromStdString(pair.first));
 
 		if (qt) {
 			action->setProperty("id", qt->id);
@@ -1149,15 +1138,15 @@ void OBSBasic::AddQuickTransitionId(int id)
 
 void OBSBasic::AddQuickTransition()
 {
-	int trIdx = sender()->property("transition_index").toInt();
+	std::string transitionUuid = sender()->property("transition_uuid").toString().toStdString();
 	QSpinBox *duration = sender()->property("duration").value<QSpinBox *>();
 	bool fadeToBlack = sender()->property("fadeToBlack").value<bool>();
 	OBSSource transition;
 
-	if (!fadeToBlack && (transitions.find(trUuids[trIdx]) == transitions.end()))
+	if (!fadeToBlack && (transitions.find(transitionUuid) == transitions.end()))
 		return;
 
-	transition = fadeToBlack ? OBSSource(fadeTransition) : transitions[trUuids[trIdx]];
+	transition = fadeToBlack ? OBSSource(fadeTransition) : transitions[transitionUuid];
 
 	if (!transition)
 		return;
@@ -1208,17 +1197,17 @@ void OBSBasic::QuickTransitionClicked()
 void OBSBasic::QuickTransitionChange()
 {
 	int id = sender()->property("id").toInt();
-	int trIdx = sender()->property("transition_index").toInt();
+	std::string transitionUuid = sender()->property("transition_uuid").toString().toStdString();
 	bool fadeToBlack = sender()->property("fadeToBlack").value<bool>();
 	QuickTransition *qt = GetQuickTransition(id);
 
 	if (qt) {
 		OBSSource tr;
 
-		if (!fadeToBlack && (transitions.find(trUuids[trIdx]) == transitions.end()))
+		if (!fadeToBlack && (transitions.find(transitionUuid) == transitions.end()))
 			return;
 
-		tr = fadeToBlack ? OBSSource(fadeTransition) : transitions[trUuids[trIdx]];
+		tr = fadeToBlack ? OBSSource(fadeTransition) : transitions[transitionUuid];
 
 		if (tr) {
 			qt->source = tr;
@@ -1365,7 +1354,6 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitionsData, obs_load_sourc
 
 			transitions.insert({uuid, OBSSource(source)});
 			trsNameUuid.insert({name, uuid});
-			trUuids.push_back(uuid);
 
 			emit TransitionAdded(QT_UTF8(name), QString::fromStdString(uuid));
 
