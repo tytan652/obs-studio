@@ -33,6 +33,7 @@ env:
   FLATPAK_BUILD_SHARE_PATH: builddir-${{ inputs.arch }}/files/share
 jobs:
   build:
+    name: Flatpak 📦 (${{ inputs.arch }})
     runs-on: ${{ inputs.arch == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     container:
       image: ghcr.io/flathub-infra/flatpak-github-actions:freedesktop-24.08
@@ -82,13 +83,15 @@ jobs:
         run: |
           : Build
           flatpak-builder \
+          --disable-rofiles-fuse \
+          --install-deps-from=flathub \
           ${{ inputs.publish-mode && '' || '--repo=repo ' }}\
           --default-branch=${{ inputs.flatpak-branch }} \
           --arch=${{ inputs.arch }} \
           --ccache \
           --mirror-screenshots-url=https://dl.flathub.org/media \
           ${{ env.FLATPAK_BUILD_DIR }} \
-          ${{ github.workspace }}/build-aux/com.obsproject.Studio.json
+          build-aux/com.obsproject.Studio.json
 
       - name: Validate AppStream
         uses: ./.github/actions/flatpak-builder-lint
@@ -110,7 +113,7 @@ jobs:
           path: ${{ env.FLATPAK_BUILD_DIR }}
 
       - name: Commit screenshots
-        if: !inputs.publish-mode
+        if: ${{ !inputs.publish-mode }}
         run: |
           : Commit screenshots
           ostree commit \
@@ -120,7 +123,7 @@ jobs:
           ${{ env.FLATPAK_BUILD_SHARE_PATH }}/app-info/media
 
       - name: Validate repository
-        if: !inputs.publish-mode
+        if: ${{ !inputs.publish-mode }}
         uses: ./.github/actions/flatpak-builder-lint
         with:
           artifact: repo
@@ -128,7 +131,7 @@ jobs:
 
       - name: Generate bundle
         id: bundle
-        if: !inputs.publish-mode && inputs.upload-bundle
+        if: ${{ !inputs.publish-mode && inputs.upload-bundle }}
         env:
           COMMIT: ${{ steps.checkout.outputs.commit }}
         run: |
@@ -146,14 +149,14 @@ jobs:
           repo ${file_name} com.obsproject.Studio
 
       - name: Upload bundle
-        if: steps.bundle.conclusion == 'success'
+        if: ${{ steps.bundle.conclusion == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.bundle.outputs.name }}
           path: ${{ github.workspace }}/${{ steps.bundle.outputs.file-name }}
 
       - uses: actions/cache/save@v4
-        if: !inputs.publish-mode && inputs.save-cache && steps.restore-cache.outputs.cache-hit != 'true'
+        if: ${{ !inputs.publish-mode && inputs.save-cache && steps.restore-cache.outputs.cache-hit != 'true' }}
         with:
           path: ${{ env.CACHE_PATH }}
           key: ${{ env.CACHE_KEY }}
