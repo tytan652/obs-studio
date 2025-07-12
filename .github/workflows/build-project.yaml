@@ -239,8 +239,8 @@ jobs:
           path: ${{ github.workspace }}/.ccache
           key: ${{ runner.os }}-${{ matrix.os }}-ccache-x86_64-${{ needs.check-event.outputs.config }}
 
-  flatpak-build:
-    name: Flatpak 📦
+  old-flatpak-build:
+    name: Old Flatpak 📦
     runs-on: ubuntu-24.04
     needs: check-event
     defaults:
@@ -322,6 +322,16 @@ jobs:
         with:
           artifact: repo
           path: repo
+
+  flatpak-build:
+    name: Flatpak 📦
+    needs: check-event
+    uses: ./.github/workflows/build-flatpak.yaml
+    with:
+      ref: ${{ github.ref }}
+      arch: x86_64
+      upload-bundle: ${{ fromJSON(needs.check-event.outputs.package) }}
+      save-cache: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
 
   windows-build:
     name: Windows 🪟
