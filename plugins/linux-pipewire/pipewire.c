@@ -1297,10 +1297,12 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 	bool rotated;
 	int flip = 0;
 
+	const char *tech_name = "Draw";
 	gs_technique_t *tech;
 	gs_eparam_t *image;
 
 	const bool previous = gs_framebuffer_srgb_enabled();
+	enum gs_color_format color_format;
 
 	if (!obs_pw_stream->texture)
 		return;
@@ -1312,10 +1314,15 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream, gs_eff
 		gs_sync_destroy(acquire_sync);
 	}
 
-	gs_enable_framebuffer_srgb(true);
+	color_format = gs_texture_get_color_format(obs_pw_stream->texture);
+
+	if (color_format == GS_R10G10B10A2)
+		tech_name = "DrawSrgbDecompress";
+
+	gs_enable_framebuffer_srgb(color_format == GS_R10G10B10A2);
 
 	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-	tech = gs_effect_get_technique(effect, "DrawSrgbDecompress");
+	tech = gs_effect_get_technique(effect, tech_name);
 	gs_technique_begin(tech);
 	gs_technique_begin_pass(tech, 0);
 
