@@ -29,7 +29,6 @@
 #include <glib/gstdio.h>
 
 #include <fcntl.h>
-#include <glad/glad.h>
 #include <libdrm/drm_fourcc.h>
 #include <pipewire/pipewire.h>
 #include <spa/param/video/format-utils.h>
@@ -285,16 +284,6 @@ static const uint32_t supported_formats_sync[] = {
 };
 
 #define N_SUPPORTED_FORMATS_SYNC (sizeof(supported_formats_sync) / sizeof(supported_formats_sync[0]))
-
-static void swap_texture_red_blue(gs_texture_t *texture)
-{
-	GLuint gl_texure = *(GLuint *)gs_texture_get_obj(texture);
-
-	glBindTexture(GL_TEXTURE_2D, gl_texure);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}
 
 static inline struct spa_pod *build_format(obs_pipewire_stream *obs_pw_stream, struct spa_pod_builder *b,
 					   uint32_t format, uint64_t *modifiers, size_t modifier_count)
@@ -844,9 +833,6 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 							   (const uint8_t **)&buffer->datas[0].data, GS_DYNAMIC);
 	}
 
-	if (obs_pw_video_format.swap_red_blue)
-		swap_texture_red_blue(obs_pw_stream->texture);
-
 	/* Video Crop */
 	region = spa_buffer_find_meta_data(buffer, SPA_META_VideoCrop, sizeof(*region));
 	if (region && spa_meta_region_is_valid(region)) {
@@ -900,9 +886,6 @@ read_metadata:
 			obs_pw_stream->cursor.texture =
 				gs_texture_create(obs_pw_stream->cursor.width, obs_pw_stream->cursor.height,
 						  obs_pw_video_format.gs_format, 1, &bitmap_data, GS_DYNAMIC);
-
-			if (obs_pw_video_format.swap_red_blue)
-				swap_texture_red_blue(obs_pw_stream->cursor.texture);
 		}
 
 		obs_pw_stream->cursor.x = cursor->position.x;
