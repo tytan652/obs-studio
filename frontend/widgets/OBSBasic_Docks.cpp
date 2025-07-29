@@ -42,6 +42,8 @@ void setupDockAction(QDockWidget *dock)
 {
 	QAction *action = dock->toggleViewAction();
 
+	action->setMenuRole(QAction::NoRole);
+
 	auto neverDisable = [action]() {
 		QSignalBlocker block(action);
 		action->setEnabled(true);

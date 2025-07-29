@@ -224,6 +224,21 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	ui->setupUi(this);
 	ui->previewDisabledWidget->setVisible(false);
 
+	/* Cleanup menu bar from TextHeuristicRole */
+	for (QObject *obj : ui->menubar->children()) {
+		auto *menu = qobject_cast<QMenu *>(obj);
+
+		if (!menu)
+			continue;
+
+		for (QObject *menuObj : menu->children()) {
+			auto *action = qobject_cast<QAction *>(menuObj);
+
+			if (action && action->menuRole() == QAction::TextHeuristicRole)
+				action->setMenuRole(QAction::NoRole);
+		}
+	}
+
 	/* Set up streaming connections */
 	connect(
 		this, &OBSBasic::StreamingStarting, this, [this] { this->streamingStarting = true; },
