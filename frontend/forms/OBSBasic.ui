@@ -1807,16 +1807,10 @@
    <property name="text">
     <string>Basic.MainMenu.File.Settings</string>
    </property>
-   <property name="menuRole">
-    <enum>QAction::PreferencesRole</enum>
-   </property>
   </action>
   <action name="actionE_xit">
    <property name="text">
     <string>Basic.MainMenu.File.Exit</string>
-   </property>
-   <property name="menuRole">
-    <enum>QAction::QuitRole</enum>
    </property>
   </action>
   <action name="actionShowLogs">
@@ -2241,9 +2235,6 @@
   <action name="actionShowAbout">
    <property name="text">
     <string>Basic.MainMenu.Help.About</string>
-   </property>
-   <property name="menuRole">
-    <enum>QAction::AboutRole</enum>
    </property>
   </action>
   <action name="toggleSourceIcons">
