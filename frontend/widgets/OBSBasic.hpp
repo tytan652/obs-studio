@@ -1531,7 +1531,7 @@ private:
 
 	void PasteShowHideTransition(obs_sceneitem_t *item, bool show, obs_source_t *tr, int duration);
 
-	void SetCurrentTransition(const std::string &uuid);
+	void SetCurrentTransition(const std::string &uuid, bool setTransition);
 
 public slots:
 	void SetCurrentScene(OBSSource scene, bool force = false);
