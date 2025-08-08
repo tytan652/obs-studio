@@ -306,7 +306,7 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 		ui->transitions->clear();
 	});
 
-	connect(this, &OBSBasic::CurrentTranstionChanged, this, [this](const QString &uuid) {
+	connect(this, &OBSBasic::CurrentTransitionChanged, this, [this](const QString &uuid) {
 		QSignalBlocker sb(ui->transitions);
 		ui->transitions->setCurrentIndex(ui->transitions->findData(uuid));
 	});
