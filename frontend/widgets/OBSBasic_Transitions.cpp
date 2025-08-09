@@ -526,6 +526,8 @@ void OBSBasic::on_transitionRemove_clicked()
 
 	transitionUuids.erase(std::find(transitionUuids.begin(), transitionUuids.end(), currentTransitionUuid));
 	transitions.erase(currentTransitionUuid);
+	emit TransitionRemoved(QString::fromStdString(currentTransitionUuid));
+
 	UpdateCurrentTransition(transitionUuids.back(), true);
 
 	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
