@@ -1472,7 +1472,7 @@ private:
 	QPointer<QMenu> perSceneTransitionMenu;
 
 	std::unordered_map<std::string, OBSSource> transitions;
-	// NOTE: There is a reliance on the order of insertion
+	// FIXME: Any code accessing this collection relies on order of insertion
 	std::vector<std::string> transitionUuids;
 	// FIXME: Replace usages of a name to identify a transition
 	std::unordered_map<std::string, std::string> transitionNameToUuids;
