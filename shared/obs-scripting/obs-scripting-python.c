@@ -1621,32 +1621,59 @@ bool obs_scripting_load_python(const char *python_path)
 	UNUSED_PARAMETER(python_path);
 #endif
 
-	Py_Initialize();
-	if (!Py_IsInitialized())
+#if RUNTIME_LINK
+	if (python_version.major != 3)
 		return false;
+
+	if (python_version.minor < 8)
+#endif
+#if RUNTIME_LINK || PY_VERSION_HEX < 0x03080000
+	{
+
+		Py_Initialize();
+		if (!Py_IsInitialized())
+			return false;
 
 #if RUNTIME_LINK
-	if (python_version.major == 3 && python_version.minor < 7) {
-		PyEval_InitThreads();
-		if (!PyEval_ThreadsInitialized())
-			return false;
-	}
-#elif PY_VERSION_HEX < 0x03070000
-	PyEval_InitThreads();
-	if (!PyEval_ThreadsInitialized())
-		return false;
+		if (python_version.minor < 7)
 #endif
+#if RUNTIME_LINK || PY_VERSION_HEX < 0x03070000
+		{
+			PyEval_InitThreads();
+			if (!PyEval_ThreadsInitialized())
+				return false;
+		}
+#endif
+		/* ---------------------------------------------- */
+		/* Must set arguments for guis to work            */
 
-	/* ---------------------------------------------- */
-	/* Must set arguments for guis to work            */
+		wchar_t *argv[] = {L"", NULL};
+		int argc = sizeof(argv) / sizeof(wchar_t *) - 1;
 
-	wchar_t *argv[] = {L"", NULL};
-	int argc = sizeof(argv) / sizeof(wchar_t *) - 1;
+		PySys_SetArgv(argc, argv);
+	}
+#endif
+#if RUNTIME_LINK
+	else
+#endif
+#if RUNTIME_LINK || PY_VERSION_HEX >= 0x03080000
+	{
+		PyConfig config;
+		PyConfig_InitPythonConfig(&config);
 
-	PRAGMA_WARN_PUSH
-	PRAGMA_WARN_DEPRECATION
-	PySys_SetArgv(argc, argv);
-	PRAGMA_WARN_POP
+		config.parse_argv = 0;
+		config.safe_path = 1;
+
+		PyWideStringList_Append(&config.argv, L"");
+
+		PyStatus status = Py_InitializeFromConfig(&config);
+		PyConfig_Clear(&config);
+
+		if (PyStatus_Exception(status)) {
+			return false;
+		}
+	}
+#endif
 
 #ifdef __APPLE__
 	PyRun_SimpleString("import sys");
