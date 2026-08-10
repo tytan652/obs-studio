@@ -1632,8 +1632,8 @@ static bool python_pre38_init()
 }
 #endif
 
-#if RUNTIME_LINK || PY_VERSION_HEX >= 0x03080000
-static bool python_init()
+#if RUNTIME_LINK || PY_VERSION_HEX < 0x030E0000
+static bool python_pre314_init()
 {
 	/* 1024 to fit all size variation of the struct and will not expand since PEP 741 add a opaque struct
 	 * replacement since Python 3.14, largest (int are 64 and long is same as long long) is estimated with 640 as
@@ -1653,6 +1653,27 @@ static bool python_init()
 	bfree(config);
 
 	if (PyStatus_Exception(status))
+		return false;
+
+	return true;
+}
+#endif
+
+#if RUNTIME_LINK || PY_VERSION_HEX >= 0x030E0000
+static bool python_init()
+{
+	PyInitConfig *config = PyInitConfig_Create();
+
+	/* ---------------------------------------------- */
+	/* Must set arguments for guis to work            */
+	char *argv[] = {""};
+
+	PyInitConfig_SetStrList(config, "argv", Py_ARRAY_LENGTH(argv), argv);
+
+	int status = Py_InitializeFromInitConfig(config);
+	PyInitConfig_Free(config);
+
+	if (status)
 		return false;
 
 	return true;
@@ -1690,12 +1711,18 @@ bool obs_scripting_load_python(const char *python_path)
 	if (python_version.minor < 8) {
 		if (!python_pre38_init())
 			return false;
+	} else if (python_version.minor < 14) {
+		if (!python_pre314_init())
+			return false;
 	} else {
 		if (!python_init())
 			return false;
 	}
 #elif PY_VERSION_HEX < 0x03080000
 	if (!python_pre38_init())
+		return false;
+#elif PY_VERSION_HEX < 0x030E0000
+	if (!python_pre314_init())
 		return false;
 #else
 	if (!python_init())

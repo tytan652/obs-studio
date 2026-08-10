@@ -197,7 +197,12 @@ bool import_python(const char *python_path, python_version_t *python_version)
 		IMPORT_FUNC(PyType_GetFlags);
 	}
 
-	if (python_version->major == 3 && python_version->minor >= 8) {
+	if (python_version->major == 3 && python_version->minor >= 14) {
+		IMPORT_FUNC(PyInitConfig_Create);
+		IMPORT_FUNC(PyInitConfig_SetStrList);
+		IMPORT_FUNC(PyInitConfig_Free);
+		IMPORT_FUNC(Py_InitializeFromInitConfig);
+	} else if (python_version->major == 3 && python_version->minor >= 8) {
 		IMPORT_FUNC(PyConfig_InitPythonConfig);
 		IMPORT_FUNC(PyConfig_SetArgv);
 		IMPORT_FUNC(PyConfig_Clear);

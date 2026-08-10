@@ -136,6 +136,10 @@ PY_EXTERN PyStatus (*Import_PyConfig_SetArgv)(PyConfig *config, Py_ssize_t argc,
 PY_EXTERN void (*Import_PyConfig_Clear)(PyConfig *config);
 PY_EXTERN PyStatus (*Import_Py_InitializeFromConfig)(const PyConfig *config);
 PY_EXTERN int (*Import_PyStatus_Exception)(PyStatus err);
+PY_EXTERN PyInitConfig *(*PyInitConfig_Create)(void);
+PY_EXTERN int (*PyInitConfig_SetStrList)(PyInitConfig *config, const char *name, size_t length, char *const *items);
+PY_EXTERN void (*PyInitConfig_Free)(PyInitConfig *config);
+PY_EXTERN int (*Py_InitializeFromInitConfig)(PyInitConfig *config);
 #if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
 PY_EXTERN void (*Import__Py_Dealloc)(PyObject *obj);
 #endif
@@ -229,6 +233,10 @@ extern bool import_python(const char *python_path, python_version_t *python_vers
 #define PyConfig_Clear Import_PyConfig_Clear
 #define Py_InitializeFromConfig Import_Py_InitializeFromConfig
 #define PyStatus_Exception Import_PyStatus_Exception
+#define PyInitConfig_Create Import_PyInitConfig_Create
+#define PyInitConfig_SetStrList Import_PyInitConfig_SetStrList
+#define PyInitConfig_Free Import_PyInitConfig_Free
+#define Py_InitializeFromInitConfig Import_Py_InitializeFromInitConfig
 #if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
 #define _Py_Dealloc Import__Py_Dealloc
 #endif
